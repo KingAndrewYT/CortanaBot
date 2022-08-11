@@ -1,5 +1,6 @@
 /*----------CONSTANTES----------*/
 const makeWASocket = require("@adiwajshing/baileys");
+const { text } = require("figlet");
 const moment = require ('moment-timezone')
 moment.tz.setDefault('America/Bogota').locale('es')
 const opciones = require('./config/opciones.js')
@@ -17,6 +18,22 @@ module.exports = async (msg ,client) => {
 /*----------ENVIO DE MENSAJES----------*/
     const sendText = async (texto) => {client.sendMessage(from, {text: texto})}
     const sendReply = async (texto) => {client.sendMessage(from, {text: texto}, {quoted: msg})}
+    const sendMentiones = async (texto, menciones) => {await client.sendMessage(from, { text: texto, mentions: [menciones]})}
+    const sendLocation = async (latitud, longitud) => {await client.sendMessage(from, {location: {degreesLatitude: latitud, degreesLongitude: longitud}})}
+    const sendVcard = async (texto, vcard) =>{client.sendMessage(from, {contacts:{displayName: texto, contacts: [{vcard}]}})}
+    const sendButtonText = async (texto, botones = []) => {
+        //const botones = [ {buttonId: 'id1', buttonText: {displayText: 'Button 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Button 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Button 3'}, type: 1} ]
+        client.sendMessage(from, {text: texto, footer: info.copyright, buttons: botones, headerType: 1})
+    }
+    const sendTemplateButtonText = async (texto, botones) => {
+        //const botones = [ {index: 1, urlButton: {displayText: 'Suscribete', url: 'https://www.youtube.com/c/KingAndrewYT'}}, {index: 2, callButton: {displayText: 'llamame', phoneNumber: '+57 322 8125090'}}, {index: 3, quickReplyButton: {displayText: 'Menu', id: '!menu'}}]
+        await client.sendMessage(from, { text: texto, footer: info.copyright, templateButtons: botones})        
+    }
+    const sendListText = async (titulo, texto,textoBoton) => {
+        //const sections = [{ title: "Section 1", rows: [ {title: "Option 1", rowId: "option1"}, {title: "Option 2", rowId: "option2", description: "This is a description"} ]}, { title: "Section 2", rows: [ {title: "Option 3", rowId: "option3"}, {title: "Option 4", rowId: "option4", description: "This is a description V2"} ]}]
+        client.sendMessage(from, { text: texto, footer: info.copyright, title: titulo, buttonText: textoBoton, sections }) 
+    }
+    const sendReaction = async (texto) => {client.sendMessage(from, { react: { text: texto, key: msg.key } })}
 /*--------------TIPOS DE MENSAJES--------------*/
     var messageType = Object.keys(msg.message)[0]
     const isText = messageType === 'conversation' 
@@ -92,6 +109,7 @@ module.exports = async (msg ,client) => {
     if (isText && (chats).toLowerCase().startsWith('hola')){
         sendReply(`Hola ${saludo}`)
     }
+    log(msg.message)
 
     switch(command){
         case 'repite':
@@ -128,6 +146,10 @@ module.exports = async (msg ,client) => {
                 error(e)
             }
             break
+        case 'test':
+
+        break      
+          
         default:
     }
 }
