@@ -3,7 +3,7 @@ const proces = require('process')
 proces.on('uncaughtException', console.error)
 
 const mensajes = require ('./mensajes.js');
-const { default: makeWASocket, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, jidDecode,  downloadContentFromMessage } = require('@adiwajshing/baileys');
+const { default: makeWASocket, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, jidDecode,  downloadContentFromMessage, Browsers } = require('@adiwajshing/baileys');
 const { state, saveState } = useSingleFileAuthState('./session_cortana.json');
 const { Boom } = require('@hapi/boom')  
 const figlet = require ('figlet')
@@ -23,7 +23,7 @@ log(figlet.textSync('Cortana Bot', { font: 'Flower Power', horizontalLayout: 'de
 log(figlet.textSync('------------', { horizontalLayout: 'default'}))
 
 //const { version } = await fetchLatestBaileysVersion()
-const client = makeWASocket({ logger: pino({ level: 'warn' }), printQRInTerminal: true, browser: ['Windows', `Unknown`, '2.0.0'], auth: state})
+const client = makeWASocket({ logger: pino({ level: 'warn' }), printQRInTerminal: true, browser: Browsers.macOS('Chrome OS'), auth: state})
     async function connectToWhatsApp () {
         try {
             let session = './session_cortana.json'
