@@ -8,6 +8,7 @@ const fs = require('fs')
 const opciones = require('./config/opciones.js')
 const translate = require ('./funciones/traductor.js')
 const {info} = opciones
+const {color} = require('./utilidades')
 const log = console.log;
 const error = console.error;
 
@@ -120,20 +121,7 @@ module.exports = async (msg ,client) => {
     if (isText && (chats).toLowerCase().startsWith('hola')){
         sendReply(`Hola ${saludo}`)
     }
-
 /*----------FUNCIONES----------*/
-    async function checkNumber (){
-        try {
-            if(args.length == 0 ) return sendReply('Si deseas confirmar la existencia de un numero en la plafaforma de WhatsApp, envia un mensaje con el comando *!check + numero de telefono con codigo de pais*\n\nEjemplo: !check 573228125090')
-            if(isNaN(q)) return sendReply('¡Error! solo se aceptan caracteres numericos')
-            if(q.length >= 15) return sendReply('¡Error! el numero ingresado supera los 15 caracteres')
-            const [result] = await client.onWhatsApp(q)
-            if(result == undefined) return sendReply(`¡Error! el numero *${q}* no existe en whatsapp`)
-            return sendReply(`¡Busqueda finalizada!\nEl numero ${q} si existe en whatsapp.\n\nclick en el siguiente enlace para ir a su chat directamente: https://wa.me/${q}`)
-        } catch (e) {
-            log(e)
-        }
-    }
     
     switch(command){
         case 'repite':
@@ -181,13 +169,20 @@ module.exports = async (msg ,client) => {
                 break
         case 'chat':// MUTEAR, DESMUTEAR, ARCHIVAR, DESARCHIVAR, LEER, MARCAR COMO NO LEIDO
             try {
-                if (args.length == 0) return 
-                if (q2 == 'archive') await client.chatModify({archive: true, lastMessages:[msg]}, from)
-                if (q2 == 'unarchive') await client.chatModify({archive: false, lastMessages:[msg]}, from)
-                if (q2 == 'mute') await client.chatModify({ mute: 8 * 60 * 60 * 1000 },from, [])
-                if (q2 == 'unmute') await client.chatModify({ mute: null },from, [])
-                if (q2 == 'read') await client.chatModify({markRead: true, lastMessages: [msg]}, from)
-                if (q2 == 'unread') await client.chatModify({markRead: false, lastMessages: [msg]}, from)
+                if (args.length == 0) return sendReply('funciones disponibles para administracion del chat:\n\n1. !chat mute\n2. !chat unmute \n3. !chat archive\n4. chat unarchive\n5. !chat read\n6.0')
+                const timestamp = new Date(new Date().getTime()+ 8*60*60*1000).getTime()
+                if (q2 == 'archive') return await client.chatModify({archive: true, lastMessages:[msg]}, from)
+                if (q2 == 'unarchive') return await client.chatModify({archive: false, lastMessages:[msg]}, from)
+                if (args[0] == 'mute') return client.chatModify({ mute: timestamp },from, [])
+                if (q2 == 'unmute') return await client.chatModify({ mute: null },from, [])
+                if (q2 == 'read') return await client.chatModify({markRead: true, lastMessages: [msg]}, from)
+                if (q2 == 'unread') return await client.chatModify({markRead: false, lastMessages: [msg]}, from)
+                if (q2 == 'pin') return await client.chatModify({ pin: true },from, [])
+                if (q2 == 'unpin') return await client.chatModify({ pin: false },from, [])
+                if (q2 == 'delete') return await client.chatModify({delete: true, lastMessages:[msg]}, from)
+                //if (args[0] == 'nombre') return await client.chatModify({pushNameSetting: q},from, [])
+                //if (q2 == 'clear') return await client.chatModify({clear:true}, from)
+                sendReply('funciones disponibles para administracion del chat:\n\n1. !chat mute\n2. !chat unmute \n3. !chat archive\n4. chat unarchive\n5. !chat read\n6.0')
             } catch (e){
                 log(e)
             }
@@ -200,10 +195,19 @@ module.exports = async (msg ,client) => {
             if(q2 == '7') client.sendMessage(from,{disappearingMessagesInChat:  7 * 24 * 60 * 60})
             if(q2 == '90') client.sendMessage(from,{disappearingMessagesInChat:  90 * 24 * 60 * 60})
             break
-        case 'check':
-            checkNumber()
+        case 'check': //VERIFICAR SI UN NUMERO EXISTE EN WHATSAPP
+            try {
+                if(args.length == 0 ) return sendReply('Si deseas confirmar la existencia de un numero en la plafaforma de WhatsApp, envia un mensaje con el comando *!check + numero de telefono con codigo de pais*\n\nEjemplo: !check 573228125090')
+                if(isNaN(q)) return sendReply('¡Error! solo se aceptan caracteres numericos')
+                if(q.length >= 15) return sendReply('¡Error! el numero ingresado supera los 15 caracteres')
+                const [result] = await client.onWhatsApp(q)
+                if(result == undefined) return sendReply(`¡Error! el numero *${q}* no existe en whatsapp`)
+                return sendReply(`¡Busqueda finalizada!\nEl numero ${q} si existe en whatsapp.\n\nclick en el siguiente enlace para ir a su chat directamente: https://wa.me/${q}`)
+            } catch (e) {
+                log(e)
+            }
             break
-        case 'info':
+        case 'info': //EXTRAER FOTO DE PERFIL Y ESTADO DE UNA PERSONA
             if(args.length == 0 ) return sendReply('Si deseas obtener informacion de una cuenta de whatsapp como su foto de perfil y estado por favor envia un mensaje con el comando *!info + numero de whatsapp con codigo de pais*\n\nEjemplo: !info 573228125090')
             if(isNaN(q)) return sendReply('¡Error! solo se aceptan caracteres numericos')
             if(q.length >= 15) return sendReply('¡Error! el numero ingresado supera los 15 caracteres')
@@ -214,7 +218,22 @@ module.exports = async (msg ,client) => {
             const texto = `*INFORMACION DE ${q}*\n\n_Estado: ${status.status}_\n_Actualizado el: ${status.setAt}_`
             sendImageReply(profile, texto)
             break
+        case 'change':
+            if(args.length == 0) return sendReply('Si deseas realizar cambios en mi perfil o estado envia un mensaje con los siguientes comandos.\n\n1. !change profile + imagen (para cambiar mi foto de perfil)\n2. !change status + texto (para cambiar mi informacion de estado)\n3. !change name + nombre (para cambiar mi nombre)')
+            if(args[0].startsWith('status')) {
+                if(args.length == 1) return sendReply('mensaje vacio, por favor escribe un estado')
+                if(q.slice(7).length > 256) return sendReply('Lo siento, el texto ingresado supera los 256 caracteres permitidos por la aplicacion, por favor intenta de nuevo con un estado mas corto.')
+                client.updateProfileStatus(q.slice(7)).then(()=>{sendReply('¡GENIAL! He cambiado mi estado correctamente.')})
+            }
+            if(args[0].startsWith('name')){
+                log(client)
+                const name = 'KingAndrew'
+                //await client.updateProfileName(name)
+                /*if(args.length == 1) return sendReply('mensaje vacio, por favor escribe un nombre')
+                if(q.slice(7).length > 256) return sendReply('a')
+                client.updateProfileName(q.slice(7)).then(()=>{sendReply('¡GENIAL! He cambiado mi nombre correctamente.')})*/
+            }
+            break        
         default:
     }
-    
 }
