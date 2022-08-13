@@ -43,15 +43,13 @@ const client = makeWASocket({ logger: pino({ level: 'warn' }), printQRInTerminal
                     let messageConnect = new Boom(lastDisconnect?.error)?.output.statusCode
                     if(messageConnect === DisconnectReason.badSession){
                         error(color('·[Estado Cortana] =>·', 'red'), color('·Sesion corrupta·', 'magenta'))
-                        client.logout();
-                        if (existsSync(session)) fs.unlinkSync(session);
+                        connectToWhatsApp(); 
                     } else if(messageConnect === DisconnectReason.connectionClosed){
                         error(color('·[Estado Cortana] =>·', 'red'), color('·Sesion cerrada por el cliente o el servidor·', 'magenta'))
                         connectToWhatsApp();
                     } else if(messageConnect === DisconnectReason.connectionReplaced){
                         error(color('·[Estado Cortana] =>·', 'red'), color('·Sesion reemplazada·', 'magenta'))
-                        client.logout();
-                        if (existsSync(session)) fs.unlinkSync(session);
+                        connectToWhatsApp(); 
                     } else if (messageConnect === DisconnectReason.restartRequired){
                         error(color('·[Estado Cortana] =>·', 'red'), color('·Se requiere un reinicio·', 'magenta'))
                         connectToWhatsApp(); 

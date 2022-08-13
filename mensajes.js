@@ -1,6 +1,6 @@
 /*----------CONSTANTES----------*/
 const makeWASocket = require("@adiwajshing/baileys");
-const { MessageType, MessageOptions, Mimetype, downloadMediaMessage, getLastMessageInChat } = require ('@adiwajshing/baileys')
+const { MessageType, MessageOptions, Mimetype, downloadMediaMessage, getLastMessageInChat, WA_DEFAULT_EPHEMERAL } = require ('@adiwajshing/baileys')
 const { text } = require("figlet");
 const moment = require ('moment-timezone')
 moment.tz.setDefault('America/Bogota').locale('es')
@@ -22,6 +22,7 @@ module.exports = async (msg ,client) => {
 //const botones = [ {buttonId: 'id1', buttonText: {displayText: 'Button 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Button 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Button 3'}, type: 1} ]        
 //const botonTemplate = [ {index: 1, urlButton: {displayText: 'Suscribete', url: 'https://www.youtube.com/c/KingAndrewYT'}}, {index: 2, callButton: {displayText: 'llamame', phoneNumber: '+57 322 8125090'}}, {index: 3, quickReplyButton: {displayText: 'Menu', id: '!menu'}}]
 //const listas = [{ title: "Section 1", rows: [ {title: "Option 1", rowId: "option1"}, {title: "Option 2", rowId: "option2", description: "This is a description"} ]}, { title: "Section 2", rows: [ {title: "Option 3", rowId: "option3"}, {title: "Option 4", rowId: "option4", description: "This is a description V2"} ]}]
+
 /*----------ENVIO DE MENSAJES----------*/
     const sendText = async (texto) => {client.sendMessage(from, {text: texto})}
     const sendReply = async (texto) => {client.sendMessage(from, {text: texto}, {quoted: msg})}
@@ -29,18 +30,20 @@ module.exports = async (msg ,client) => {
     const sendLocation = async (latitud, longitud) => {await client.sendMessage(from, {location: {degreesLatitude: latitud, degreesLongitude: longitud}})}
     const sendVcard = async (texto, vcard) =>{client.sendMessage(from, {contacts:{displayName: texto, contacts: [{vcard}]}})}
     const sendButtonText = async (texto, botones = []) => {client.sendMessage(from, {text: texto, footer: info.copyright, buttons: botones, headerType: 1})}
-    const sendTemplateButtonText = async (texto, botones = []) => { await client.sendMessage(from, { text: texto, footer: info.copyright, templateButtons: botones}) }
+    const sendTemplateButtonText = async (texto, botones) => { await client.sendMessage(from, { text: texto, footer: info.copyright, templateButtons: botones}) }
     const sendListText = async (titulo, texto,textoBoton = []) => { client.sendMessage(from, { text: texto, footer: info.copyright, title: titulo, buttonText: textoBoton, sections }) }
     const sendReaction = async (texto, para) => {client.sendMessage(para, { react: { text: texto, key: msg.key } })}
     const sendGif = async (ubicacion, texto) => {client.sendMessage(from, {video: fs.readFileSync(ubicacion), caption: texto, gifPlayback: true})}
     const sendGifReply = async (ubicacion, texto) => {client.sendMessage(from, {video: fs.readFileSync(ubicacion), caption: texto, gifPlayback: true},{quoted: msg})}
     const sendVideo = async (ubicacion, texto) => {client.sendMessage(from, {video: {url:ubicacion, caption: texto}})}
     const sendVideoReply = async (ubicacion, texto) => {client.sendMessage(from, {video: {url:ubicacion, caption: texto}},{quoted: msg})}
+    const sendImageReply = async (ubicacion, texto) => {client.sendMessage(from, {image: {url:ubicacion}, caption: texto},{quoted: msg})}
     const sendAudio = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4' })}
     const sendAudioReply = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4' },{quoted: msg})}
     const sendPresence = async (presence) => {await client.sendPresenceUpdate(presence, from)} //recording -  paused - composing - unavailable - available
     const sendPtt = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4', ptt: true})}
     const sendPttReply = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4', ptt: true},{quoted: msg})}
+    
     /*--------------TIPOS DE MENSAJES--------------*/
     var messageType = Object.keys(msg.message)[0]
     const isText = messageType === 'conversation' 
@@ -90,6 +93,7 @@ module.exports = async (msg ,client) => {
     const isCmd = cmd.startsWith(prefix)
     const args = cmd.trim().split(/ +/).slice(1)
     const q = args.join(' ')
+    const q2 = args.join(' ').toLowerCase()
     const arg = cmd.trim().substring(cmd.indexOf(' ') + 1)
     
 /*----------VARIABLES----------*/
@@ -112,12 +116,24 @@ module.exports = async (msg ,client) => {
         if (emojiReaction === '🙏'){var reactionEmoji = 'Reaccion de Agradecimiento 🙏'}
         await sendText(reactionEmoji)
     }*/
-/*----------COMANDOS SIN PREFIJO----------*/
+/*----------COMANDS SIN PREFIJO----------*/
     if (isText && (chats).toLowerCase().startsWith('hola')){
         sendReply(`Hola ${saludo}`)
     }
 
-    //pruebas
+/*----------FUNCIONES----------*/
+    async function checkNumber (){
+        try {
+            if(args.length == 0 ) return sendReply('Si deseas confirmar la existencia de un numero en la plafaforma de WhatsApp, envia un mensaje con el comando *!check + numero de telefono con codigo de pais*\n\nEjemplo: !check 573228125090')
+            if(isNaN(q)) return sendReply('¡Error! solo se aceptan caracteres numericos')
+            if(q.length >= 15) return sendReply('¡Error! el numero ingresado supera los 15 caracteres')
+            const [result] = await client.onWhatsApp(q)
+            if(result == undefined) return sendReply(`¡Error! el numero *${q}* no existe en whatsapp`)
+            return sendReply(`¡Busqueda finalizada!\nEl numero ${q} si existe en whatsapp.\n\nclick en el siguiente enlace para ir a su chat directamente: https://wa.me/${q}`)
+        } catch (e) {
+            log(e)
+        }
+    }
     
     switch(command){
         case 'repite':
@@ -163,20 +179,40 @@ module.exports = async (msg ,client) => {
                 client.sendMessage(from, { delete: key })
                 log('_Proceso finalizado, he eliminado mi mensaje correctamente._')
                 break
-        case 'unmute':
-            await client.chatModify({ mute: null },from, [])
+        case 'chat':// MUTEAR, DESMUTEAR, ARCHIVAR, DESARCHIVAR, LEER, MARCAR COMO NO LEIDO
+            try {
+                if (args.length == 0) return 
+                if (q2 == 'archive') await client.chatModify({archive: true, lastMessages:[msg]}, from)
+                if (q2 == 'unarchive') await client.chatModify({archive: false, lastMessages:[msg]}, from)
+                if (q2 == 'mute') await client.chatModify({ mute: 8 * 60 * 60 * 1000 },from, [])
+                if (q2 == 'unmute') await client.chatModify({ mute: null },from, [])
+                if (q2 == 'read') await client.chatModify({markRead: true, lastMessages: [msg]}, from)
+                if (q2 == 'unread') await client.chatModify({markRead: false, lastMessages: [msg]}, from)
+            } catch (e){
+                log(e)
+            }
             break
-        case 'leido':
-            client.chatModify({markRead: true, lastMessages: [msg]}, from)
+        case 'temporales': //MENSAJES TEMPORALES 24 HORAS - 7 DIAS - 90 DIAS
+            if (args.length == 0) return
+            if(q2 == 'on') client.sendMessage(from,{disappearingMessagesInChat:  WA_DEFAULT_EPHEMERAL})
+            if(q2 == 'off') client.sendMessage(from,{disappearingMessagesInChat:  null})
+            if(q2 == '1') client.sendMessage(from,{disappearingMessagesInChat:  24 * 60 * 60})
+            if(q2 == '7') client.sendMessage(from,{disappearingMessagesInChat:  7 * 24 * 60 * 60})
+            if(q2 == '90') client.sendMessage(from,{disappearingMessagesInChat:  90 * 24 * 60 * 60})
             break
-        case 'noleido':
-            client.chatModify({markRead: false, lastMessages: [msg]}, from)
+        case 'check':
+            checkNumber()
             break
-        case 'archivar':
-            client.chatModify({archive: true, lastMessages:[msg]}, from)
-            break
-        case 'desarchivar':
-            client.chatModify({archive: false, lastMessages:[msg]}, from)
+        case 'info':
+            if(args.length == 0 ) return sendReply('Si deseas obtener informacion de una cuenta de whatsapp como su foto de perfil y estado por favor envia un mensaje con el comando *!info + numero de whatsapp con codigo de pais*\n\nEjemplo: !info 573228125090')
+            if(isNaN(q)) return sendReply('¡Error! solo se aceptan caracteres numericos')
+            if(q.length >= 15) return sendReply('¡Error! el numero ingresado supera los 15 caracteres')
+            const [result] = await client.onWhatsApp(q)
+            if(result == undefined) return sendReply(`¡Error! el numero *${q}* no existe en whatsapp`)
+            const status = await client.fetchStatus(`${q}@s.whatsapp.net`)
+            const profile = await client.profilePictureUrl(`${q}@s.whatsapp.net`, 'image')
+            const texto = `*INFORMACION DE ${q}*\n\n_Estado: ${status.status}_\n_Actualizado el: ${status.setAt}_`
+            sendImageReply(profile, texto)
             break
         default:
     }
