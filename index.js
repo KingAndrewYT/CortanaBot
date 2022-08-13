@@ -31,9 +31,10 @@ const client = makeWASocket({ logger: pino({ level: 'warn' }), printQRInTerminal
                 //if(update.qr)utilidades.generarQR(update.qr)
                 const { connection, lastDisconnect } = update
                 if (connection === 'connecting'){
-                    log(color("·[Estado Cortana] => ·","green"), color('·Conectando...·', 'magenta'))
+                    log(color("·[Estado Cortana] => ·","green"), color('·Conectando...·' + client.type, 'magenta'))
                 }
                 if (connection === 'open') {
+
                     log(color('·[Desarrollador] => ·', 'green'), color('·KingAndrewYT·', 'magenta'))
                     log(color('·[Estado Cortana] =>·', 'green'), color('·Inicializacion Finalizada·', 'magenta'))
                     log(color('·[Bienvenid@] =>·', 'green'), color(`${client.user.name} (${client.user.id.replace("@s.whatsapp.net", "")})·`, 'magenta'))

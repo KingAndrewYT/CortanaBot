@@ -1,6 +1,6 @@
 /*----------CONSTANTES----------*/
 const makeWASocket = require("@adiwajshing/baileys");
-const { MessageType, MessageOptions, Mimetype } = require ('@adiwajshing/baileys')
+const { MessageType, MessageOptions, Mimetype, downloadMediaMessage, getLastMessageInChat } = require ('@adiwajshing/baileys')
 const { text } = require("figlet");
 const moment = require ('moment-timezone')
 moment.tz.setDefault('America/Bogota').locale('es')
@@ -16,6 +16,7 @@ module.exports = async (msg ,client) => {
     var from = msg.key.remoteJid
     const isGroup = from.includes('g.us')
     const isParticipant = from.includes('s.whatsapp.net')
+    const numeroBot = client.user.id.split("@")[0].slice(0, -3).concat('@s.whatsapp.net')
 
 /*----------PLANTILLAS BOTONES ETC----------*/
 //const botones = [ {buttonId: 'id1', buttonText: {displayText: 'Button 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Button 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Button 3'}, type: 1} ]        
@@ -30,11 +31,17 @@ module.exports = async (msg ,client) => {
     const sendButtonText = async (texto, botones = []) => {client.sendMessage(from, {text: texto, footer: info.copyright, buttons: botones, headerType: 1})}
     const sendTemplateButtonText = async (texto, botones = []) => { await client.sendMessage(from, { text: texto, footer: info.copyright, templateButtons: botones}) }
     const sendListText = async (titulo, texto,textoBoton = []) => { client.sendMessage(from, { text: texto, footer: info.copyright, title: titulo, buttonText: textoBoton, sections }) }
-    const sendReaction = async (texto) => {client.sendMessage(from, { react: { text: texto, key: msg.key } })}
+    const sendReaction = async (texto, para) => {client.sendMessage(para, { react: { text: texto, key: msg.key } })}
     const sendGif = async (ubicacion, texto) => {client.sendMessage(from, {video: fs.readFileSync(ubicacion), caption: texto, gifPlayback: true})}
+    const sendGifReply = async (ubicacion, texto) => {client.sendMessage(from, {video: fs.readFileSync(ubicacion), caption: texto, gifPlayback: true},{quoted: msg})}
     const sendVideo = async (ubicacion, texto) => {client.sendMessage(from, {video: {url:ubicacion, caption: texto}})}
-    //const sendMp4 = async (ubicacion) => {client.sendMessage(from,  { audio:{ url: "media/audio.mpeg" }})
-/*--------------TIPOS DE MENSAJES--------------*/
+    const sendVideoReply = async (ubicacion, texto) => {client.sendMessage(from, {video: {url:ubicacion, caption: texto}},{quoted: msg})}
+    const sendAudio = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4' })}
+    const sendAudioReply = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4' },{quoted: msg})}
+    const sendPresence = async (presence) => {await client.sendPresenceUpdate(presence, from)} //recording -  paused - composing - unavailable - available
+    const sendPtt = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4', ptt: true})}
+    const sendPttReply = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4', ptt: true},{quoted: msg})}
+    /*--------------TIPOS DE MENSAJES--------------*/
     var messageType = Object.keys(msg.message)[0]
     const isText = messageType === 'conversation' 
     const isImage = messageType === 'imageMessage'
@@ -84,7 +91,7 @@ module.exports = async (msg ,client) => {
     const args = cmd.trim().split(/ +/).slice(1)
     const q = args.join(' ')
     const arg = cmd.trim().substring(cmd.indexOf(' ') + 1)
-
+    
 /*----------VARIABLES----------*/
     const horario = moment().format('HH')
     var saludo = 'feliz media noche 🌃' 
@@ -110,12 +117,14 @@ module.exports = async (msg ,client) => {
         sendReply(`Hola ${saludo}`)
     }
 
+    //pruebas
+    
     switch(command){
         case 'repite':
             if(args.length == 0) return sendReply('*⋆⊱∘[✧repite✧]∘⊰⋆*\n_Si deseas que yo repita algo envia un mensaje con el siguiente formato: *${prefix}repite + mensaje que quieres que repita*_\n\n_Ejemplo: *${prefix}repite Hola usuario como estas?*_\n*⋆⊱∘[✧cortana✧]∘⊰⋆*')
             sendReply(q)
             break
-        case 'traducir':
+        case 'traducir': //TRADUCIR MENSAJES ENVIADOS O ELIMINADOS
             try {
                 const alerta = `*⋆⊱∘[✧traductor✧]∘⊰⋆*\n_Si deseas traducir un mensaje enviado responde al mensaje con el comando: *${prefix}traducir + código de idioma*_\n⋆⊱∘[✧cortana✧]∘⊰⋆*`
                 const alerta2 = `*⋆⊱∘[✧traductor✧]∘⊰⋆*\n_Si deseas traducir un texto o un mensaje escribe o etiqueta el mensaje con el comando: *${prefix}traducir + código de idioma*_ ó \n*${prefix}traducir + codigo de idioma + texto*\n\n_Ejemplo: *${prefix}traducir es Hi, I Love You*_\n⋆⊱∘[✧cortana✧]∘⊰⋆*`
@@ -145,9 +154,31 @@ module.exports = async (msg ,client) => {
                 error(e)
             }
             break
-        case 'test':
-            client.sendMessage(from,  { audio: { url: "./media/audio.mpeg" , mimetype: 'audio/ogg'}})
-        break      
+        case 'eliminar': //ELIMINAR MENSAJES ENVIADOS POR EL BOT
+                if (!isQuoted) return sendReply('_*Borrador de Mensajes*_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!eliminar*_')
+                const identificacion = msg.message.extendedTextMessage.contextInfo.participant
+                if (identificacion != numeroBot) return sendReply('_*Borrador de Mensajes*_\n\n_!Error! lamentablemente en este momento aun no esta disponible la funcion de eliminar mensajes de otras personas_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!eliminar*_')              
+                const stanza = msg.message.extendedTextMessage.contextInfo.stanzaId
+                const key = {remoteJid: from,id: stanza, fromMe: true }
+                client.sendMessage(from, { delete: key })
+                log('_Proceso finalizado, he eliminado mi mensaje correctamente._')
+                break
+        case 'unmute':
+            await client.chatModify({ mute: null },from, [])
+            break
+        case 'leido':
+            client.chatModify({markRead: true, lastMessages: [msg]}, from)
+            break
+        case 'noleido':
+            client.chatModify({markRead: false, lastMessages: [msg]}, from)
+            break
+        case 'archivar':
+            client.chatModify({archive: true, lastMessages:[msg]}, from)
+            break
+        case 'desarchivar':
+            client.chatModify({archive: false, lastMessages:[msg]}, from)
+            break
         default:
     }
+    
 }
