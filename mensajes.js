@@ -2,6 +2,7 @@
 const makeWASocket = require("@adiwajshing/baileys");
 const { MessageType, MessageOptions, Mimetype, downloadMediaMessage, getLastMessageInChat, WA_DEFAULT_EPHEMERAL } = require ('@adiwajshing/baileys')
 const { text } = require("figlet");
+const { writeFile } =  require ('fs/promises')
 const moment = require ('moment-timezone')
 moment.tz.setDefault('America/Bogota').locale('es')
 const fs = require('fs')
@@ -226,14 +227,64 @@ module.exports = async (msg ,client) => {
                 client.updateProfileStatus(q.slice(7)).then(()=>{sendReply('¡GENIAL! He cambiado mi estado correctamente.')})
             }
             if(args[0].startsWith('name')){
-                log(client)
-                const name = 'KingAndrew'
-                //await client.updateProfileName(name)
                 /*if(args.length == 1) return sendReply('mensaje vacio, por favor escribe un nombre')
-                if(q.slice(7).length > 256) return sendReply('a')
-                client.updateProfileName(q.slice(7)).then(()=>{sendReply('¡GENIAL! He cambiado mi nombre correctamente.')})*/
+                if(q.slice(7).length > 15) return sendReply('a')
+                client.updateProfileName(q.slice(7))*/
+                sendReply('[INFORMACIÒN]\n\n_Lamentamos informarle que la funcion de cambio de nombre no esta disponible por el momento, estaremos trabajando para brindarte una solucion lo mas pronto posible._')
+            }
+            if (args[0].startsWith('profile')){
+                //if(!isImage || !isQuotedImage) return sendReply('¡ERROR! por favor envia o etiqueta una imagen con el comando !change profile')
+                if(isImage){
+                    const buffer = await downloadMediaMessage(msg, 'buffer', {})
+                    await writeFile('./media/profile.jpg', buffer)
+                    await client.updateProfilePicture(numeroBot, {url: './media/profile.jpg'}).then(()=>{sendReply('¡Genial! he actualizado mi foto de perfil correctamente')}).catch(()=>{sendReply('¡Ups! ha ocurrido un error por favor intentalo de nuevo')})
+                    fs.unlinkSync('./media/profile.jpg')
+                }
             }
             break        
+        case 'ephemeral':
+            client.sendMessage(from, {text: q}, {ephemeralExpiration : WA_DEFAULT_EPHEMERAL})
+            break
+        case 'block':
+            if(!isGroup) return client.updateBlockStatus(from, 'block')
+            if(isGroup){
+                if(isQuoted) {
+                    const jid  = msg.message.extendedTextMessage.contextInfo.participant
+                    if(jid == numeroBot) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    client.updateBlockStatus(jid, 'block')
+                } else {
+                    if(args.length == 0 ) return sendReply('')
+                    if(isNaN(q)) return sendReply('¡Error! solo se aceptan caracteres numericos')
+                    if(q.length >= 15) return sendReply('¡Error! el numero ingresado supera los 15 caracteres')
+                    const [result] = await client.onWhatsApp(q)
+                    if(result == undefined) return sendReply(`¡Error! el numero *${q}* no existe en whatsapp`)
+                    const numero = q+'@s.whatsapp.net'
+                    if(numero == numeroBot) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    client.updateBlockStatus(numero, 'block')
+                }
+            }
+            break
+        case 'unblock':
+            if(!isGroup) return client.updateBlockStatus(from, 'block')
+            if(isGroup){
+                if(isQuoted) {
+                    const jid  = msg.message.extendedTextMessage.contextInfo.participant
+                    if(jid == numeroBot) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    client.updateBlockStatus(jid, 'unblock')
+                } else {
+                    if(args.length == 0 ) return sendReply('')
+                    if(isNaN(q)) return sendReply('¡Error! solo se aceptan caracteres numericos')
+                    if(q.length >= 15) return sendReply('¡Error! el numero ingresado supera los 15 caracteres')
+                    const [result] = await client.onWhatsApp(q)
+                    if(result == undefined) return sendReply(`¡Error! el numero *${q}* no existe en whatsapp`)
+                    const numero = q+'@s.whatsapp.net'
+                    if(numero == numeroBot) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    client.updateBlockStatus(numero, 'unblock')
+                }
+            }
+            break
+
+
         default:
     }
 }

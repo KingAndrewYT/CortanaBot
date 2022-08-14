@@ -3,7 +3,7 @@ const proces = require('process')
 proces.on('uncaughtException', console.error)
 
 const mensajes = require ('./mensajes.js');
-const { default: makeWASocket, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, jidDecode,  downloadContentFromMessage, Browsers } = require('@adiwajshing/baileys');
+const { default: makeWASocket, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, jidDecode,  downloadContentFromMessage, Browsers, downloadMediaMessage } = require('@adiwajshing/baileys');
 const { state, saveState } = useSingleFileAuthState('./session_cortana.json');
 const { Boom } = require('@hapi/boom')  
 const figlet = require ('figlet')
