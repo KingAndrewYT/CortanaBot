@@ -1,9 +1,11 @@
-const { downloadMediaMessage} = require ('@adiwajshing/baileys')
+const { downloadMediaMessage, isJidGroup} = require ('@adiwajshing/baileys')
+const moment = require ('moment-timezone')
+moment.tz.setDefault('America/Bogota').locale('es')
 const fs = require('fs')
 const { writeFile } =  require ('fs/promises')
 const funciones = require ('../funciones')
-const {inWA} = funciones
-
+const {inWA, getGroupAdmins} = funciones
+const log = console.log
 const groupSettings = async (msg, client,q, args, command)=> {
 
     var messageType = Object.keys(msg.message)[0]
@@ -49,12 +51,12 @@ const groupSettings = async (msg, client,q, args, command)=> {
         case 'nombre':
             if(args.length == 1) return sendReply('por favor escribe el nombre que tendra el grupo.')
             if(q.length > 35 ) return sendReply('¡Error! El nombre proporcionado excede los 35 caracteres.')
-            client.groupUpdateSubject(from, nombre)
+            client.groupUpdateSubject(from, q)
             break
         case 'descripcion':
             if(args.length == 1) return sendReply('por favor escribe la descripcion que tendra el grupo')
             if(q.length > 522 ) return sendReply('¡Error! El nombre proporcionado excede los 522 caracteres.')
-            client.groupUpdateDescription(from, desc)
+            client.groupUpdateDescription(from, q)
             break
         case 'perfil':    
             if(isImage){
@@ -79,6 +81,26 @@ const groupSettings = async (msg, client,q, args, command)=> {
             break
         case 'salir':
             client.groupLeave(from)
+            break
+        case 'enlace':
+            const enlace = await client.groupInviteCode(from)
+            sendReply(`Abre este enlace para unirte a mi grupo de WhatsApp: \nhttps://chat.whatsapp.com/${enlace}`)
+            break
+        case 'anular':
+            client.groupRevokeInvite(from)
+            break
+        case 'infogrupo': 
+            const gpmd = await client.groupMetadata('120363041933112090@g.us')
+            const {subject, subjectOwner, subjectTime, size, creation, owner, desc, descId, restrict, announce, participants, ephemeralDuration} = gpmd
+            const horaCreacion = moment(creation * 1000).tz('America/Bogota').format('h:mm:ss a')
+            const fechaCreacion = moment(creation * 1000).tz('America/Bogota').format('dddd, DD MMM YYYY')
+            const horaNombre = moment(subjectTime * 1000).tz('America/Bogota').format('dddd, DD MMM YYYY h:mm:ss a')
+            try {var gPerfil = await client.profilePictureUrl(from)}catch{var gPerfil = 'https://i.ibb.co/j4rsNvy/nopp.png'}
+            getGroupAdmins(participants)
+            const gids = []
+            const texto = (``)
+            log(gpmd)
+            sendReply(texto)
             break
         case '':
             break
