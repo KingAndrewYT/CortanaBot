@@ -172,8 +172,8 @@ module.exports = async (msg ,client) => {
                 error(e)
             }
             break
-        case 'eliminar': //ELIMINAR MENSAJES ENVIADOS POR EL BOT
-                if (!isQuoted) return sendReply('_*Borrador de Mensajes*_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!eliminar*_')
+        case 'borrar': //ELIMINAR MENSAJES ENVIADOS POR EL BOT
+                if (!isQuoted) return sendReply('_*Borrador de Mensajes*_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!borrar*_')
                 const identificacion = msg.message.extendedTextMessage.contextInfo.participant
                 if (identificacion != numeroBot) return sendReply('_*Borrador de Mensajes*_\n\n_!Error! lamentablemente en este momento aun no esta disponible la funcion de eliminar mensajes de otras personas_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!eliminar*_')              
                 const stanza = msg.message.extendedTextMessage.contextInfo.stanzaId
@@ -322,14 +322,9 @@ module.exports = async (msg ,client) => {
             const tbi = [ {index: 1, urlButton: {displayText: 'Suscribete', url: 'https://www.youtube.com/c/KingAndrewYT'}}, {index: 2, callButton: {displayText: 'llamame', phoneNumber: '+57 322 8125090'}}, {index: 3, quickReplyButton: {displayText: 'Menu', id: '!menu'}}]
             sendTemplateButtonImage('./media/text.jpg', '¡Hola! Esto es una prueba de envio de plantilla de botones con imagen', tbi)
             break
-        case 'crear':
-            if(args.length == 0) return
-            groupSettings(msg, client, q, args)
-            break
-        case 'group':
+        case'crear':case'añadir':case'eliminar':case'promover':case'degradar':case'nombre':case'descripcion':case'perfil':case'mutear':case'desmutear':case'lockdesc':case'unlockdesc':case'salir':
             if(!isGroup) return sendReply('esta opcion solo esta disponible dentro de grupos')
-            if(args.length == 0) return sendReply('opciones disponibles "add","remove","promote","demote"')
-            groupSettings(msg, client, q, args)
+            groupSettings(msg, client, q, args, command)
             break
             default:
     }
