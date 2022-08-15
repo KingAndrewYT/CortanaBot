@@ -1,6 +1,6 @@
 const inWA = async (msg, client, numero) => {
-    const sendReply = async (texto) => {client.sendMessage(from, {text: texto}, {quoted: msg})}
     var from = msg.key.remoteJid
+    const sendReply = async (texto) => {client.sendMessage(from, {text: texto}, {quoted: msg})}
     const regExp = numero.replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
     if(isNaN(regExp)) return sendReply('¡Error! solo se aceptan caracteres numericos')
     if(regExp.length >= 15) return sendReply('¡Error! el numero ingresado supera los 15 caracteres')

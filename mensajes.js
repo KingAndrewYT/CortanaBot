@@ -7,7 +7,7 @@ const fs = require('fs')
 const opciones = require('./config/opciones.js')
 const translate = require ('./funciones/traductor.js')
 const funciones = require ('./funciones')
-const {inWA} = funciones
+const {inWA, groupSettings} = funciones
 const {info} = opciones
 const log = console.log;
 const error = console.error;
@@ -257,7 +257,6 @@ module.exports = async (msg ,client) => {
                     await writeFile('./media/profile.jpg', buffer)
                     await client.updateProfilePicture(numeroBot, {url: './media/profile.jpg'}).then(()=>{sendReply('¡Genial! he actualizado mi foto de perfil correctamente')}).catch(()=>{sendReply('¡Ups! ha ocurrido un error por favor intentalo de nuevo')})
                     //fs.unlinkSync('./media/profile.jpg')
-                    
                 }
                 if(isQuotedImage){
                     const profile = msg.message.extendedTextMessage.contextInfo.quotedMessage.imageMessage
@@ -325,56 +324,12 @@ module.exports = async (msg ,client) => {
             break
         case 'crear':
             if(args.length == 0) return
-            if(q2 == 'create') {
-                const group = await client.groupCreate('pruebas de programacion', ['573228125090@s.whatsapp.net'])
-                await client.sendMessage(group.id, {text: `Hola a todos XD`})
-                sendText(`He creado el grupo correctamente con el siguiente id: ${group.id}`)
-            }
+            groupSettings(msg, client, q, args)
             break
         case 'group':
             if(!isGroup) return sendReply('esta opcion solo esta disponible dentro de grupos')
             if(args.length == 0) return sendReply('opciones disponibles "add","remove","promote","demote"')
-            if (args[0] == 'add') {
-                const regExp = q.slice(4).replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
-                if(args.length == 1) return sendReply('por favor envia el numero de la persona que quieres añadir al grupo')
-                inWA(regExp).then(async (res) => { 
-                    if(res == true){
-                        await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'add')
-                    }
-                })
-                return
-            }
-            if (args[0] == 'remove') {
-                const regExp = q.slice(7).replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
-                if(args.length == 1) return sendReply('por favor envia el numero de la persona que quieres eliminar del grupo')
-                inWA(regExp).then(async (res) => { 
-                    if(res == true){
-                        await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'remove')
-                    }
-                })
-                return
-            }
-            if (args[0] == 'promote') {
-                const regExp = q.slice(8).replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
-                if(args.length == 1) return sendReply('por favor envia el numero de la persona que quieres promover a administrador(a)')
-                inWA(regExp).then(async (res) => { 
-                    if(res == true){
-                        await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'promote')
-                    }
-                })
-                return
-            }
-            if (args[0] == 'demote') {
-                const regExp = q.slice(7).replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
-                if(args.length == 1) return sendReply('por favor envia el numero de la persona que quieres degradar de administrador(a)')
-                inWA(regExp).then(async (res) => { 
-                    if(res == true){
-                        await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'demote')
-                    }
-                })
-                return
-            }
-            sendReply('¡Error! Por favor elige una opcion correcta')
+            groupSettings(msg, client, q, args)
             break
             default:
     }
