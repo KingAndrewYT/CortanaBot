@@ -28,7 +28,7 @@ const client = makeWASocket({ logger: pino({ level: 'warn' }), printQRInTerminal
         try {
             let session = './session_cortana.json'
             client.ev.on('connection.update', async (update) => {
-                //if(update.qr)utilidades.generarQR(update.qr)
+                if(update.qr)utilidades.generarQR(update.qr)
                 const { connection, lastDisconnect } = update
                 if (connection === 'connecting'){
                     log(color("·[Estado Cortana] => ·","green"), color('·Conectando...·' + client.type, 'magenta'))
