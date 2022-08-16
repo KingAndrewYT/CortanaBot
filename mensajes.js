@@ -35,7 +35,7 @@ module.exports = async (msg ,client) => {
     const isParticipant = from.includes('s.whatsapp.net')
     const numeroBotId = client.user.id.split("@")[0].slice(0, -3).concat('@s.whatsapp.net')
     const numeroBot = client.user.id.split("@")[0].slice(0, -3)
-    const numeroCreador = `${numeroCreador}@s.whatsapp.net`
+    const ownerNumber = `${numeroCreador}@s.whatsapp.net`
     
 
 /*----------PLANTILLAS BOTONES ETC----------*/
