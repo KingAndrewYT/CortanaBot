@@ -1,27 +1,42 @@
-/*----------CONSTANTES----------*/
-const { AnyWASocket , MessageType, MessageOptions, Mimetype, downloadMediaMessage, getLastMessageInChat, WA_DEFAULT_EPHEMERAL,downloadContentFromMessage } = require ('@adiwajshing/baileys')
+/*----------MODULOS----------*/
+const { downloadMediaMessage, WA_DEFAULT_EPHEMERAL, downloadContentFromMessage } = require ('@adiwajshing/baileys')
 const { writeFile } =  require ('fs/promises')
 const moment = require ('moment-timezone')
 moment.tz.setDefault('America/Bogota').locale('es')
 const fs = require('fs')
-const opciones = require('./config/opciones.js')
 const translate = require ('./funciones/traductor.js')
 const funciones = require ('./funciones')
-const {inWA, groupSettings} = funciones
-const {info} = opciones
+
+let {inWA, groupSettings} = funciones
+let { readFileSync, writeFileSync, unlinkSync, existsSync} = fs
+let { stringify, parse } = JSON
+
 const log = console.log;
 const error = console.error;
 
+/*--------------ESPECIALES--------------*/
+const sleep = async (ms) => {return new Promise(resolve => setTimeout(resolve, ms))}
 const time = moment.tz('America/Bogota').format('H:mm:ss a')
 const date = moment.tz('America/Bogota').format('DD/MM/YY')
-const timedate = moment.tz('America/Bogota').format('DD/MM/YY h:mm a')
+const timeDate = moment.tz('America/Bogota').format('DD/MM/YY h:mm a')
+const processTime = async (timestamp, now) => {return moment.duration(now - moment(timestamp * 1000)).asSeconds()}
+const randomizer = async (value) => {const random = value[Math.floor(Math.random() * value.length)]; return random}
+
+/*--------------JSON'S--------------*/
+const alertas = parse(readFileSync('./config/alertas.json'))
+const info = parse(readFileSync('./config/configs.json'))
+let {numeroCreador, nombreCreador, nombreBot, copyright, igCreador, fbCreador, ytCreador, discordCreador, prefix, banChats, nopref, onepref, multipref } = info
 
 module.exports = async (msg ,client) => {
-    const prefix = info.prefix
+//    const prefix = info.prefix
+    const isMe = msg.key.fromMe
     var from = msg.key.remoteJid
     const isGroup = from.includes('g.us')
     const isParticipant = from.includes('s.whatsapp.net')
-    const numeroBot = client.user.id.split("@")[0].slice(0, -3).concat('@s.whatsapp.net')
+    const numeroBotId = client.user.id.split("@")[0].slice(0, -3).concat('@s.whatsapp.net')
+    const numeroBot = client.user.id.split("@")[0].slice(0, -3)
+    const numeroCreador = `${numeroCreador}@s.whatsapp.net`
+    
 
 /*----------PLANTILLAS BOTONES ETC----------*/
 //const botones = [ {buttonId: 'id1', buttonText: {displayText: 'Button 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Button 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Button 3'}, type: 1} ]        
@@ -31,14 +46,15 @@ module.exports = async (msg ,client) => {
 /*----------ENVIO DE MENSAJES----------*/
     const sendText = async (texto) => {client.sendMessage(from, {text: texto})}
     const sendReply = async (texto) => {client.sendMessage(from, {text: texto}, {quoted: msg})}
-    const sendMentiones = async (texto, menciones) => {await client.sendMessage(from, { text: texto, mentions: [menciones]})}
+    const sendReplyWithMentions = async (texto, menciones) => {client.sendMessage(from, {text: texto}, {quoted: msg, mentions: [menciones]})}
+    const sendTextWithMentions = async (texto, menciones) => {await client.sendMessage(from, { text: texto, mentions: [menciones]})}
     const sendLocation = async (latitud, longitud) => {await client.sendMessage(from, {location: {degreesLatitude: latitud, degreesLongitude: longitud}})}
     const sendVcard = async (texto, vcard) =>{client.sendMessage(from, {contacts:{displayName: texto, contacts: [{vcard}]}})}
-    const sendButtonText = async (texto, botones = []) => {client.sendMessage(from, {text: texto, footer: info.copyright, buttons: botones, headerType: 1})}
-    const sendButtonImage = async (imagen, texto, botones = []) => { await client.sendMessage(from, {image: {url: imagen}, caption: texto, footer: info.copyright, buttons: botones, headerType: 4})}
-    const sendTemplateButtonText = async (texto, botones) => { await client.sendMessage(from, { text: texto, footer: info.copyright, templateButtons: botones}) }
-    const sendTemplateButtonImage = async (imagen, texto, botones) => { await client.sendMessage(from, { text: texto, footer: info.copyright, templateButtons: botones, image: {url: imagen}}) }
-    const sendListText = async (titulo, texto,textoBoton = []) => { client.sendMessage(from, { text: texto, footer: info.copyright, title: titulo, buttonText: textoBoton, sections }) }
+    const sendButtonText = async (texto, botones = []) => {client.sendMessage(from, {text: texto, footer: copyright, buttons: botones, headerType: 1})}
+    const sendButtonImage = async (imagen, texto, botones = []) => { await client.sendMessage(from, {image: {url: imagen}, caption: texto, footer: copyright, buttons: botones, headerType: 4})}
+    const sendTemplateButtonText = async (texto, botones) => { await client.sendMessage(from, { text: texto, footer: copyright, templateButtons: botones}) }
+    const sendTemplateButtonImage = async (imagen, texto, botones) => { await client.sendMessage(from, { text: texto, footer: copyright, templateButtons: botones, image: {url: imagen}}) }
+    const sendListText = async (titulo, texto,textoBoton = []) => { client.sendMessage(from, { text: texto, footer: copyright, title: titulo, buttonText: textoBoton, sections }) }
     const sendReaction = async (texto, para) => {client.sendMessage(para, { react: { text: texto, key: msg.key } })}
     const sendGif = async (ubicacion, texto) => {client.sendMessage(from, {video: fs.readFileSync(ubicacion), caption: texto, gifPlayback: true})}
     const sendGifReply = async (ubicacion, texto) => {client.sendMessage(from, {video: fs.readFileSync(ubicacion), caption: texto, gifPlayback: true},{quoted: msg})}
@@ -69,6 +85,7 @@ module.exports = async (msg ,client) => {
     const isQuoted = messageType === 'extendedTextMessage'
     const isButtonResp = messageType === 'buttonsResponseMessage'
     const isListResp = messageType === 'ListResponseMessage'
+    const isInviteLink = messageType === 'groupInviteMessage'
 
  /*----------TIPOS DE MENSAJES RESPONDIDOS----------*/
     const quoted = isQuoted && msg.message.extendedTextMessage.contextInfo != null ? msg.message.extendedTextMessage.contextInfo.quotedMessage || [] : []
@@ -87,10 +104,11 @@ module.exports = async (msg ,client) => {
     const isQuotedStatus = quotedMessageType === 'senderKeyDistributionMessage'
     const isQuotedReaction = quotedMessageType === 'reactionMessage'
     const isQuotedQuoted = quotedMessageType === 'extendedTextMessage'
+    const isQuotedInviteLink = quotedMessageType === 'groupInviteMessage'
 
 /*----------OBTENCION DE MENSAJES----------*/
-    const body = isText && msg.message[messageType] ? msg.message[messageType] : isImage && msg.message[messageType].caption ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption ? msg.message[messageType].caption : isQuoted && msg.message[messageType].text ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : isListResp && msg.message[messageType].listResponseMessage.singleSelectReply.selectedRowId ? msg.message[messageType].listResponseMessage.singleSelectReply.selectedRowId :  isReaction && msg.message[messageType].text ? msg.message[messageType].text : ''
-    const cmd = isText && msg.message[messageType].startsWith(prefix) ? msg.message[messageType] : isImage && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption :  isQuoted && msg.message[messageType].text.startsWith(prefix) ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId.startsWith(prefix) ? msg.message[messageType].selectedButtonId : isListResp && msg.message[messageType].listResponseMessage.singleSelectReply.selectedRowId.startsWith(prefix) ? msg.message[messageType].listResponseMessage.singleSelectReply.selectedRowId : ''
+    const body = isText && msg.message[messageType] ? msg.message[messageType] : isImage && msg.message[messageType].caption ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption ? msg.message[messageType].caption : isQuoted && msg.message[messageType].text ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : isListResp && msg.message[messageType].listResponseMessage.singleSelectReply.selectedRowId ? msg.message[messageType].listResponseMessage.singleSelectReply.selectedRowId : isReaction && msg.message[messageType].text ? msg.message[messageType].text : ''
+    const cmd = isText && msg.message[messageType].startsWith(prefix) ? msg.message[messageType] : isImage && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption :  isQuoted && msg.message[messageType].text.startsWith(prefix) ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId.startsWith(prefix) ? msg.message[messageType].selectedButtonId : isListResp && msg.message[messageType].listResponseMessage.singleSelectReply.selectedRowId.startsWith(prefix) ? msg.message[messageType].listResponseMessage.singleSelectReply.selectedRowId: isReaction && msg.message[messageType].text ? msg.message[messageType].text : '' 
     const chats = isText && msg.message[messageType] ? msg.message[messageType]: isQuoted && msg.message[messageType].text ? msg.message[messageType].text : ''
     const selectedButton = isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : ''
     const selectedList = isListResp && msg.message[messageType].listResponseMessage.singleSelectReply.selectedRowId ? msg.message[messageType].listResponseMessage.singleSelectReply.selectedRowId : ''
@@ -102,7 +120,12 @@ module.exports = async (msg ,client) => {
     const q = args.join(' ')
     const q2 = args.join(' ').toLowerCase()
     const arg = cmd.trim().substring(cmd.indexOf(' ') + 1)
-    
+    const url = args.length != 0 ? args[0] : ''
+
+/*----------------------------*/
+    //const grupos = await client.groupFetchAllParticipating()
+    //log(grupos)
+
 /*----------VARIABLES----------*/
     const horario = moment().format('HH')
     var saludo = 'feliz media noche 🌃' 
@@ -124,18 +147,10 @@ module.exports = async (msg ,client) => {
         await sendText(reactionEmoji)
     }*/
 /*----------COMANDS SIN PREFIJO----------*/
-    if (isText && (chats).toLowerCase().startsWith('hola')){
+    if (!isMe && (chats).toLowerCase().startsWith('hola')){
         sendReply(`Hola ${saludo}`)
+        log(msg.message)
     }
-/*----------FUNCIONES----------*/
-    /*const inWA = async (numero) => {
-        const regExp = numero.replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
-        if(isNaN(regExp)) return sendReply('¡Error! solo se aceptan caracteres numericos')
-        if(regExp.length >= 15) return sendReply('¡Error! el numero ingresado supera los 15 caracteres')
-        const [result] = await client.onWhatsApp(regExp)
-        if(result == undefined) return sendReply(`¡Error! el numero ingresado no existe en whatsapp, por favor verifica e intenta nuevamente.`)
-        return result.exists
-    }*/
     
     switch(command){
         case 'repite':
@@ -175,7 +190,7 @@ module.exports = async (msg ,client) => {
         case 'borrar': //ELIMINAR MENSAJES ENVIADOS POR EL BOT
                 if (!isQuoted) return sendReply('_*Borrador de Mensajes*_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!borrar*_')
                 const identificacion = msg.message.extendedTextMessage.contextInfo.participant
-                if (identificacion != numeroBot) return sendReply('_*Borrador de Mensajes*_\n\n_!Error! lamentablemente en este momento aun no esta disponible la funcion de eliminar mensajes de otras personas_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!eliminar*_')              
+                if (identificacion != numeroBotId) return sendReply('_*Borrador de Mensajes*_\n\n_!Error! lamentablemente en este momento aun no esta disponible la funcion de eliminar mensajes de otras personas_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!eliminar*_')              
                 const stanza = msg.message.extendedTextMessage.contextInfo.stanzaId
                 const key = {remoteJid: from,id: stanza, fromMe: true }
                 client.sendMessage(from, { delete: key })
@@ -224,7 +239,6 @@ module.exports = async (msg ,client) => {
                     var time = moment(status.setAt).tz('America/Bogota').format('DD/MM/YY h:mm a')
                     if (time == 'Fecha inválida') var time = ''
                     const texto = `*🪀[ CUENTA DE EMPRESA DETECTADA ]🪀*\n\n*INFORMACION DE: _${q}_*\n\n❯ Direccion: ${address}\n❯ Descripcion: ${description}\n❯ Sitios Web: ${website}\n❯ Email: ${email}\n❯ Categoria: ${category}\n❯ Estado: ${status.status}.\n❯ Cambiado el: ${time}`
-                    log(texto.replace(/undefined/g, 'No Disponible'))
                     sendImageReply(profile, texto.replace(/undefined/g, 'No Disponible'))
                     return
                 } 
@@ -255,7 +269,7 @@ module.exports = async (msg ,client) => {
                 if(isImage){
                     const buffer = await downloadMediaMessage(msg, 'buffer', {})
                     await writeFile('./media/profile.jpg', buffer)
-                    await client.updateProfilePicture(numeroBot, {url: './media/profile.jpg'}).then(()=>{sendReply('¡Genial! he actualizado mi foto de perfil correctamente')}).catch(()=>{sendReply('¡Ups! ha ocurrido un error por favor intentalo de nuevo')})
+                    await client.updateProfilePicture(numeroBotId, {url: './media/profile.jpg'}).then(()=>{sendReply('¡Genial! he actualizado mi foto de perfil correctamente')}).catch(()=>{sendReply('¡Ups! ha ocurrido un error por favor intentalo de nuevo')})
                     //fs.unlinkSync('./media/profile.jpg')
                 }
                 if(isQuotedImage){
@@ -266,7 +280,7 @@ module.exports = async (msg ,client) => {
                       buffer = Buffer.concat([buffer, chunk]);
                     }
                     await writeFile('./media/profile.jpg', buffer)
-                    await client.updateProfilePicture(numeroBot, {url: './media/profile.jpg'}).then(()=>{sendReply('¡Genial! he actualizado mi foto de perfil correctamente')}).catch(()=>{sendReply('¡Ups! ha ocurrido un error por favor intentalo de nuevo')})
+                    await client.updateProfilePicture(numeroBotId, {url: './media/profile.jpg'}).then(()=>{sendReply('¡Genial! he actualizado mi foto de perfil correctamente')}).catch(()=>{sendReply('¡Ups! ha ocurrido un error por favor intentalo de nuevo')})
                     fs.unlinkSync('./media/profile.jpg')
                 }
             }
@@ -279,13 +293,13 @@ module.exports = async (msg ,client) => {
             if(isGroup){
                 if(isQuoted) {
                     const jid  = msg.message.extendedTextMessage.contextInfo.participant
-                    if(jid == numeroBot) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    if(jid == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
                     client.updateBlockStatus(jid, 'block')
                 } else {
                     if(args.length == 0 ) return sendReply('')
                     inWA(msg,client,q).then(async (res) => {if(res != true)return})
                     const numero = q+'@s.whatsapp.net'
-                    if(numero == numeroBot) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    if(numero == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
                     client.updateBlockStatus(numero, 'block')
                 }
             }
@@ -295,13 +309,13 @@ module.exports = async (msg ,client) => {
             if(isGroup){
                 if(isQuoted) {
                     const jid  = msg.message.extendedTextMessage.contextInfo.participant
-                    if(jid == numeroBot) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    if(jid == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
                     client.updateBlockStatus(jid, 'unblock')
                 } else {
                     if(args.length == 0 ) return sendReply('por vavor ingresa el numero de telefono despues del comando')
                     inWA(msg,client,q).then(async (res) => {if(res != true)return})
                     const numero = q+'@s.whatsapp.net'
-                    if(numero == numeroBot) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    if(numero == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
                     client.updateBlockStatus(numero, 'unblock')
                 }
             }
@@ -322,10 +336,18 @@ module.exports = async (msg ,client) => {
             const tbi = [ {index: 1, urlButton: {displayText: 'Suscribete', url: 'https://www.youtube.com/c/KingAndrewYT'}}, {index: 2, callButton: {displayText: 'llamame', phoneNumber: '+57 322 8125090'}}, {index: 3, quickReplyButton: {displayText: 'Menu', id: '!menu'}}]
             sendTemplateButtonImage('./media/text.jpg', '¡Hola! Esto es una prueba de envio de plantilla de botones con imagen', tbi)
             break
-        case'infogrupo':case'anular':case'enlace':case'crear':case'añadir':case'eliminar':case'promover':case'degradar':case'nombre':case'descripcion':case'perfil':case'mutear':case'desmutear':case'lockdesc':case'unlockdesc':case'salir':
+        case'infolink':case'entrar':case'infogrupo':case'anular':case'enlace':case'crear':case'añadir':case'eliminar':case'promover':case'degradar':case'nombre':case'descripcion':case'perfil':case'mutear':case'desmutear':case'lockdesc':case'unlockdesc':case'salir':
             if(!isGroup) return sendReply('esta opcion solo esta disponible dentro de grupos')
             groupSettings(msg, client, q, args, command)
             break
+        case 'gpperfil':
+            groupSettings(msg, client, q, args, command)
+            break
+        case 'acceppt':
+            const inviteMessage = msg.message.extendedTextMessage.contextInfo.quotedMessage.groupInviteMessage
+            await client.groupAcceptInviteV4(from, inviteMessage)        
+            break
             default:
     }
+    
 }

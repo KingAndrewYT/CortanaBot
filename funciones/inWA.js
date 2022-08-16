@@ -1,5 +1,4 @@
 
-
 const inWA = async (msg, client, numero) => {
     var from = msg.key.remoteJid
     const sendReply = async (texto) => {client.sendMessage(from, {text: texto}, {quoted: msg})}

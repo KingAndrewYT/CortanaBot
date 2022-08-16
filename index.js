@@ -23,7 +23,7 @@ log(figlet.textSync('Cortana Bot', { font: 'Flower Power', horizontalLayout: 'de
 log(figlet.textSync('------------', { horizontalLayout: 'default'}))
 
 //const { version } = await fetchLatestBaileysVersion()
-const client = makeWASocket({ logger: pino({ level: 'warn' }), printQRInTerminal: true, browser: Browsers.macOS('Chrome OS'), auth: state})
+const client = makeWASocket({ logger: pino({ level: 'silent' }), printQRInTerminal: true, browser: Browsers.macOS('Chrome OS'), auth: state})
     async function connectToWhatsApp () {
         try {
             let session = './session_cortana.json'
