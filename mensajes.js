@@ -2,12 +2,14 @@
 const { downloadMediaMessage, WA_DEFAULT_EPHEMERAL, downloadContentFromMessage } = require ('@adiwajshing/baileys')
 const { writeFile } =  require ('fs/promises')
 const moment = require ('moment-timezone')
+const gtts = require ('node-gtts')
+const axios = require ('axios')
 moment.tz.setDefault('America/Bogota').locale('es')
 const fs = require('fs')
 const translate = require ('./funciones/traductor.js')
 const funciones = require ('./funciones')
 
-let {inWA, groupSettings} = funciones
+let {inWA, groupSettings, getAdmins} = funciones
 let { readFileSync, writeFileSync, unlinkSync, existsSync} = fs
 let { stringify, parse } = JSON
 
@@ -28,26 +30,27 @@ const info = parse(readFileSync('./config/configs.json'))
 let {numeroCreador, nombreCreador, nombreBot, copyright, igCreador, fbCreador, ytCreador, discordCreador, prefix, banChats, nopref, onepref, multipref } = info
 
 module.exports = async (msg ,client) => {
-//    const prefix = info.prefix
     const isMe = msg.key.fromMe
     var from = msg.key.remoteJid
     const isGroup = from.includes('g.us')
     const isParticipant = from.includes('s.whatsapp.net')
     const numeroBotId = client.user.id.split("@")[0].slice(0, -3).concat('@s.whatsapp.net')
     const numeroBot = client.user.id.split("@")[0].slice(0, -3)
+    const nombreBot = client.user.name
     const ownerNumber = `${numeroCreador}@s.whatsapp.net`
-    
+    const statusBroadcast = 'status@broadcast'
+    const myGroupId = '120363028009957173@g.us'
 
 /*----------PLANTILLAS BOTONES ETC----------*/
-//const botones = [ {buttonId: 'id1', buttonText: {displayText: 'Button 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Button 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Button 3'}, type: 1} ]        
-//const botonTemplate = [ {index: 1, urlButton: {displayText: 'Suscribete', url: 'https://www.youtube.com/c/KingAndrewYT'}}, {index: 2, callButton: {displayText: 'llamame', phoneNumber: '+57 322 8125090'}}, {index: 3, quickReplyButton: {displayText: 'Menu', id: '!menu'}}]
-//const listas = [{ title: "Section 1", rows: [ {title: "Option 1", rowId: "option1"}, {title: "Option 2", rowId: "option2", description: "This is a description"} ]}, { title: "Section 2", rows: [ {title: "Option 3", rowId: "option3"}, {title: "Option 4", rowId: "option4", description: "This is a description V2"} ]}]
+    //const botones = [ {buttonId: 'id1', buttonText: {displayText: 'Button 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Button 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Button 3'}, type: 1} ]        
+    //const botonTemplate = [ {index: 1, urlButton: {displayText: 'Suscribete', url: 'https://www.youtube.com/c/KingAndrewYT'}}, {index: 2, callButton: {displayText: 'llamame', phoneNumber: '+57 322 8125090'}}, {index: 3, quickReplyButton: {displayText: 'Menu', id: '!menu'}}]
+    //const listas = [{ title: "Section 1", rows: [ {title: "Option 1", rowId: "option1"}, {title: "Option 2", rowId: "option2", description: "This is a description"} ]}, { title: "Section 2", rows: [ {title: "Option 3", rowId: "option3"}, {title: "Option 4", rowId: "option4", description: "This is a description V2"} ]}]
 
 /*----------ENVIO DE MENSAJES----------*/
     const sendText = async (texto) => {client.sendMessage(from, {text: texto})}
     const sendReply = async (texto) => {client.sendMessage(from, {text: texto}, {quoted: msg})}
-    const sendReplyWithMentions = async (texto, menciones) => {client.sendMessage(from, {text: texto}, {quoted: msg, mentions: [menciones]})}
-    const sendTextWithMentions = async (texto, menciones) => {await client.sendMessage(from, { text: texto, mentions: [menciones]})}
+    const sendReplyWithMentions = async (texto, menciones) => {await client.sendMessage(from, {text: texto}, {quoted: msg, mentions: [menciones]})}
+    const sendTextWithMentions = async (texto, menciones) => {client.sendMessage(from, {text: texto, mentions: [menciones]})}
     const sendLocation = async (latitud, longitud) => {await client.sendMessage(from, {location: {degreesLatitude: latitud, degreesLongitude: longitud}})}
     const sendVcard = async (texto, vcard) =>{client.sendMessage(from, {contacts:{displayName: texto, contacts: [{vcard}]}})}
     const sendButtonText = async (texto, botones = []) => {client.sendMessage(from, {text: texto, footer: copyright, buttons: botones, headerType: 1})}
@@ -67,7 +70,7 @@ module.exports = async (msg ,client) => {
     const sendPtt = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4', ptt: true})}
     const sendPttReply = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4', ptt: true},{quoted: msg})}
     
-    /*--------------TIPOS DE MENSAJES--------------*/
+/*--------------TIPOS DE MENSAJES--------------*/
     var messageType = Object.keys(msg.message)[0]
     const isText = messageType === 'conversation' 
     const isImage = messageType === 'imageMessage'
@@ -123,6 +126,26 @@ module.exports = async (msg ,client) => {
     const url = args.length != 0 ? args[0] : ''
 
 /*----------------------------*/
+    const sender = msg.key.fromMe ? numeroBotId : isGroup ? msg.key.participant : msg.key.remoteJid
+    const pushname = msg.key.fromMe ? msg.pushName :  msg.pushName ? msg.pushName : 'Usuario Desconocido'
+    const groupMetadata = isGroup ? await client.groupMetadata(from) : ''
+    const groupName = isGroup ? groupMetadata.subject : ''
+    const groupDesc = isGroup ? groupMetadata.desc : ''
+    const groupId = isGroup ? groupMetadata.id : ''
+    const groupOwner = isGroup ? groupMetadata.owner : ''
+    const groupMembers = isGroup ? groupMetadata.participants : ''
+    const groupAdmins = isGroup ? getAdmins(groupMembers) : ''
+    const isEphemeral = isGroup ? groupMetadata.ephemeralDuration != undefined : ''
+    const isRestrict = isGroup ? groupMetadata.restrict : ''
+    const restrict = isRestrict ? 'administradores' : 'todos'
+    const isAnnounce = groupMetadata.announce
+    const announce = isAnnounce ? 'administradores' : 'todos'
+    const groupEphemeral = isEphemeral ? groupMetadata.ephemeralDuration : ''
+    
+/*----------------------------*/
+    const isOwner = ownerNumber.includes(sender)
+
+/*----------------------------*/
     //const grupos = await client.groupFetchAllParticipating()
     //log(grupos)
 
@@ -151,7 +174,18 @@ module.exports = async (msg ,client) => {
         sendReply(`Hola ${saludo}`)
         log(msg.message)
     }
-    
+
+    if (!isCmd && isOwner && chats.toLowerCase().startsWith('simi')){
+        const tts= gtts('es')
+        const text = chats.slice(5)
+        const {data} = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(text)}&lc=es&cf=false`)
+        const {success} = data
+        tts.save('./media/temp/simi.mp3', success, async function(){
+            await sendPttReply('./media/temp/simi.mp3').catch(e => {return error(e)})
+            //unlinkSync('./media/temp/simi.mp3')
+        })
+    }
+    if (!isOwner && command) return sendReply('modo de pruebas activado')
     switch(command){
         case 'repite':
             if(args.length == 0) return sendReply('*⋆⊱∘[✧repite✧]∘⊰⋆*\n_Si deseas que yo repita algo envia un mensaje con el siguiente formato: *${prefix}repite + mensaje que quieres que repita*_\n\n_Ejemplo: *${prefix}repite Hola usuario como estas?*_\n*⋆⊱∘[✧cortana✧]∘⊰⋆*')
@@ -347,7 +381,13 @@ module.exports = async (msg ,client) => {
             const inviteMessage = msg.message.extendedTextMessage.contextInfo.quotedMessage.groupInviteMessage
             await client.groupAcceptInviteV4(from, inviteMessage)        
             break
-            default:
+        case 'admins':
+            if(!isOwner) return
+            sendReplyWithMentions(q,groupAdmins)
+        break
+        
+    default:
+        
     }
     
 }
