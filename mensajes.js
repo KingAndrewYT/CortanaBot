@@ -9,7 +9,7 @@ const fs = require('fs')
 const translate = require ('./funciones/traductor.js')
 const funciones = require ('./funciones')
 
-let {inWA, groupSettings, getAdmins} = funciones
+let {inWA, groupSettings, getAdmins, getAll} = funciones
 let { readFileSync, writeFileSync, unlinkSync, existsSync} = fs
 let { stringify, parse } = JSON
 
@@ -69,7 +69,9 @@ module.exports = async (msg ,client) => {
     const sendPresence = async (presence) => {await client.sendPresenceUpdate(presence, from)} //recording -  paused - composing - unavailable - available
     const sendPtt = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4', ptt: true})}
     const sendPttReply = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4', ptt: true},{quoted: msg})}
-    
+    const grabando = async (x) => {await client.sendPresenceUpdate('recording', x)}
+    const escribiendo = async (x) => {await client.sendPresenceUpdate('composing', x)}
+
 /*--------------TIPOS DE MENSAJES--------------*/
     var messageType = Object.keys(msg.message)[0]
     const isText = messageType === 'conversation' 
@@ -125,7 +127,7 @@ module.exports = async (msg ,client) => {
     const arg = cmd.trim().substring(cmd.indexOf(' ') + 1)
     const url = args.length != 0 ? args[0] : ''
 
-/*----------------------------*/
+/*--------------IDENTIFICADORES--------------*/
     const sender = msg.key.fromMe ? numeroBotId : isGroup ? msg.key.participant : msg.key.remoteJid
     const pushname = msg.key.fromMe ? msg.pushName :  msg.pushName ? msg.pushName : 'Usuario Desconocido'
     const groupMetadata = isGroup ? await client.groupMetadata(from) : ''
@@ -135,6 +137,7 @@ module.exports = async (msg ,client) => {
     const groupOwner = isGroup ? groupMetadata.owner : ''
     const groupMembers = isGroup ? groupMetadata.participants : ''
     const groupAdmins = isGroup ? getAdmins(groupMembers) : ''
+    const groupParticipants = isGroup ? getAll(groupMembers) : ''
     const isEphemeral = isGroup ? groupMetadata.ephemeralDuration != undefined : ''
     const isRestrict = isGroup ? groupMetadata.restrict : ''
     const restrict = isRestrict ? 'administradores' : 'todos'
@@ -144,10 +147,11 @@ module.exports = async (msg ,client) => {
     
 /*----------------------------*/
     const isOwner = ownerNumber.includes(sender)
-
+    const isAdmin = groupAdmins.includes(sender)
+    const isLinkWa = chats.includes('chat.whatsapp.com/')
+    const isBotAdmin = groupAdmins.includes(numeroBotId)
 /*----------------------------*/
-    //const grupos = await client.groupFetchAllParticipating()
-    //log(grupos)
+    
 
 /*----------VARIABLES----------*/
     const horario = moment().format('HH')
@@ -169,21 +173,65 @@ module.exports = async (msg ,client) => {
         if (emojiReaction === '🙏'){var reactionEmoji = 'Reaccion de Agradecimiento 🙏'}
         await sendText(reactionEmoji)
     }*/
-/*----------COMANDS SIN PREFIJO----------*/
-    if (!isMe && (chats).toLowerCase().startsWith('hola')){
-        sendReply(`Hola ${saludo}`)
-        log(msg.message)
-    }
 
-    if (!isCmd && isOwner && chats.toLowerCase().startsWith('simi')){
-        const tts= gtts('es')
+/*----------FUNCIONES----------*/
+    if(isGroup && isLinkWa && !isAdmin && !isOwner && isBotAdmin) await client.groupParticipantsUpdate(from,[sender], 'remove')
+    
+/*----------RESPUESTAS DE LA BOT----------*/
+    if (!isMe && (chats).toLowerCase().startsWith('hola ')){
+        escribiendo(from)
+        sendReply(`Hola ${saludo}`)
+    }
+    if(!isCmd && (chats).toLowerCase().startsWith('di ')){
+        const tts = gtts('es')
+        const text = chats.slice(3)
+        tts.save('./media/temp/di.mp3', text, async function(){
+            grabando(from)
+            await sendPttReply('./media/temp/di.mp3').catch(e => {return sendReply('¡ERROR 404! Not Found.')})
+        })
+    }
+/*----------CHAT BOTS----------*/
+    if (!isCmd && chats.toLowerCase().startsWith('simi ')){
         const text = chats.slice(5)
         const {data} = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(text)}&lc=es&cf=false`)
         const {success} = data
-        tts.save('./media/temp/simi.mp3', success, async function(){
-            await sendPttReply('./media/temp/simi.mp3').catch(e => {return error(e)})
-            //unlinkSync('./media/temp/simi.mp3')
-        })
+        await escribiendo(from)
+        sendReply(success)
+    }
+    if (!isCmd && chats.toLowerCase().startsWith('cortana ')){
+        await escribiendo(from)
+        const text = chats.slice(8)
+        await translate(text, 'en').then(async (res)=>{
+            const {data} = await axios.get(`https://some-random-api.ml/chatbot?message=${encodeURIComponent(res)}&key=l00NB88YglRMSz69Uocfjgvq1`)
+            const {response} = data
+            log(decodeURIComponent(response))
+            await translate(response, 'es').then(async (res) =>{ await sendReply(res) }).catch(e => sendReply('¡ERROR 404!')) }).catch(e => sendReply('¡ERROR 405!'))
+    }
+/*----------ENVIO DE AUDIOS----------*/
+    if (!isCmd && chats.toLowerCase() === 'yamete'){
+        const yamete = ['./media/yamete/1.mp3','./media/yamete/2.mp3','./media/yamete/3.mp3','./media/yamete/4.mp3']
+        var randomy = yamete[Math.floor(Math.random() * yamete.length)]
+        sendPttReply(randomy)
+    }
+    if (!isCmd && chats.toLowerCase() === 'onichan'){
+        const onichan = ['./media/oniichan/oniichan1.mp3','./media/oniichan/oniichan2.mp3','./media/oniichan/oniichan3.mp3','./media/oniichan/oniichan4.mp3','./media/oniichan/oniichan5.mp3','./media/oniichan/oniichan6.mp3','./media/oniichan/oniichan7.mp3','./media/oniichan/oniichan8.mp3','./media/oniichan/oniichan9.mp3','./media/oniichan/oniichan10.mp3','./media/oniichan/oniichan11.mp3','./media/oniichan/oniichan12.mp3','./media/oniichan/oniichan13.mp3','./media/oniichan/oniichan14.mp3','./media/oniichan/oniichan15.mp3','./media/oniichan/oniichan16.mp3','./media/oniichan/oniichan17.mp3','./media/oniichan/oniichan18.mp3','./media/oniichan/oniichan19.mp3','./media/oniichan/oniichan20.mp3','./media/oniichan/oniichan21.mp3','./media/oniichan/oniichan22.mp3','./media/oniichan/oniichan23.mp3','./media/oniichan/oniichan24.mp3','./media/oniichan/oniichan25.mp3','./media/oniichan/oniichan26.mp3','./media/oniichan/oniichan27.mp3']
+        var randomo = onichan[Math.floor(Math.random() * onichan.length)]
+        sendPttReply(randomo)
+    }
+    if (!isCmd && chats.toLowerCase() === 'baka'){
+        const baka = ['./media/baka/1.mp3','./media/baka/2.mp3','./media/baka/3.mp3','./media/baka/4.mp3','./media/baka/5.mp3','./media/baka/6.mp3','./media/baka/7.mp3']
+        var randomb = baka[Math.floor(Math.random() * baka.length)]
+        sendPttReply(randomb)
+    }
+    if (!isCmd && chats.toLowerCase() === 'ara'){
+        const ara = ['./media/ara/1.mp3', './media/ara/2.mp3', './media/ara/3.mp3', './media/ara/4.mp3', './media/ara/5.mp3', './media/ara/6.mp3', './media/ara/7.mp3', './media/ara/8.mp3', './media/ara/9.mp3', './media/ara/10.mp3', './media/ara/11.mp3', './media/ara/12.mp3', './media/ara/13.mp3', './media/ara/14.mp3', './media/ara/15.mp3', './media/ara/16.mp3', './media/ara/17.mp3', './media/ara/18.mp3', './media/ara/19.mp3', './media/ara/20.mp3', './media/ara/21.mp3']
+        var randoma = ara[Math.floor(Math.random() * ara.length)]
+        sendPttReply(randoma)
+    }
+    if (!isCmd && chats.toLowerCase() === 'nya'){
+        const nya = ['./media/nya/1.mp3', './media/nya/2.mp3', './media/nya/3.mp3', './media/nya/4.mp3', './media/nya/5.mp3', './media/nya/6.mp3', './media/nya/7.mp3', './media/nya/8.mp3', './media/nya/9.mp3', './media/nya/10.mp3', './media/nya/11.mp3', './media/nya/12.mp3', './media/nya/13.mp3', './media/nya/14.mp3', './media/nya/15.mp3', './media/nya/16.mp3', './media/nya/17.mp3', './media/nya/18.mp3', './media/nya/19.mp3', './media/nya/20.mp3', './media/nya/21.mp3', './media/nya/22.mp3', './media/nya/23.mp3', './media/nya/24.mp3', './media/nya/25.mp3', './media/nya/26.mp3', './media/nya/27.mp3', './media/nya/28.mp3']
+        var randomn = nya[Math.floor(Math.random() * nya.length)]
+        sendPttReply(randomn)
     }
     if (!isOwner && command) return sendReply('modo de pruebas activado')
     switch(command){
@@ -382,12 +430,12 @@ module.exports = async (msg ,client) => {
             await client.groupAcceptInviteV4(from, inviteMessage)        
             break
         case 'admins':
-            if(!isOwner) return
-            sendReplyWithMentions(q,groupAdmins)
+            sendReplyWithMentions(q, groupAdmins)
         break
-        
+        case 'todos':
+            sendReplyWithMentions(q, groupParticipants)
+            break
     default:
-        
     }
     
 }

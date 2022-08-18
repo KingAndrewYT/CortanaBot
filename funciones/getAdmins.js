@@ -1,10 +1,9 @@
-const getAdmins = async (participants) => {
-        const admins = []
-        for (let i of participants){
-            i.admin ? admins.push(i.id) : ''
-        }
-        return admins
-        
-    }
+const getAdmins = (participants) => {
+    const admins = []
+    participants.map(i => {
+        i.admin ? admins.push(i.id) : ''
+    })
+    return  admins
+}
 
 module.exports = getAdmins
