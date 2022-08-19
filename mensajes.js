@@ -1,5 +1,5 @@
 /*----------MODULOS----------*/
-const { downloadMediaMessage, WA_DEFAULT_EPHEMERAL, downloadContentFromMessage } = require ('@adiwajshing/baileys')
+const { downloadMediaMessage, WA_DEFAULT_EPHEMERAL, downloadContentFromMessage, getContentType } = require ('@adiwajshing/baileys')
 const { writeFile } =  require ('fs/promises')
 const moment = require ('moment-timezone')
 const gtts = require ('node-gtts')
@@ -8,6 +8,8 @@ moment.tz.setDefault('America/Bogota').locale('es')
 const fs = require('fs')
 const translate = require ('./funciones/traductor.js')
 const funciones = require ('./funciones')
+const utilidades = require('./utilidades')
+const { color} = utilidades
 
 let {inWA, groupSettings, getAdmins, getAll} = funciones
 let { readFileSync, writeFileSync, unlinkSync, existsSync} = fs
@@ -25,21 +27,41 @@ const processTime = async (timestamp, now) => {return moment.duration(now - mome
 const randomizer = async (value) => {const random = value[Math.floor(Math.random() * value.length)]; return random}
 
 /*--------------JSON'S--------------*/
-const alertas = parse(readFileSync('./config/alertas.json'))
-const info = parse(readFileSync('./config/configs.json'))
+const alertas = parse(readFileSync('./JSONS/alertas.json'))
+const info = parse(readFileSync('./JSONS/configs.json'))
 let {numeroCreador, nombreCreador, nombreBot, copyright, igCreador, fbCreador, ytCreador, discordCreador, prefix, banChats, nopref, onepref, multipref } = info
+const banned = parse(readFileSync('./JSONS/banned.json'))
+const bienvenida = parse(readFileSync('./JSONS/bienvenida.json'))
+const despedida = parse(readFileSync('./JSONS/despedida.json'))
+const promote = parse(readFileSync('./JSONS/promote.json'))
+const demote = parse(readFileSync('./JSONS/demote.json'))
+const vip = parse(readFileSync('./JSONS/vip.json'))
+const antienlaces = parse(readFileSync('./JSONS/antienlaces.json'))
+const premium = parse(readFileSync('./JSONS/premium.json'))
+const _afk = parse(readFileSync('./JSONS/afk.json'))
+const _leveling = parse(readFileSync('./JSONS/leveling.json'))
+const _registered = parse(readFileSync('./JSONS/registered.json'))
+const _level = parse(readFileSync('./datos/level.json'))
+const antiarabes = parse(readFileSync('./JSONS/antiarabes.json'))
+const antifakes = parse(readFileSync('./JSONS/antifakes.json'))
+const onlyowner = parse(readFileSync('./JSONS/onlyowner.json'))
+const onlyvip = parse(readFileSync('./JSONS/onlyvip.json'))
+const onlypremium = parse(readFileSync('./JSONS/onlypremium.json'))
+const onlyadmins = parse(readFileSync('./JSONS/onlyadmins.json'))
+const nsfw = parse(readFileSync('./JSONS/nsfw.json'))
+const porno = parse(readFileSync('./JSONS/porno.json'))
+const simi = parse(readFileSync('./JSONS/simi.json'))
+const cortana = parse(readFileSync('./JSONS/cortana.json'))
+const autostickers = parse(readFileSync('./JSONS/autostickers.json'))
+const { apiNoBg, apiSimi, imgbb } = parse(readFileSync('./datos/apis.json'))
+
 
 module.exports = async (msg ,client) => {
+
+    if(!msg.message) return
+    if(msg.key && msg.key.remoteJid === 'status@broadcast') return
     const isMe = msg.key.fromMe
     var from = msg.key.remoteJid
-    const isGroup = from.includes('g.us')
-    const isParticipant = from.includes('s.whatsapp.net')
-    const numeroBotId = client.user.id.split("@")[0].slice(0, -3).concat('@s.whatsapp.net')
-    const numeroBot = client.user.id.split("@")[0].slice(0, -3)
-    const nombreBot = client.user.name
-    const ownerNumber = `${numeroCreador}@s.whatsapp.net`
-    const statusBroadcast = 'status@broadcast'
-    const myGroupId = '120363028009957173@g.us'
 
 /*----------PLANTILLAS BOTONES ETC----------*/
     //const botones = [ {buttonId: 'id1', buttonText: {displayText: 'Button 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Button 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Button 3'}, type: 1} ]        
@@ -125,11 +147,20 @@ module.exports = async (msg ,client) => {
     const q = args.join(' ')
     const q2 = args.join(' ').toLowerCase()
     const arg = cmd.trim().substring(cmd.indexOf(' ') + 1)
-    const url = args.length != 0 ? args[0] : ''
+    const url = args.length != 0 ? args[0] : ''    
 
 /*--------------IDENTIFICADORES--------------*/
+    const isGroup = from.includes('g.us')
+    const isParticipant = from.includes('s.whatsapp.net')
+    const numeroBotId = client.user.id.split("@")[0].slice(0, -3).concat('@s.whatsapp.net')
+    const numeroBot = client.user.id.split("@")[0].slice(0, -3)
+    const nombreBot = client.user.name
+    const ownerNumber = `${numeroCreador}@s.whatsapp.net`
+    const statusBroadcast = 'status@broadcast'
+    const myGroupId = '120363028009957173@g.us'
+
     const sender = msg.key.fromMe ? numeroBotId : isGroup ? msg.key.participant : msg.key.remoteJid
-    const pushname = msg.key.fromMe ? msg.pushName :  msg.pushName ? msg.pushName : 'Usuario Desconocido'
+    const pushname = msg.pushName || 'Usuario Desconocido'
     const groupMetadata = isGroup ? await client.groupMetadata(from) : ''
     const groupName = isGroup ? groupMetadata.subject : ''
     const groupDesc = isGroup ? groupMetadata.desc : ''
@@ -145,13 +176,53 @@ module.exports = async (msg ,client) => {
     const announce = isAnnounce ? 'administradores' : 'todos'
     const groupEphemeral = isEphemeral ? groupMetadata.ephemeralDuration : ''
     
-/*----------------------------*/
+/*-------------INCLUSORES---------------*/
     const isOwner = ownerNumber.includes(sender)
     const isAdmin = groupAdmins.includes(sender)
-    const isLinkWa = chats.includes('chat.whatsapp.com/')
     const isBotAdmin = groupAdmins.includes(numeroBotId)
-/*----------------------------*/
-    
+    //const isRegistered = checkRegisteredUser(sender)
+    const isBot = numeroBotId.includes(sender)
+    const isBanned = banned.includes(sender)
+    const isVip = vip.includes(sender)
+    const isPremium = premium.includes(sender)
+    const isBienvenida = isGroup ?  bienvenida.includes(from) : false
+    const isDespedida = isGroup ?  despedida.includes(from) : false
+    const isPromote = isGroup ?  promote.includes(from) : false
+    const isDemote = isGroup ?  demote.includes(from) : false
+    const isLevelingOn = isGroup ? _leveling.includes(from) : false
+    //const isAfkOn = isGroup ? checkAfkUser(sender, _afk) : false
+    const isAntienlaces = isGroup ? antienlaces.includes(from) : false
+    const isLeveling = isGroup ? _leveling.includes(from) : false
+    const isAntiarabes = isGroup ? antiarabes.includes(from) : false
+    const isAntifakes = isGroup ? antifakes.includes(from) : false
+    const isPrivate = banChats == true;
+    const isOnlyvip = isGroup ? onlyvip.includes(from) : false
+    const isOnlypremium = isGroup ? onlypremium.includes(from) : false
+    const isOnlyowner = isGroup ? onlyowner.includes(from) : false
+    const isOnlyadmins = isGroup ? onlyadmins.includes(from) : false
+    const isNsfw = isGroup ? nsfw.includes(from) : false
+    const isPorno = isGroup ? porno.includes(from) : false
+    const isSimi = isGroup ? simi.includes(from) : false
+    const isCortana = isGroup ? cortana.includes(from) : false
+    const isAutostickers = isGroup ? autostickers.includes(from) : false
+
+/*------------APIS-------------*/
+    const nekos = `https://nekos.life/api/v2/img/`
+    const memeapi = `https://meme-api.herokuapp.com/gimme/`
+
+/*------------REGEX-------------*/
+    const isYoutube = url.match(new RegExp(/https?:\/\/(www\.)?youtube\.com|https?:\/\/youtu\.be/gi))
+    const isFacebook = url.match(new RegExp(/https?:\/\/(www\.)?facebook\.com|https?:\/\/fb\.watch|https?:\/\/(web\.)?facebook\.com/gi))
+    const isTiktok = url.match(new RegExp(/https?:\/\/(m\.)?tiktok.com|https?:\/\/(www\.)?tiktok.com|https?:\/\/(vm\.)?tiktok.com|https?:\/\/(vt\.)?tiktok.com/gi))
+    const isSoundcloud = url.match(new RegExp(/https?:\/\/(www\.)?soundcloud.com/gi))
+    const isInstagram = url.match(new RegExp(/https?:\/\/(www\.)?instagram\.com/gi))
+    const isSpotify = url.match(new RegExp(/https?:\/\/(open\.)?spotify\.com/gi))
+    const isGiphy = url.match(new RegExp(/https?:\/\/(www\.)?giphy.com/, 'gi'))
+    const isMediaGiphy = url.match(new RegExp(/https?:\/\/media.giphy.com\/media/, 'gi'))
+    const isLine = url.match(new RegExp(/https?:\/\/(store\.)?line\.me\/stickershop/gi))
+    const isTelegram = chats.match(new RegExp(/https?:\/\/(www\.)?t\.me\/addstickers/gi))    
+    const isWaLink = url.match(new RegExp(/https?:\/\/(www\.)?chat.whatsapp.com/gi))
+    const isLinkWa = chats.includes('chat.whatsapp.com/')
 
 /*----------VARIABLES----------*/
     const horario = moment().format('HH')
@@ -175,12 +246,12 @@ module.exports = async (msg ,client) => {
     }*/
 
 /*----------FUNCIONES----------*/
-    if(isGroup && isLinkWa && !isAdmin && !isOwner && isBotAdmin) await client.groupParticipantsUpdate(from,[sender], 'remove')
+    if(isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) await client.groupParticipantsUpdate(from,[sender], 'remove')
     
 /*----------RESPUESTAS DE LA BOT----------*/
-    if (!isMe && (chats).toLowerCase().startsWith('hola ')){
+    if (!isMe && (chats).toLowerCase().startsWith('....')){
         escribiendo(from)
-        sendReply(`Hola ${saludo}`)
+        sendReply(`Hola *${pushname}* ${saludo}`)
     }
     if(!isCmd && (chats).toLowerCase().startsWith('di ')){
         const tts = gtts('es')
@@ -205,35 +276,46 @@ module.exports = async (msg ,client) => {
             const {data} = await axios.get(`https://some-random-api.ml/chatbot?message=${encodeURIComponent(res)}&key=l00NB88YglRMSz69Uocfjgvq1`)
             const {response} = data
             log(decodeURIComponent(response))
-            await translate(response, 'es').then(async (res) =>{ await sendReply(res) }).catch(e => sendReply('¡ERROR 404!')) }).catch(e => sendReply('¡ERROR 405!'))
+            await translate(response, 'es').then(async (res) =>{ await escribiendo(from); await sendReply(res) }).catch(e => sendReply('¡ERROR 404!')) }).catch(e => sendReply('¡ERROR 405!'))
     }
 /*----------ENVIO DE AUDIOS----------*/
     if (!isCmd && chats.toLowerCase() === 'yamete'){
         const yamete = ['./media/yamete/1.mp3','./media/yamete/2.mp3','./media/yamete/3.mp3','./media/yamete/4.mp3']
         var randomy = yamete[Math.floor(Math.random() * yamete.length)]
+        grabando(from)
         sendPttReply(randomy)
     }
     if (!isCmd && chats.toLowerCase() === 'onichan'){
         const onichan = ['./media/oniichan/oniichan1.mp3','./media/oniichan/oniichan2.mp3','./media/oniichan/oniichan3.mp3','./media/oniichan/oniichan4.mp3','./media/oniichan/oniichan5.mp3','./media/oniichan/oniichan6.mp3','./media/oniichan/oniichan7.mp3','./media/oniichan/oniichan8.mp3','./media/oniichan/oniichan9.mp3','./media/oniichan/oniichan10.mp3','./media/oniichan/oniichan11.mp3','./media/oniichan/oniichan12.mp3','./media/oniichan/oniichan13.mp3','./media/oniichan/oniichan14.mp3','./media/oniichan/oniichan15.mp3','./media/oniichan/oniichan16.mp3','./media/oniichan/oniichan17.mp3','./media/oniichan/oniichan18.mp3','./media/oniichan/oniichan19.mp3','./media/oniichan/oniichan20.mp3','./media/oniichan/oniichan21.mp3','./media/oniichan/oniichan22.mp3','./media/oniichan/oniichan23.mp3','./media/oniichan/oniichan24.mp3','./media/oniichan/oniichan25.mp3','./media/oniichan/oniichan26.mp3','./media/oniichan/oniichan27.mp3']
         var randomo = onichan[Math.floor(Math.random() * onichan.length)]
+        grabando(from)
         sendPttReply(randomo)
     }
     if (!isCmd && chats.toLowerCase() === 'baka'){
         const baka = ['./media/baka/1.mp3','./media/baka/2.mp3','./media/baka/3.mp3','./media/baka/4.mp3','./media/baka/5.mp3','./media/baka/6.mp3','./media/baka/7.mp3']
         var randomb = baka[Math.floor(Math.random() * baka.length)]
+        grabando(from)
         sendPttReply(randomb)
     }
     if (!isCmd && chats.toLowerCase() === 'ara'){
         const ara = ['./media/ara/1.mp3', './media/ara/2.mp3', './media/ara/3.mp3', './media/ara/4.mp3', './media/ara/5.mp3', './media/ara/6.mp3', './media/ara/7.mp3', './media/ara/8.mp3', './media/ara/9.mp3', './media/ara/10.mp3', './media/ara/11.mp3', './media/ara/12.mp3', './media/ara/13.mp3', './media/ara/14.mp3', './media/ara/15.mp3', './media/ara/16.mp3', './media/ara/17.mp3', './media/ara/18.mp3', './media/ara/19.mp3', './media/ara/20.mp3', './media/ara/21.mp3']
         var randoma = ara[Math.floor(Math.random() * ara.length)]
+        grabando(from)
         sendPttReply(randoma)
     }
     if (!isCmd && chats.toLowerCase() === 'nya'){
         const nya = ['./media/nya/1.mp3', './media/nya/2.mp3', './media/nya/3.mp3', './media/nya/4.mp3', './media/nya/5.mp3', './media/nya/6.mp3', './media/nya/7.mp3', './media/nya/8.mp3', './media/nya/9.mp3', './media/nya/10.mp3', './media/nya/11.mp3', './media/nya/12.mp3', './media/nya/13.mp3', './media/nya/14.mp3', './media/nya/15.mp3', './media/nya/16.mp3', './media/nya/17.mp3', './media/nya/18.mp3', './media/nya/19.mp3', './media/nya/20.mp3', './media/nya/21.mp3', './media/nya/22.mp3', './media/nya/23.mp3', './media/nya/24.mp3', './media/nya/25.mp3', './media/nya/26.mp3', './media/nya/27.mp3', './media/nya/28.mp3']
         var randomn = nya[Math.floor(Math.random() * nya.length)]
+        grabando(from)
         sendPttReply(randomn)
     }
-    if (!isOwner && command) return sendReply('modo de pruebas activado')
+
+/*----------LOGS----------*/    
+    if (isCmd && !isGroup) { log(color('[CMD]', 'magenta'),  color(`${command}[${args.length}]`),  'de', color(pushname), 'a las: ' ,color(moment().tz('America/Bogota').format('h:mm a'), 'yellow') ) }
+    if (isCmd && isGroup) { log(color('[CMD]', 'magenta'),  color(`${command}[${args.length}]`),  'de', color(pushname),  'en',  color (groupName),  'a las: ',color(moment().tz('America/Bogota').format('h:mm a'), 'yellow') ) }
+    if (!isOwner && command) return sendReply('¡Error 404! Not Found')
+    
+    client.chatModify({markRead: true, lastMessages: [msg]}, from)
     switch(command){
         case 'repite':
             if(args.length == 0) return sendReply('*⋆⊱∘[✧repite✧]∘⊰⋆*\n_Si deseas que yo repita algo envia un mensaje con el siguiente formato: *${prefix}repite + mensaje que quieres que repita*_\n\n_Ejemplo: *${prefix}repite Hola usuario como estas?*_\n*⋆⊱∘[✧cortana✧]∘⊰⋆*')
@@ -436,6 +518,244 @@ module.exports = async (msg ,client) => {
             sendReplyWithMentions(q, groupParticipants)
             break
     default:
+    }
+/*---------ACTIVADORES----------*/
+    switch (command){
+        case 'antienlaces': case 'antilink': case 'antilinks':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const antienlacesCheck = isAntienlaces ? 'funcion antienlaces *ACTIVADA* \n\n!antienlaces off para desactivar' : 'funcion antienlaces *DESACTIVADA* \n\n!antienlaces on para activar'
+            if (args.length == 0){ if(isAntienlaces) return sendReply(antienlacesCheck) ; if(!isAntienlaces) return sendReply(antienlacesCheck)}
+            if(args[0] == 'on' || args[0] == '1') {
+                antienlaces.push(from)
+                writeFileSync('./JSONS/antienlaces.json', stringify(antienlaces))
+                sendReply('[ACTIVANDO ANTIENLACES]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = antienlaces.indexOf(from)
+                antienlaces.splice(del, 1)
+                writeFileSync('./JSONS/antienlaces.json', stringify(antienlaces))
+                sendReply('[DESACTIVANDO ANTIENLACES]')
+            }
+        break
+        case 'simi': 
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const simiCheck = isSimi ? 'funcion simi *ACTIVADA* \n\n!simi off para desactivar' : 'funcion simi *DESACTIVADA* \n\n!simi on para activar'
+            if (args.length == 0){ if(isSimi) return sendReply(simiCheck) ; if(!isSimi) return sendReply(simiCheck)}
+            if(args[0] == 'on' || args[0] == '1') {
+                simi.push(from)
+                writeFileSync('./JSONS/simi.json', stringify(simi))
+                sendReply('[ACTIVANDO SIMI]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = simi.indexOf(from)
+                simi.splice(del, 1)
+                writeFileSync('./JSONS/simi.json', stringify(simi))
+                sendReply('[DESACTIVANDO SIMI]')
+            }
+        break
+        case 'bienvenida': 
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const bienvenidaCheck = isBienvenida ? 'funcion bienvenida *ACTIVADA* \n\n!bienvenida off para desactivar' : 'funcion bienvenida *DESACTIVADA* \n\n!bienvenida on para activar'
+            if (args.length == 0){ if(isBienvenida) return sendReply(bienvenidaCheck) ; if(!isBienvenida) return sendReply(bienvenidaCheck)}
+            if(args[0] == 'on' || args[0] == '1') {
+                bienvenida.push(from)
+                writeFileSync('./JSONS/bienvenida.json', stringify(bienvenida))
+                sendReply('[ACTIVANDO BIENVENIDA]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = bienvenida.indexOf(from)
+                bienvenida.splice(del, 1)
+                writeFileSync('./JSONS/bienvenida.json', stringify(bienvenida))
+                sendReply('[DESACTIVANDO BIENVENIDA]')
+            }
+        break
+        case 'despedida': 
+        if (!isGroup) return sendReply(alertas.groups)
+        if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+        if (!isBotAdmin) return sendReply(alertas.adminbot)
+        const despedidaCheck = isDespedida ? 'funcion despedida *ACTIVADA* \n\n!despedida off para desactivar' : 'funcion despedida *DESACTIVADA* \n\n!despedida on para activar'
+        if (args.length == 0){ if(isDespedida) return sendReply(despedidaCheck) ; if(!isDespedida) return sendReply(despedidaCheck)}
+        if(args[0] == 'on' || args[0] == '1') {
+            despedida.push(from)
+            writeFileSync('./JSONS/despedida.json', stringify(despedida))
+            sendReply('[ACTIVANDO DESPEDIDA]')
+        }
+        if (args[0] == 'off' || args[0] == '0') {
+            let del = despedida.indexOf(from)
+            despedida.splice(del, 1)
+            writeFileSync('./JSONS/despedida.json', stringify(despedida))
+            sendReply('[DESACTIVANDO DESPEDIDA]')
+        }
+    break
+        case 'cortana': 
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const cortanaCheck = isCortana ? 'funcion cortana *ACTIVADA* \n\n!cortana off para desactivar' : 'funcion cortana *DESACTIVADA* \n\n!cortana on para activar'
+            if (args.length == 0){ if(isCortana) return sendReply(cortanaCheck) ; if(!isCortana) return sendReply(cortanaCheck)}
+            if(args[0] == 'on' || args[0] == '1') {
+                cortana.push(from)
+                writeFileSync('./JSONS/cortana.json', stringify(cortana))
+                sendReply('[ACTIVANDO CORTANA]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = cortana.indexOf(from)
+                cortana.splice(del, 1)
+                writeFileSync('./JSONS/cortana.json', stringify(cortana))
+                sendReply('[DESACTIVANDO CORTANA]')
+            }
+        break
+        case 'nsfw': 
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const nsfwCheck = isNsfw ? 'funcion nsfw *ACTIVADA* \n\n!nsfw off para desactivar' : 'funcion nsfw *DESACTIVADA* \n\n!nsfw on para activar'
+            if (args.length == 0){ if(isNsfw) return sendReply(nsfwCheck) ; if(!isNsfw) return sendReply(nsfwCheck)}
+            if(args[0] == 'on' || args[0] == '1') {
+                nsfw.push(from)
+                writeFileSync('./JSONS/nsfw.json', stringify(nsfw))
+                sendReply('[ACTIVANDO NSFW]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = nsfw.indexOf(from)
+                nsfw.splice(del, 1)
+                writeFileSync('./JSONS/nsfw.json', stringify(nsfw))
+                sendReply('[DESACTIVANDO NSFW]')
+            }
+        break
+        case 'promovidos': case 'promote': 
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const promoteCheck = isPromote ? 'funcion promote *ACTIVADA* \n\n!promote off para desactivar' : 'funcion promote *DESACTIVADA* \n\n!promote on para activar'
+            if (args.length == 0){ if(isPromote) return sendReply(promoteCheck) ; if(!isPromote) return sendReply(promoteCheck)}
+            if(args[0] == 'on' || args[0] == '1') {
+                promote.push(from)
+                writeFileSync('./JSONS/promote.json', stringify(promote))
+                sendReply('[ACTIVANDO PROMOTE]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = promote.indexOf(from)
+                promote.splice(del, 1)
+                writeFileSync('./JSONS/promote.json', stringify(promote))
+                sendReply('[DESACTIVANDO PROMOTE]')
+            }
+        break
+        case 'degradados': case 'demote': 
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const demoteCheck = isDemote ? 'funcion demote *ACTIVADA* \n\n!demote off para desactivar' : 'funcion demote *DESACTIVADA* \n\n!demote on para activar'
+            if (args.length == 0){ if(isDemote) return sendReply(demoteCheck) ; if(!isDemote) return sendReply(demoteCheck)}
+            if(args[0] == 'on' || args[0] == '1') {
+                demote.push(from)
+                writeFileSync('./JSONS/demote.json', stringify(demote))
+                sendReply('[ACTIVANDO DEMOTE]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = demote.indexOf(from)
+                demote.splice(del, 1)
+                writeFileSync('./JSONS/demote.json', stringify(demote))
+                sendReply('[DESACTIVANDO DEMOTE]')
+            }
+        break
+        case 'antiarabes': 
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const antiarabesCheck = isAntiarabes ? 'funcion antiarabes *ACTIVADA* \n\n!antiarabes off para desactivar' : 'funcion antiarabes *DESACTIVADA* \n\n!antiarabes on para activar'
+            if (args.length == 0){ if(isAntiarabes) return sendReply(antiarabesCheck) ; if(!isAntiarabes) return sendReply(antiarabesCheck)}
+            if(args[0] == 'on' || args[0] == '1') {
+                antiarabes.push(from)
+                writeFileSync('./JSONS/antiarabes.json', stringify(antiarabes))
+                sendReply('[ACTIVANDO ANTIARABES]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = antiarabes.indexOf(from)
+                antiarabes.splice(del, 1)
+                writeFileSync('./JSONS/antiarabes.json', stringify(antiarabes))
+                sendReply('[DESACTIVANDO ANTIARABES]')
+            }
+        break
+        case 'antifakes': 
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const antifakesCheck = isAntifakes ? 'funcion antifakes *ACTIVADA* \n\n!antifakes off para desactivar' : 'funcion antifakes *DESACTIVADA* \n\n!antifakes on para activar'
+            if (args.length == 0){ if(isAntifakes) return sendReply(antifakesCheck) ; if(!isAntifakes) return sendReply(antifakesCheck)}
+            if(args[0] == 'on' || args[0] == '1') {
+                antifakes.push(from)
+                writeFileSync('./JSONS/antifakes.json', stringify(antifakes))
+                sendReply('[ACTIVANDO ANTIFAKES]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = antifakes.indexOf(from)
+                antifakes.splice(del, 1)
+                writeFileSync('./JSONS/antifakes.json', stringify(antifakes))
+                sendReply('[DESACTIVANDO ANTIFAKES]')
+            }
+        break
+        case 'autostickers': 
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const autostickersCheck = isAutostickers ? 'funcion autostickers *ACTIVADA* \n\n!autostickers off para desactivar' : 'funcion autostickers *DESACTIVADA* \n\n!autostickers on para activar'
+            if (args.length == 0){ if(isAutostickers) return sendReply(autostickersCheck) ; if(!isAutostickers) return sendReply(autostickersCheck)}
+            if(args[0] == 'on' || args[0] == '1') {
+                autostickers.push(from)
+                writeFileSync('./JSONS/autostickers.json', stringify(autostickers))
+                sendReply('[ACTIVANDO AUTOSTICKERS]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = autostickers.indexOf(from)
+                autostickers.splice(del, 1)
+                writeFileSync('./JSONS/autostickers.json', stringify(autostickers))
+                sendReply('[DESACTIVANDO AUTOSTICKERS]')
+            }
+        break
+        case 'leveling': 
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const levelingCheck = isLeveling ? 'funcion leveling *ACTIVADA* \n\n!leveling off para desactivar' : 'funcion leveling *DESACTIVADA* \n\n!leveling on para activar'
+            if (args.length == 0){ if(isLeveling) return sendReply(levelingCheck) ; if(!isLeveling) return sendReply(levelingCheck)}
+            if(args[0] == 'on' || args[0] == '1') {
+                leveling.push(from)
+                writeFileSync('./JSONS/leveling.json', stringify(leveling))
+                sendReply('[ACTIVANDO LEVELING]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = leveling.indexOf(from)
+                leveling.splice(del, 1)
+                writeFileSync('./JSONS/leveling.json', stringify(leveling))
+                sendReply('[DESACTIVANDO LEVELING]')
+            }
+        break
+        case 'porno': 
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const pornoCheck = isPorno ? 'funcion porno *ACTIVADA* \n\n!porno off para desactivar' : 'funcion porno *DESACTIVADA* \n\n!porno on para activar'
+            if (args.length == 0){ if(isPorno) return sendReply(pornoCheck) ; if(!isPorno) return sendReply(pornoCheck)}
+            if(args[0] == 'on' || args[0] == '1') {
+                porno.push(from)
+                writeFileSync('./JSONS/porno.json', stringify(porno))
+                sendReply('[ACTIVANDO PORNO]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = porno.indexOf(from)
+                porno.splice(del, 1)
+                writeFileSync('./JSONS/porno.json', stringify(porno))
+                sendReply('[DESACTIVANDO PORNO]')
+            }
+        break
+        default:
     }
     
 }
