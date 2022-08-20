@@ -24,26 +24,7 @@ const groupSettings = async (msg, client,q, args, command)=> {
     const regExp = q.replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
 
     switch(command){
-        case 'añadir':
-            if(args.length == 0) return sendReply('por favor envia el numero de la persona que quieres añadir al grupo')
-            if(regExp == numeroBot) return sendReply('¡Error! Yo ya hago parte de este grupo')
-            inWA(msg,client,regExp).then(async(res)=>{if(res == true) return client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'add')}) 
-            break
-        case 'eliminar':
-            if(args.length == 0) return sendReply('por favor envia el numero de la persona que quieres eliminar del grupo')
-            if(regExp == numeroBot) return sendReply('¡Error! No me puedo eliminar a mi misma, si deseas que salga del grupo por favor envia el comando !salir')
-            inWA(msg,client,regExp).then(async(res)=>{if(res == true) return client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'remove')})
-            break
-        case 'promover':
-            if(args.length == 0) return sendReply('por favor envia el numero de la persona que quieres promover a administrador(a)')
-            if(regExp == numeroBot) return sendReply('¡Error! Lo siento, no me puedo promover a mi misma')
-            inWA(msg,client,regExp).then(async (res) => { if(res == true){ return await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'promote') }})
-            break
-        case 'degradar':
-            if(args.length == 0) return sendReply('por favor envia el numero de la persona que quieres degradar de administrador(a)')
-            if(regExp == numeroBot) return sendReply('¡Error! Lo siento no me puedo degradar a mi misma')          
-            inWA(msg,client,regExp).then(async (res) => { if(res == true){ return await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'demote') }})
-            break
+    
         case 'crear':
             if(args.length == 0) return sendReply('por favor escribe el nombre que tendra el grupo que creare para ti.')
             if(q.length > 35 ) return sendReply('¡Error! El nombre proporcionado excede los 35 caracteres.')

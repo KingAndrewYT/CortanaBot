@@ -10,6 +10,7 @@ const translate = require ('./funciones/traductor.js')
 const funciones = require ('./funciones')
 const utilidades = require('./utilidades')
 const { color} = utilidades
+const toast = require('./JSONS/toasts.js')
 
 let {inWA, groupSettings, getAdmins, getAll} = funciones
 let { readFileSync, writeFileSync, unlinkSync, existsSync} = fs
@@ -58,8 +59,8 @@ const { apiNoBg, apiSimi, imgbb } = parse(readFileSync('./datos/apis.json'))
 
 module.exports = async (msg ,client) => {
 
-    if(!msg.message) return
-    if(msg.key && msg.key.remoteJid === 'status@broadcast') return
+    if (!msg.message) return
+    if (msg.key && msg.key.remoteJid === 'status@broadcast') return
     const isMe = msg.key.fromMe
     var from = msg.key.remoteJid
 
@@ -71,8 +72,8 @@ module.exports = async (msg ,client) => {
 /*----------ENVIO DE MENSAJES----------*/
     const sendText = async (texto) => {client.sendMessage(from, {text: texto})}
     const sendReply = async (texto) => {client.sendMessage(from, {text: texto}, {quoted: msg})}
-    const sendReplyWithMentions = async (texto, menciones) => {await client.sendMessage(from, {text: texto}, {quoted: msg, mentions: [menciones]})}
-    const sendTextWithMentions = async (texto, menciones) => {client.sendMessage(from, {text: texto, mentions: [menciones]})}
+    const sendReplyWithMentions = async (texto, menciones) => {await client.sendMessage(from, {text: texto, mentions: menciones}, {quoted: msg})}
+    const sendTextWithMentions = async (texto, menciones) => {await client.sendMessage(from, {text: texto, mentions: menciones})}
     const sendLocation = async (latitud, longitud) => {await client.sendMessage(from, {location: {degreesLatitude: latitud, degreesLongitude: longitud}})}
     const sendVcard = async (texto, vcard) =>{client.sendMessage(from, {contacts:{displayName: texto, contacts: [{vcard}]}})}
     const sendButtonText = async (texto, botones = []) => {client.sendMessage(from, {text: texto, footer: copyright, buttons: botones, headerType: 1})}
@@ -148,6 +149,7 @@ module.exports = async (msg ,client) => {
     const q2 = args.join(' ').toLowerCase()
     const arg = cmd.trim().substring(cmd.indexOf(' ') + 1)
     const url = args.length != 0 ? args[0] : ''    
+    const regExp = q.replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
 
 /*--------------IDENTIFICADORES--------------*/
     const isGroup = from.includes('g.us')
@@ -174,7 +176,9 @@ module.exports = async (msg ,client) => {
     const restrict = isRestrict ? 'administradores' : 'todos'
     const isAnnounce = groupMetadata.announce
     const announce = isAnnounce ? 'administradores' : 'todos'
-    const groupEphemeral = isEphemeral ? groupMetadata.ephemeralDuration : ''
+    //const groupEphemeral = isEphemeral ? groupMetadata.ephemeralDuration : ''
+    const isTag = isQuoted ? msg.message.extendedTextMessage.contextInfo.participant != '' : ''
+    const isMentionedTag = isQuoted ? msg.message.extendedTextMessage.contextInfo.mentionedJid : false
     
 /*-------------INCLUSORES---------------*/
     const isOwner = ownerNumber.includes(sender)
@@ -232,6 +236,15 @@ module.exports = async (msg ,client) => {
     if (horario >= '08' && horario <= '11') { var saludo = 'buenos dias 🌤️'}
     if (horario >= '12' && horario <= '17') { var saludo = 'buenas tardes🌇'}
     if (horario >= '18' && horario <= '23') { var saludo = 'buenas noches 🌃'}
+
+    var tipoDeUsr = '·🔮 Participante·'    
+    if (isAdmin){ var tipoDeUsr = '·•🛂 Administrador·' }
+    if (isPremium) { var tipoDeUsr = '·•🌟 Usuario Premium·' }
+    if (isBot){ var tipoDeUsr = '·•🤖 BOT·' }
+    if (isVip){ var tipoDeUsr = '·•⚜ Usuario VIP·' }
+    if (isOwner) { var tipoDeUsr = '·•💻 Desarrollador·' }
+
+    const informacion = toast.info(pushname, tipoDeUsr)
     
     /*if (isReaction){
         const emojiReaction = msg.message.reactionMessage.text
@@ -246,14 +259,14 @@ module.exports = async (msg ,client) => {
     }*/
 
 /*----------FUNCIONES----------*/
-    if(isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) await client.groupParticipantsUpdate(from,[sender], 'remove')
+    if (isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) await client.groupParticipantsUpdate(from,[sender], 'remove')
     
 /*----------RESPUESTAS DE LA BOT----------*/
     if (!isMe && (chats).toLowerCase().startsWith('....')){
         escribiendo(from)
         sendReply(`Hola *${pushname}* ${saludo}`)
     }
-    if(!isCmd && (chats).toLowerCase().startsWith('di ')){
+    if (!isCmd && (chats).toLowerCase().startsWith('di ')){
         const tts = gtts('es')
         const text = chats.slice(3)
         tts.save('./media/temp/di.mp3', text, async function(){
@@ -313,12 +326,12 @@ module.exports = async (msg ,client) => {
 /*----------LOGS----------*/    
     if (isCmd && !isGroup) { log(color('[CMD]', 'magenta'),  color(`${command}[${args.length}]`),  'de', color(pushname), 'a las: ' ,color(moment().tz('America/Bogota').format('h:mm a'), 'yellow') ) }
     if (isCmd && isGroup) { log(color('[CMD]', 'magenta'),  color(`${command}[${args.length}]`),  'de', color(pushname),  'en',  color (groupName),  'a las: ',color(moment().tz('America/Bogota').format('h:mm a'), 'yellow') ) }
-    if (!isOwner && command) return sendReply('¡Error 404! Not Found')
+    if (!isOwner && command) return sendReply('{\n    modo desarrollador activado\n}')
     
     client.chatModify({markRead: true, lastMessages: [msg]}, from)
     switch(command){
         case 'repite':
-            if(args.length == 0) return sendReply('*⋆⊱∘[✧repite✧]∘⊰⋆*\n_Si deseas que yo repita algo envia un mensaje con el siguiente formato: *${prefix}repite + mensaje que quieres que repita*_\n\n_Ejemplo: *${prefix}repite Hola usuario como estas?*_\n*⋆⊱∘[✧cortana✧]∘⊰⋆*')
+            if (args.length == 0) return sendReply('*⋆⊱∘[✧repite✧]∘⊰⋆*\n_Si deseas que yo repita algo envia un mensaje con el siguiente formato: *${prefix}repite + mensaje que quieres que repita*_\n\n_Ejemplo: *${prefix}repite Hola usuario como estas?*_\n*⋆⊱∘[✧cortana✧]∘⊰⋆*')
             sendReply(q)
             break
         case 'traducir': //TRADUCIR MENSAJES ENVIADOS O ELIMINADOS
@@ -340,8 +353,8 @@ module.exports = async (msg ,client) => {
                         .catch(() => { return sendReply(error1) })
                     }
                 } else if (isText){
-                    if(args.length == 0) return await sendReply(alerta2)
-                    if(args.length == 1) return await sendReply(error1)
+                    if (args.length == 0) return await sendReply(alerta2)
+                    if (args.length == 1) return await sendReply(error1)
                     const texto = cmd.slice(12)
                     await translate(texto, args[0])
                     .then(async (res) =>{ sendReply(res) })
@@ -377,25 +390,25 @@ module.exports = async (msg ,client) => {
             break
         case 'temporales': //MENSAJES TEMPORALES 24 HORAS - 7 DIAS - 90 DIAS
             if (args.length == 0) return
-            if(q2 == 'on') client.sendMessage(from,{disappearingMessagesInChat:  WA_DEFAULT_EPHEMERAL})
-            if(q2 == 'off') client.sendMessage(from,{disappearingMessagesInChat:  null})
-            if(q2 == '1') client.sendMessage(from,{disappearingMessagesInChat:  24 * 60 * 60})
-            if(q2 == '7') client.sendMessage(from,{disappearingMessagesInChat:  7 * 24 * 60 * 60})
-            if(q2 == '90') client.sendMessage(from,{disappearingMessagesInChat:  90 * 24 * 60 * 60})
+            if (q2 == 'on') client.sendMessage(from,{disappearingMessagesInChat:  WA_DEFAULT_EPHEMERAL})
+            if (q2 == 'off') client.sendMessage(from,{disappearingMessagesInChat:  null})
+            if (q2 == '1') client.sendMessage(from,{disappearingMessagesInChat:  24 * 60 * 60})
+            if (q2 == '7') client.sendMessage(from,{disappearingMessagesInChat:  7 * 24 * 60 * 60})
+            if (q2 == '90') client.sendMessage(from,{disappearingMessagesInChat:  90 * 24 * 60 * 60})
             break
         case 'check': //VERIFICAR SI UN NUMERO EXISTE EN WHATSAPP
-            if(args.length == 0 ) return sendReply('por vavor ingresa el numero de telefono despues del comando')
-            inWA(msg,client,q).then((res) => {if(res == true){
+            if (args.length == 0 ) return sendReply('por vavor ingresa el numero de telefono despues del comando')
+            inWA(msg,client,q).then((res) => {if (res == true){
                 const regExp = q.replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
                 return sendReply(`¡Busqueda finalizada!\nEl numero ${regExp} si existe en whatsapp.\n\nclick en el siguiente enlace para ir a su chat directamente: https://wa.me/${regExp}`)
             }})
             break
         case 'info': //EXTRAER FOTO DE PERFIL Y ESTADO DE UNA PERSONA
-            if(args.length == 0 ) return sendReply('Si deseas obtener informacion de una cuenta de whatsapp como su foto de perfil y estado por favor envia un mensaje con el comando *!info + numero de whatsapp con codigo de pais*\n\nEjemplo: !info 573228125090')
-            inWA(msg,client,q).then(async (res) => { if(res == true){
+            if (args.length == 0 ) return sendReply('Si deseas obtener informacion de una cuenta de whatsapp como su foto de perfil y estado por favor envia un mensaje con el comando *!info + numero de whatsapp con codigo de pais*\n\nEjemplo: !info 573228125090')
+            inWA(msg,client,q).then(async (res) => { if (res == true){
                 const regExp = q.replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
                 const isB = await client.getBusinessProfile(`${regExp}@s.whatsapp.net`)
-                if(isB != undefined) {
+                if (isB != undefined) {
                     const { address, description, website, email, category, business_hours} = isB
                     log(business_hours)
                     try { var status = await client.fetchStatus(`${regExp}@s.whatsapp.net`)  } catch (e){ var status = {status: '', setAt: ''} }
@@ -415,28 +428,28 @@ module.exports = async (msg ,client) => {
             }})
             break
         case 'change':
-            if(args.length == 0) return sendReply('Si deseas realizar cambios en mi perfil o estado envia un mensaje con los siguientes comandos.\n\n1. !change profile + imagen (para cambiar mi foto de perfil)\n2. !change status + texto (para cambiar mi informacion de estado)\n3. !change name + nombre (para cambiar mi nombre)')
-            if(args[0].startsWith('status')) {
-                if(args.length == 1) return sendReply('mensaje vacio, por favor escribe un estado')
-                if(q.slice(7).length > 256) return sendReply('Lo siento, el texto ingresado supera los 256 caracteres permitidos por la aplicacion, por favor intenta de nuevo con un estado mas corto.')
+            if (args.length == 0) return sendReply('Si deseas realizar cambios en mi perfil o estado envia un mensaje con los siguientes comandos.\n\n1. !change profile + imagen (para cambiar mi foto de perfil)\n2. !change status + texto (para cambiar mi informacion de estado)\n3. !change name + nombre (para cambiar mi nombre)')
+            if (args[0].startsWith('status')) {
+                if (args.length == 1) return sendReply('mensaje vacio, por favor escribe un estado')
+                if (q.slice(7).length > 256) return sendReply('Lo siento, el texto ingresado supera los 256 caracteres permitidos por la aplicacion, por favor intenta de nuevo con un estado mas corto.')
                 client.updateProfileStatus(q.slice(7)).then(()=>{sendReply('¡GENIAL! He cambiado mi estado correctamente.')})
             }
-            if(args[0].startsWith('name')){
+            if (args[0].startsWith('name')){
                 log(AnyWASocket)
-                /*if(args.length == 1) return sendReply('mensaje vacio, por favor escribe un nombre')
-                if(q.slice(7).length > 15) return sendReply('a')
+                /*if (args.length == 1) return sendReply('mensaje vacio, por favor escribe un nombre')
+                if (q.slice(7).length > 15) return sendReply('a')
                 client.updateProfileName(q.slice(7))*/
                 sendReply('[INFORMACIÒN]\n\n_Lamentamos informarle que la funcion de cambio de nombre no esta disponible por el momento, estaremos trabajando para brindarte una solucion lo mas pronto posible._')
             }
             if (args[0].startsWith('profile')){
-                //if(!isImage || !isQuotedImage) return sendReply('¡ERROR! por favor envia o etiqueta una imagen con el comando !change profile')
-                if(isImage){
+                //if (!isImage || !isQuotedImage) return sendReply('¡ERROR! por favor envia o etiqueta una imagen con el comando !change profile')
+                if (isImage){
                     const buffer = await downloadMediaMessage(msg, 'buffer', {})
                     await writeFile('./media/profile.jpg', buffer)
                     await client.updateProfilePicture(numeroBotId, {url: './media/profile.jpg'}).then(()=>{sendReply('¡Genial! he actualizado mi foto de perfil correctamente')}).catch(()=>{sendReply('¡Ups! ha ocurrido un error por favor intentalo de nuevo')})
                     //fs.unlinkSync('./media/profile.jpg')
                 }
-                if(isQuotedImage){
+                if (isQuotedImage){
                     const profile = msg.message.extendedTextMessage.contextInfo.quotedMessage.imageMessage
                     stream = await downloadContentFromMessage(profile, "image");
                     let buffer = Buffer.from([]);
@@ -453,33 +466,33 @@ module.exports = async (msg ,client) => {
             client.sendMessage(from, {text: q}, {ephemeralExpiration : WA_DEFAULT_EPHEMERAL})
             break
         case 'block':
-            if(!isGroup) return client.updateBlockStatus(from, 'block')
-            if(isGroup){
-                if(isQuoted) {
+            if (!isGroup) return client.updateBlockStatus(from, 'block')
+            if (isGroup){
+                if (isQuoted) {
                     const jid  = msg.message.extendedTextMessage.contextInfo.participant
-                    if(jid == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    if (jid == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
                     client.updateBlockStatus(jid, 'block')
                 } else {
-                    if(args.length == 0 ) return sendReply('')
-                    inWA(msg,client,q).then(async (res) => {if(res != true)return})
+                    if (args.length == 0 ) return sendReply('')
+                    inWA(msg,client,q).then(async (res) => {if (res != true)return})
                     const numero = q+'@s.whatsapp.net'
-                    if(numero == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    if (numero == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
                     client.updateBlockStatus(numero, 'block')
                 }
             }
             break
         case 'unblock':
-            if(!isGroup) return client.updateBlockStatus(from, 'block')
-            if(isGroup){
-                if(isQuoted) {
+            if (!isGroup) return client.updateBlockStatus(from, 'block')
+            if (isGroup){
+                if (isQuoted) {
                     const jid  = msg.message.extendedTextMessage.contextInfo.participant
-                    if(jid == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    if (jid == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
                     client.updateBlockStatus(jid, 'unblock')
                 } else {
-                    if(args.length == 0 ) return sendReply('por vavor ingresa el numero de telefono despues del comando')
-                    inWA(msg,client,q).then(async (res) => {if(res != true)return})
+                    if (args.length == 0 ) return sendReply('por vavor ingresa el numero de telefono despues del comando')
+                    inWA(msg,client,q).then(async (res) => {if (res != true)return})
                     const numero = q+'@s.whatsapp.net'
-                    if(numero == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    if (numero == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
                     client.updateBlockStatus(numero, 'unblock')
                 }
             }
@@ -501,7 +514,7 @@ module.exports = async (msg ,client) => {
             sendTemplateButtonImage('./media/text.jpg', '¡Hola! Esto es una prueba de envio de plantilla de botones con imagen', tbi)
             break
         case'infolink':case'entrar':case'infogrupo':case'anular':case'enlace':case'crear':case'añadir':case'eliminar':case'promover':case'degradar':case'nombre':case'descripcion':case'perfil':case'mutear':case'desmutear':case'lockdesc':case'unlockdesc':case'salir':
-            if(!isGroup) return sendReply('esta opcion solo esta disponible dentro de grupos')
+            if (!isGroup) return sendReply('esta opcion solo esta disponible dentro de grupos')
             groupSettings(msg, client, q, args, command)
             break
         case 'gpperfil':
@@ -526,8 +539,8 @@ module.exports = async (msg ,client) => {
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const antienlacesCheck = isAntienlaces ? 'funcion antienlaces *ACTIVADA* \n\n!antienlaces off para desactivar' : 'funcion antienlaces *DESACTIVADA* \n\n!antienlaces on para activar'
-            if (args.length == 0){ if(isAntienlaces) return sendReply(antienlacesCheck) ; if(!isAntienlaces) return sendReply(antienlacesCheck)}
-            if(args[0] == 'on' || args[0] == '1') {
+            if (args.length == 0){ if (isAntienlaces) return sendReply(antienlacesCheck) ; if (!isAntienlaces) return sendReply(antienlacesCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
                 antienlaces.push(from)
                 writeFileSync('./JSONS/antienlaces.json', stringify(antienlaces))
                 sendReply('[ACTIVANDO ANTIENLACES]')
@@ -544,8 +557,8 @@ module.exports = async (msg ,client) => {
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const simiCheck = isSimi ? 'funcion simi *ACTIVADA* \n\n!simi off para desactivar' : 'funcion simi *DESACTIVADA* \n\n!simi on para activar'
-            if (args.length == 0){ if(isSimi) return sendReply(simiCheck) ; if(!isSimi) return sendReply(simiCheck)}
-            if(args[0] == 'on' || args[0] == '1') {
+            if (args.length == 0){ if (isSimi) return sendReply(simiCheck) ; if (!isSimi) return sendReply(simiCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
                 simi.push(from)
                 writeFileSync('./JSONS/simi.json', stringify(simi))
                 sendReply('[ACTIVANDO SIMI]')
@@ -562,8 +575,8 @@ module.exports = async (msg ,client) => {
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const bienvenidaCheck = isBienvenida ? 'funcion bienvenida *ACTIVADA* \n\n!bienvenida off para desactivar' : 'funcion bienvenida *DESACTIVADA* \n\n!bienvenida on para activar'
-            if (args.length == 0){ if(isBienvenida) return sendReply(bienvenidaCheck) ; if(!isBienvenida) return sendReply(bienvenidaCheck)}
-            if(args[0] == 'on' || args[0] == '1') {
+            if (args.length == 0){ if (isBienvenida) return sendReply(bienvenidaCheck) ; if (!isBienvenida) return sendReply(bienvenidaCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
                 bienvenida.push(from)
                 writeFileSync('./JSONS/bienvenida.json', stringify(bienvenida))
                 sendReply('[ACTIVANDO BIENVENIDA]')
@@ -580,8 +593,8 @@ module.exports = async (msg ,client) => {
         if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
         if (!isBotAdmin) return sendReply(alertas.adminbot)
         const despedidaCheck = isDespedida ? 'funcion despedida *ACTIVADA* \n\n!despedida off para desactivar' : 'funcion despedida *DESACTIVADA* \n\n!despedida on para activar'
-        if (args.length == 0){ if(isDespedida) return sendReply(despedidaCheck) ; if(!isDespedida) return sendReply(despedidaCheck)}
-        if(args[0] == 'on' || args[0] == '1') {
+        if (args.length == 0){ if (isDespedida) return sendReply(despedidaCheck) ; if (!isDespedida) return sendReply(despedidaCheck)}
+        if (args[0] == 'on' || args[0] == '1') {
             despedida.push(from)
             writeFileSync('./JSONS/despedida.json', stringify(despedida))
             sendReply('[ACTIVANDO DESPEDIDA]')
@@ -598,8 +611,8 @@ module.exports = async (msg ,client) => {
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const cortanaCheck = isCortana ? 'funcion cortana *ACTIVADA* \n\n!cortana off para desactivar' : 'funcion cortana *DESACTIVADA* \n\n!cortana on para activar'
-            if (args.length == 0){ if(isCortana) return sendReply(cortanaCheck) ; if(!isCortana) return sendReply(cortanaCheck)}
-            if(args[0] == 'on' || args[0] == '1') {
+            if (args.length == 0){ if (isCortana) return sendReply(cortanaCheck) ; if (!isCortana) return sendReply(cortanaCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
                 cortana.push(from)
                 writeFileSync('./JSONS/cortana.json', stringify(cortana))
                 sendReply('[ACTIVANDO CORTANA]')
@@ -616,8 +629,8 @@ module.exports = async (msg ,client) => {
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const nsfwCheck = isNsfw ? 'funcion nsfw *ACTIVADA* \n\n!nsfw off para desactivar' : 'funcion nsfw *DESACTIVADA* \n\n!nsfw on para activar'
-            if (args.length == 0){ if(isNsfw) return sendReply(nsfwCheck) ; if(!isNsfw) return sendReply(nsfwCheck)}
-            if(args[0] == 'on' || args[0] == '1') {
+            if (args.length == 0){ if (isNsfw) return sendReply(nsfwCheck) ; if (!isNsfw) return sendReply(nsfwCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
                 nsfw.push(from)
                 writeFileSync('./JSONS/nsfw.json', stringify(nsfw))
                 sendReply('[ACTIVANDO NSFW]')
@@ -629,13 +642,13 @@ module.exports = async (msg ,client) => {
                 sendReply('[DESACTIVANDO NSFW]')
             }
         break
-        case 'promovidos': case 'promote': 
+        case 'promovidos': case 'promoted': 
             if (!isGroup) return sendReply(alertas.groups)
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const promoteCheck = isPromote ? 'funcion promote *ACTIVADA* \n\n!promote off para desactivar' : 'funcion promote *DESACTIVADA* \n\n!promote on para activar'
-            if (args.length == 0){ if(isPromote) return sendReply(promoteCheck) ; if(!isPromote) return sendReply(promoteCheck)}
-            if(args[0] == 'on' || args[0] == '1') {
+            if (args.length == 0){ if (isPromote) return sendReply(promoteCheck) ; if (!isPromote) return sendReply(promoteCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
                 promote.push(from)
                 writeFileSync('./JSONS/promote.json', stringify(promote))
                 sendReply('[ACTIVANDO PROMOTE]')
@@ -647,13 +660,13 @@ module.exports = async (msg ,client) => {
                 sendReply('[DESACTIVANDO PROMOTE]')
             }
         break
-        case 'degradados': case 'demote': 
+        case 'degradados': case 'demoted': 
             if (!isGroup) return sendReply(alertas.groups)
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const demoteCheck = isDemote ? 'funcion demote *ACTIVADA* \n\n!demote off para desactivar' : 'funcion demote *DESACTIVADA* \n\n!demote on para activar'
-            if (args.length == 0){ if(isDemote) return sendReply(demoteCheck) ; if(!isDemote) return sendReply(demoteCheck)}
-            if(args[0] == 'on' || args[0] == '1') {
+            if (args.length == 0){ if (isDemote) return sendReply(demoteCheck) ; if (!isDemote) return sendReply(demoteCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
                 demote.push(from)
                 writeFileSync('./JSONS/demote.json', stringify(demote))
                 sendReply('[ACTIVANDO DEMOTE]')
@@ -670,8 +683,8 @@ module.exports = async (msg ,client) => {
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const antiarabesCheck = isAntiarabes ? 'funcion antiarabes *ACTIVADA* \n\n!antiarabes off para desactivar' : 'funcion antiarabes *DESACTIVADA* \n\n!antiarabes on para activar'
-            if (args.length == 0){ if(isAntiarabes) return sendReply(antiarabesCheck) ; if(!isAntiarabes) return sendReply(antiarabesCheck)}
-            if(args[0] == 'on' || args[0] == '1') {
+            if (args.length == 0){ if (isAntiarabes) return sendReply(antiarabesCheck) ; if (!isAntiarabes) return sendReply(antiarabesCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
                 antiarabes.push(from)
                 writeFileSync('./JSONS/antiarabes.json', stringify(antiarabes))
                 sendReply('[ACTIVANDO ANTIARABES]')
@@ -688,8 +701,8 @@ module.exports = async (msg ,client) => {
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const antifakesCheck = isAntifakes ? 'funcion antifakes *ACTIVADA* \n\n!antifakes off para desactivar' : 'funcion antifakes *DESACTIVADA* \n\n!antifakes on para activar'
-            if (args.length == 0){ if(isAntifakes) return sendReply(antifakesCheck) ; if(!isAntifakes) return sendReply(antifakesCheck)}
-            if(args[0] == 'on' || args[0] == '1') {
+            if (args.length == 0){ if (isAntifakes) return sendReply(antifakesCheck) ; if (!isAntifakes) return sendReply(antifakesCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
                 antifakes.push(from)
                 writeFileSync('./JSONS/antifakes.json', stringify(antifakes))
                 sendReply('[ACTIVANDO ANTIFAKES]')
@@ -706,8 +719,8 @@ module.exports = async (msg ,client) => {
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const autostickersCheck = isAutostickers ? 'funcion autostickers *ACTIVADA* \n\n!autostickers off para desactivar' : 'funcion autostickers *DESACTIVADA* \n\n!autostickers on para activar'
-            if (args.length == 0){ if(isAutostickers) return sendReply(autostickersCheck) ; if(!isAutostickers) return sendReply(autostickersCheck)}
-            if(args[0] == 'on' || args[0] == '1') {
+            if (args.length == 0){ if (isAutostickers) return sendReply(autostickersCheck) ; if (!isAutostickers) return sendReply(autostickersCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
                 autostickers.push(from)
                 writeFileSync('./JSONS/autostickers.json', stringify(autostickers))
                 sendReply('[ACTIVANDO AUTOSTICKERS]')
@@ -724,8 +737,8 @@ module.exports = async (msg ,client) => {
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const levelingCheck = isLeveling ? 'funcion leveling *ACTIVADA* \n\n!leveling off para desactivar' : 'funcion leveling *DESACTIVADA* \n\n!leveling on para activar'
-            if (args.length == 0){ if(isLeveling) return sendReply(levelingCheck) ; if(!isLeveling) return sendReply(levelingCheck)}
-            if(args[0] == 'on' || args[0] == '1') {
+            if (args.length == 0){ if (isLeveling) return sendReply(levelingCheck) ; if (!isLeveling) return sendReply(levelingCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
                 leveling.push(from)
                 writeFileSync('./JSONS/leveling.json', stringify(leveling))
                 sendReply('[ACTIVANDO LEVELING]')
@@ -742,8 +755,8 @@ module.exports = async (msg ,client) => {
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const pornoCheck = isPorno ? 'funcion porno *ACTIVADA* \n\n!porno off para desactivar' : 'funcion porno *DESACTIVADA* \n\n!porno on para activar'
-            if (args.length == 0){ if(isPorno) return sendReply(pornoCheck) ; if(!isPorno) return sendReply(pornoCheck)}
-            if(args[0] == 'on' || args[0] == '1') {
+            if (args.length == 0){ if (isPorno) return sendReply(pornoCheck) ; if (!isPorno) return sendReply(pornoCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
                 porno.push(from)
                 writeFileSync('./JSONS/porno.json', stringify(porno))
                 sendReply('[ACTIVANDO PORNO]')
@@ -757,5 +770,129 @@ module.exports = async (msg ,client) => {
         break
         default:
     }
-    
+
+    /*---------AJUSTES DE GRUPOS----------*/
+    switch(command){
+        case 'abrir': case 'open': case 'desmutear':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            await client.groupSettingUpdate(from, 'not_announcement')
+            break
+        case 'cerrar': case 'close': case 'mutear':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            await client.groupSettingUpdate(from, 'announcement')
+            break
+        case 'promover': case 'promote':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (isTag){
+                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
+                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
+                if (etiqueta == numeroBotId) return sendReply(toast.prombot(pushname))
+                if (groupAdmins.includes(etiqueta)) return sendReply(toast.promadmin(pushname))
+                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido promovido al rango *Administrador*`
+                return client.groupParticipantsUpdate(from,[etiqueta], 'promote').then(()=>{sendReplyWithMentions(text, [etiqueta])})
+            } 
+            if (isMentionedTag){
+                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
+                if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
+                if (mentionedTag == numeroBotId) return sendReply(toast.prombot(pushname))
+                if (groupAdmins.includes(isMentionedTag)) return sendReply(toast.promadmin(pushname))
+                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido promovido al rango *Administrador*`
+                return client.groupParticipantsUpdate(from,[mentionedTag], 'promote').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
+            }
+            if (args.length == 0) return sendReplyWithMentions(toast.noprom(prefix, informacion), ['573228125090@s.whatsapp.net'])
+            if (!groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
+            if (regExp == numeroBot) return sendReply(toast.prombot(pushname))
+            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.promadmin(pushname))
+            const text = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido promovido al rango *Administrador*`
+            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'promote'); sendReplyWithMentions(text, [`${regExp}@s.whatsapp.net`])}})
+            break
+        case 'degradar': case 'demote':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (isTag){
+                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
+                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
+                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
+                if (etiqueta == numeroBotId) return sendReply(toast.dembot(pushname))
+                if (!groupAdmins.includes(etiqueta)) return sendReply(toast.demadmin(pushname))
+                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido degradado rango *Administrador*`
+                return client.groupParticipantsUpdate(from,[etiqueta], 'demote').then(()=>{sendReplyWithMentions(text, [etiqueta])})
+            } 
+            if (isMentionedTag){
+                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
+                if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
+                if (mentionedTag == numeroBotId) return sendReply(toast.dembot(pushname))
+                if (!groupAdmins.includes(isMentionedTag)) return sendReply(toast.demadmin(pushname))
+                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido degradado del rango *Administrador*`
+                return client.groupParticipantsUpdate(from,[mentionedTag], 'demote').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
+            }
+            if (args.length == 0) return sendReplyWithMentions(toast.nodem(prefix, informacion), ['573228125090@s.whatsapp.net'])
+            if (!groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
+            if (regExp == numeroBot) return sendReply(toast.dembot(pushname))
+            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.demadmin(pushname))
+            const demtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido degradado del rango *Administrador*`
+            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'demote'); sendReplyWithMentions(demtext, [`${regExp}@s.whatsapp.net`])}})
+            break
+        case 'eliminar': case 'remove': case 'kick':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (isTag){
+                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
+                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
+                if (etiqueta == numeroBotId) return sendReply(toast.rembot(pushname))
+                if (groupAdmins.includes(etiqueta)) return sendReply(toast.remadmin(pushname))
+                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido eliminado grupo`
+                return client.groupParticipantsUpdate(from,[etiqueta], 'remove').then(()=>{sendReplyWithMentions(text, [etiqueta])})
+            } 
+            if (isMentionedTag){
+                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
+                if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
+                if (mentionedTag == numeroBotId) return sendReply(toast.rembot(pushname))
+                if (groupAdmins.includes(isMentionedTag)) return sendReply(toast.remadmin(pushname))
+                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido eliminado del grupo`
+                return client.groupParticipantsUpdate(from,[mentionedTag], 'remove').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
+            }
+            if (args.length == 0) return sendReplyWithMentions(toast.norem(prefix, informacion), ['573228125090@s.whatsapp.net'])
+            if (!groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
+            if (regExp == numeroBot) return sendReply(toast.rembot(pushname))
+            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.remadmin(pushname))
+            const remtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido eliminado del grupo`
+            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'remove'); sendReplyWithMentions(remtext, [`${regExp}@s.whatsapp.net`])}})
+            break
+        case 'añadir': case 'add':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (isTag){
+                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
+                if (groupParticipants.includes(etiqueta)) return sendReply(toast.onGroup(pushname))
+                if (etiqueta == numeroBotId) return sendReply(toast.addbot(pushname))
+                if (groupAdmins.includes(etiqueta)) return sendReply(toast.addadmin(pushname))
+                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido añadido al grupo`
+                return client.groupParticipantsUpdate(from,[etiqueta], 'add').then(()=>{sendReplyWithMentions(text, [etiqueta])})
+            } 
+            if (isMentionedTag){
+                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
+                if (groupParticipants.includes(mentionedTag)) return sendReply(toast.onGroup(pushname))
+                if (mentionedTag == numeroBotId) return sendReply(toast.addbot(pushname))
+                if (groupAdmins.includes(isMentionedTag)) return sendReply(toast.addadmin(pushname))
+                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido añadido al grupo`
+                return client.groupParticipantsUpdate(from,[mentionedTag], 'add').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
+            }
+            if (args.length == 0) return sendReplyWithMentions(toast.noadd(prefix, informacion), ['573228125090@s.whatsapp.net'])
+            if (groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
+            if (regExp == numeroBot) return sendReply(toast.addbot(pushname))
+            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.addadmin(pushname))
+            const addtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido añadido al grupo`
+            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'add'); sendReplyWithMentions(addtext, [`${regExp}@s.whatsapp.net`])}})
+            break
+    }    
 }
