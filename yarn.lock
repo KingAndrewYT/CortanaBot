@@ -771,6 +771,14 @@ ajv@^6.12.3:
     json-schema-traverse "^0.4.1"
     uri-js "^4.2.2"
 
+aki-api@^6.0.8:
+  version "6.0.8"
+  resolved "https://registry.yarnpkg.com/aki-api/-/aki-api-6.0.8.tgz#2e2091ea1ffdc0773ec4585f0441d00c95b16b2e"
+  integrity sha512-fOMHSPfcyT2WFrf2wsQf5GNpwCSJzWA7+YO3DU8j8wOS16I10lmpIxXkdx3rCiWfmhD6kXVdUaEGJ4DKkiPbMA==
+  dependencies:
+    axios "^0.21.1"
+    https-proxy-agent "^5.0.0"
+
 amp-message@~0.1.1:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/amp-message/-/amp-message-0.1.2.tgz#a78f1c98995087ad36192a41298e4db49e3dfc45"
