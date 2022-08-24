@@ -1,8 +1,10 @@
+"use strict"
 /*----------MODULOS----------*/
 const {assertMediaContent, downloadMediaMessage, WA_DEFAULT_EPHEMERAL, downloadContentFromMessage, getContentType } = require ('@adiwajshing/baileys')
 const { writeFile } =  require ('fs/promises')
 const moment = require ('moment-timezone')
 const gtts = require ('node-gtts')
+const ffmpeg = require ('fluent-ffmpeg')
 const axios = require ('axios')
 moment.tz.setDefault('America/Bogota').locale('es')
 const fs = require('fs')
@@ -60,13 +62,10 @@ const cortana = parse(readFileSync('./JSONS/cortana.json'))
 const autostickers = parse(readFileSync('./JSONS/autostickers.json'))
 const { apiNoBg, apiSimi, imgbb } = parse(readFileSync('./datos/apis.json'))
 
-/*----AKINATOR FUNCTION-----------*/ 
-
-    const region = 'es'
-    const aki = new Aki({region})
-    const playaki = async () => {
-        await aki.start()
-    }; playaki().catch(e => {sendReply(e)})
+/*--------AKINATOR------------*/
+let haIniciado = false
+let aki = false
+let usuarioJugando = false
 
 module.exports = async (msg ,client) => {
     if (!msg.message) return
@@ -87,10 +86,10 @@ module.exports = async (msg ,client) => {
     const sendLocation = async (latitud, longitud) => {await client.sendMessage(from, {location: {degreesLatitude: latitud, degreesLongitude: longitud}})}
     const sendVcard = async (texto, vcard) =>{client.sendMessage(from, {contacts:{displayName: texto, contacts: [{vcard}]}})}
     const sendButtonText = async (texto, botones = []) => {client.sendMessage(from, {text: texto, footer: copyright, buttons: botones, headerType: 1})}
-    const sendButtonImage = async (imagen, texto, botones = []) => { await client.sendMessage(from, {image: {url: imagen}, caption: texto, footer: copyright, buttons: botones, headerType: 4})}
+    const sendButtonImage = async (imagen, texto, botones) => { await client.sendMessage(from, {image: {url: imagen}, caption: texto, footer: copyright, buttons: botones, headerType: 4})}
     const sendTemplateButtonText = async (texto, botones) => { await client.sendMessage(from, { text: texto, footer: copyright, templateButtons: botones}) }
     const sendTemplateButtonImage = async (imagen, texto, botones) => { await client.sendMessage(from, { text: texto, footer: copyright, templateButtons: botones, image: {url: imagen}}) }
-    const sendListText = async (title,text, btext, sections) => { client.sendMessage(from, {text: text, footer: copyright, title: title, buttonText: btext, sections })}
+    const sendListText = async (text, btext, sections) => { client.sendMessage(from, {text: text, footer: copyright, title: '', buttonText: btext, sections })}
     const sendReaction = async (texto, para) => {client.sendMessage(para, { react: { text: texto, key: msg.key } })}
     const sendGif = async (ubicacion, texto) => {client.sendMessage(from, {video: {url: ubicacion}, caption: texto, gifPlayback: true})}
     const sendGifReply = async (ubicacion, texto) => {client.sendMessage(from, {video: {url: ubicacion}, caption: texto, gifPlayback: true},{quoted: msg})}
@@ -123,7 +122,7 @@ module.exports = async (msg ,client) => {
     const isReaction = messageType === 'reactionMessage'
     const isQuoted = messageType === 'extendedTextMessage'
     const isButtonResp = messageType === 'buttonsResponseMessage'
-    const isListResp = messageType2 === 'listResponseMessage'
+    const isListResp = messageType === 'listResponseMessage'
     const isInviteLink = messageType === 'groupInviteMessage'
 
  /*----------TIPOS DE MENSAJES RESPONDIDOS----------*/
@@ -146,7 +145,7 @@ module.exports = async (msg ,client) => {
     const isQuotedInviteLink = quotedMessageType === 'groupInviteMessage'
 
 /*----------OBTENCION DE MENSAJES----------*/
-    const body = isText && msg.message[messageType] ? msg.message[messageType] : isImage && msg.message[messageType].caption ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption ? msg.message[messageType].caption : isQuoted && msg.message[messageType].text ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : isReaction && msg.message[messageType].text ? msg.message[messageType].text : ''
+    //const body = isText && msg.message[messageType] ? msg.message[messageType] : isImage && msg.message[messageType].caption ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption ? msg.message[messageType].caption : isQuoted && msg.message[messageType].text ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : isReaction && msg.message[messageType].text ? msg.message[messageType].text : ''
     const cmd = isText && msg.message[messageType].startsWith(prefix) ? msg.message[messageType] : isImage && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption :  isQuoted && msg.message[messageType].text.startsWith(prefix) ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId.startsWith(prefix) ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId.startsWith(prefix) ? msg.message.listResponseMessage.singleSelectReply.selectedRowId: isReaction && msg.message[messageType].text ? msg.message[messageType].text : '' 
     const chats = isText && msg.message[messageType] ? msg.message[messageType]: isQuoted && msg.message[messageType].text ? msg.message[messageType].text : ''
     const selectedButton = isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : ''
@@ -261,7 +260,6 @@ module.exports = async (msg ,client) => {
 
     const akil0 = [{ rows: [{ title: `Si`, rowId: `${prefix}aki 0` },{ title: `No`, rowId: `${prefix}aki 1` }, { title: `No lo se`, rowId: `${prefix}aki 2` }, { title: `Probablemente`, rowId: `${prefix}aki 3` },{ title: `Probablemente no`, rowId: `${prefix}aki 4` }] }]
     const akil1 = [{ rows: [{ title: `Si`, rowId: `${prefix}aki 0` },{ title: `No`, rowId: `${prefix}aki 1` }, { title: `No lo se`, rowId: `${prefix}aki 2` }, { title: `Probablemente`, rowId: `${prefix}aki 3` },{ title: `Probablemente no`, rowId: `${prefix}aki 4` },{ title: `<= Anterior`, rowId: `${prefix}aki atras` }] }]
-    const akil2 = [{ rows: [{ title: `Si`, rowId: `${prefix}aki si` },{ title: `No`, rowId: `${prefix}aki 1` },{ title: `<= Anterior`, rowId: `${prefix}aki atras` }] }]
     
     /*if (isReaction){
         const emojiReaction = msg.message.reactionMessage.text
@@ -343,7 +341,7 @@ module.exports = async (msg ,client) => {
 /*----------LOGS----------*/    
     if (isCmd && !isGroup) { log(color('[CMD]', 'magenta'),  color(`${command}[${args.length}]`),  'de', color(pushname), 'a las: ' ,color(moment().tz('America/Bogota').format('h:mm a'), 'yellow') ) }
     if (isCmd && isGroup) { log(color('[CMD]', 'magenta'),  color(`${command}[${args.length}]`),  'de', color(pushname),  'en',  color (groupName),  'a las: ',color(moment().tz('America/Bogota').format('h:mm a'), 'yellow') ) }
-    if (!isOwner && command) return sendReply('{\n    modo desarrollador activado\n}')
+    //if (!isOwner && command) return sendReply('{\n    modo desarrollador activado\n}')
 
     client.chatModify({markRead: true, lastMessages: [msg]}, from)
     switch(command){
@@ -1177,40 +1175,140 @@ module.exports = async (msg ,client) => {
     }
 /*---------JUEGOS----------*/
     switch(command){
-        case 'aki':
+        case 'akinator': case 'aki':
+            if (sender !== usuarioJugando && haIniciado == true) return sendReply(toast.noPlayer())
             if (q.toLowerCase() == 'start'){
-                await playaki()
-                const title = `👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀𝐌𝐄𝐒 - 𝐀𝐊𝐈𝐍𝐀𝐓𝐎𝐑]🧞‍♂️`
-                const text = `Pregunta: ${aki.question}.`
+                if(haIniciado == true) return sendReply(toast.akiEnd())
+                const region = 'es'
+                aki = new Aki({region})
+                await aki.start()
+                usuarioJugando = sender
+                haIniciado = true
+                const text = toast.akiStart(aki)
                 const btext = 'Elige una opcion ✨'
-                sendListText(title, text, btext, akil0)
+                return sendListText(text, btext, akil0)
             } else if (q == '0' || q == '1' || q == '2' || q == '3' || q == '4'){
+                if(haIniciado == false){return sendReply(toast.akiStoped())}
                 const myAnswer = q
                 await aki.step(myAnswer)
                 if(aki.progress >= 70 || aki.currentStep >= 78){
                     await aki.win()
                     var akiwon = aki.answers[0]
-                    const title = `👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀𝐌𝐄𝐒 - 𝐀𝐊𝐈𝐍𝐀𝐓𝐎𝐑]🧞‍♂️`
-                    const text = `Pienso en...\n *${akiwon.name}*\n*${akiwon.description}*`
-                    const btext = 'Elige una opcion ✨'
-                    sendListText(title, text, btext, akil2)
+                    const text = toast.akiWon(akiwon)
+                    const image = akiwon.absolute_picture_path
+                    const buttons = [{buttonId: `${prefix}aki si`, buttonText: {displayText: 'SI'}, type: 1},{buttonId: `${prefix}aki 1`, buttonText: {displayText: 'NO'}, type: 1}]
+                    return sendButtonImage(image, text, buttons)
                 } else {
-                    const title = `👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀𝐌𝐄𝐒 - 𝐀𝐊𝐈𝐍𝐀𝐓𝐎𝐑]🧞‍♂️`
-                    const text = `Elige tu proxima respuesta:\n\nPregunta: ${aki.question}.`
+                    const text = toast.akiStep(aki)
                     const btext = 'Elige una opcion ✨'
-                    sendListText(title, text, btext, akil1)
+                    return sendListText( text, btext, akil1)
                 }
             } else if (q.toLowerCase() == 'atras'){
                 await aki.back()
-                const title = `👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀𝐌𝐄𝐒 - 𝐀𝐊𝐈𝐍𝐀𝐓𝐎𝐑]🧞‍♂️`
-                const text = `Elige tu proxima respuesta:\n\nPregunta: ${aki.question}.`
+                const text = toast.akiStep(aki)
                 const btext = 'Elige una opcion ✨'
-                sendListText(title, text, btext, akil1)
+                return sendListText( text, btext, akil1)
             }
             if (q.toLowerCase() == 'si'){
-                const text = `Genial acierto de nuevo`
+                const text = toast.akiWin()
+                const buttons = [{  buttonId:`${prefix}akinator start`, buttonText:{ displayText:'[ JUGAR DE NUEVO ]' }, type:3  }, { buttonId:`${prefix}akinator terminar`, buttonText:{ displayText:'[ TERMINAR ]' }, type:3  }]
                 const image = `https://es.akinator.com/bundles/elokencesite/images/akitudes_670x1096/triomphe.png?v94`
-                sendImageReply(image,text)
+                return sendButtonImage(image, text, buttons)
+            }
+            if (q.toLowerCase() == 'terminar'){
+                haIniciado = false
+                usuarioJugando = false
+                const text = toast.akiFinish()
+                const image = `https://es.akinator.com/bundles/elokencesite/images/logo_akinator.png?v94`
+                const buttons = [{  buttonId:`${prefix}aki start`, buttonText:{ displayText:'[JUEGO NUEVO]' }, type:1  }]    
+                return sendButtonImage(image, text, buttons)
+            }
+            const text = toast.akiPlay(pushname)
+            const image = `https://es.akinator.com/bundles/elokencesite/images/akinator.png?v94`
+            const buttons = [{  buttonId:`${prefix}akinator start`, buttonText:{ displayText:'[ JUGAR ]' }, type:1  }]
+            return sendButtonImage(image, text, buttons)        
+    }
+
+/*--------STICKERS Y MAS-------- */
+    switch(command){
+        case 'sticker':
+            if(isQuotedImage){
+                let media = './media/temp/sticker.png'
+                const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
+                var ran = `${Math.floor(Math.random() * 10000)}${'.webp'}`
+                ffmpeg(media)
+                .input(media)
+                .addOutputOptions([`-vcodec`,`libwebp`,`-vf`,`scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`])
+                    .toFormat('webp')
+                    .save(ran)
+                .on('error', () => {
+                    unlinkSync(media)
+                    unlinkSync(ran)
+                })
+                .on('end', async () =>{
+                    await client.sendMessage(from, {sticker: readFileSync(ran)},{quoted:msg})
+                    unlinkSync(media)
+                    unlinkSync(ran)
+                })
+            } 
+            if (isImage){
+                let media = './media/temp/sticker.png'
+                await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)})
+                var ran = `${Math.floor(Math.random() * 10000)}${'.webp'}`
+                ffmpeg(media)
+                .input(media)
+                .addOutputOptions([`-vcodec`,`libwebp`,`-vf`,`scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`])
+                    .toFormat('webp')
+                    .save(ran)
+                .on('error', () => {
+                    unlinkSync(media)
+                    unlinkSync(ran)
+                })
+                .on('end', async () =>{
+                    await client.sendMessage(from, {sticker: readFileSync(ran)},{quoted:msg})
+                    unlinkSync(media)
+                    unlinkSync(ran)
+                })
+            }
+            if (isQuotedVideo ){
+                const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+                let media = './media/temp/sticker.mp4'
+                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
+                var ran = `${Math.floor(Math.random() * 10000)}${'.webp'}`
+                ffmpeg(media)
+                .input(media)
+                .addOutputOptions([`-vcodec`,`libwebp`,`-vf`,`scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`])
+                    .toFormat('webp')
+                    .save(ran)
+                .on('error', () => {
+                    unlinkSync(media)
+                    unlinkSync(ran)
+                })
+                .on('end', async () =>{
+                    await client.sendMessage(from, {sticker: readFileSync(ran)},{quoted:msg})
+                    unlinkSync(media)
+                    unlinkSync(ran)
+                })
+            }
+            if (isVideo){
+                let media = './media/temp/sticker.mp4'
+                await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)})
+                var ran = `${Math.floor(Math.random() * 10000)}${'.webp'}`
+                ffmpeg(media)
+                .input(media)
+                .addOutputOptions([`-vcodec`,`libwebp`,`-vf`,`scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`])
+                    .toFormat('webp')
+                    .save(ran)
+                .on('error', () => {
+                    unlinkSync(media)
+                    unlinkSync(ran)
+                })
+                .on('end', async () =>{
+                    await client.sendMessage(from, {sticker: readFileSync(ran)},{quoted:msg})
+                    unlinkSync(media)
+                    unlinkSync(ran)
+                })
             }
             break
     }

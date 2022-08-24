@@ -17,6 +17,7 @@
     "child_process": "^1.0.2",
     "exec-sh": "^0.4.0",
     "figlet": "^1.5.2",
+    "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^10.1.0",
     "jimp": "^0.16.1",
     "link-preview-js": "^3.0.3",
