@@ -2,10 +2,12 @@
 /*----------MODULOS----------*/
 const {assertMediaContent, downloadMediaMessage, WA_DEFAULT_EPHEMERAL, downloadContentFromMessage, getContentType } = require ('@adiwajshing/baileys')
 const { writeFile } =  require ('fs/promises')
+const {generate} = require ('flaming-text-generator')
 const moment = require ('moment-timezone')
 const gtts = require ('node-gtts')
 const ffmpeg = require ('fluent-ffmpeg')
 const axios = require ('axios')
+const fetch = require ('node-fetch')
 moment.tz.setDefault('America/Bogota').locale('es')
 const fs = require('fs')
 const translate = require ('./funciones/traductor.js')
@@ -18,7 +20,7 @@ const mintake = require('mintake')
 const { text } = require('figlet')
 const { Aki } = require('aki-api')
 
-let {inWA, groupSettings, getAdmins, getAll} = funciones
+let {inWA, groupSettings, getAdmins, getAll, sendSticker} = funciones
 let { readFileSync, writeFileSync, unlinkSync, existsSync} = fs
 let { stringify, parse } = JSON
 
@@ -31,7 +33,9 @@ const time = moment.tz('America/Bogota').format('H:mm:ss a')
 const date = moment.tz('America/Bogota').format('DD/MM/YY')
 const timeDate = moment.tz('America/Bogota').format('DD/MM/YY h:mm a')
 const processTime = async (timestamp, now) => {return moment.duration(now - moment(timestamp * 1000)).asSeconds()}
-const randomizer = async (value) => {const random = value[Math.floor(Math.random() * value.length)]; return random}
+const randomizer = (value) => {const random = value[Math.floor(Math.random() * value.length)]; return random}
+const loose = ['Buena suerte para la próxima crack.','Esta vez no fue, talvez luego.', 'Date un baño de azucar para quitarte la sal que llevas encima.', 'Buen intento crack ;).', 'Le apuntaste pero no le pegaste.', 'Por poco ganas']
+let looser = loose[Math.floor(Math.random() * loose.length)]
 
 /*--------------JSON'S--------------*/
 const alertas = parse(readFileSync('./JSONS/alertas.json'))
@@ -101,8 +105,10 @@ module.exports = async (msg ,client) => {
     const sendPresence = async (presence) => {await client.sendPresenceUpdate(presence, from)} //recording -  paused - composing - unavailable - available
     const sendPtt = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4', ptt: true})}
     const sendPttReply = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4', ptt: true},{quoted: msg})}
+    const sentSticker = async (ran) => {client.sendMessage(from, {sticker: readFileSync(ran)},{quoted:msg})}
     const grabando = () => { client.sendPresenceUpdate('recording', from)}
     const escribiendo = () => {client.sendPresenceUpdate('composing', from)}
+    
 
 /*--------------TIPOS DE MENSAJES--------------*/
     var messageType = Object.keys(msg.message)[0]
@@ -126,7 +132,7 @@ module.exports = async (msg ,client) => {
     const isInviteLink = messageType === 'groupInviteMessage'
 
  /*----------TIPOS DE MENSAJES RESPONDIDOS----------*/
-    const quoted = isQuoted && msg.message.extendedTextMessage.contextInfo != null ? msg.message.extendedTextMessage.contextInfo.quotedMessage : false
+    const quoted = isQuoted && msg.message.extendedTextMessage.contextInfo.quotedMessage != null ? msg.message.extendedTextMessage.contextInfo.quotedMessage : false
     var quotedMessageType = Object.keys(quoted)[0]
     const isQuotedText = quotedMessageType === 'conversation'
     const isQuotedImage = quotedMessageType === 'imageMessage'
@@ -338,6 +344,20 @@ module.exports = async (msg ,client) => {
         sendPttReply(randomn)
     }
 
+/*---------FUNCION AUTOSTICKERS------ */
+    if (isMedia && isGroup && isAutostickers){
+        if(isImage){
+            let media = './media/temp/autsticker.png'
+            await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)})
+            sendSticker(client,msg,from,media)
+        }
+        if(isVideo){
+            if(msg.message.videoMessage.seconds > 10) return
+            let media = './media/temp/sticker.mp4'
+            await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)})
+            sendSticker(client,msg,from,media)
+        }
+    }
 /*----------LOGS----------*/    
     if (isCmd && !isGroup) { log(color('[CMD]', 'magenta'),  color(`${command}[${args.length}]`),  'de', color(pushname), 'a las: ' ,color(moment().tz('America/Bogota').format('h:mm a'), 'yellow') ) }
     if (isCmd && isGroup) { log(color('[CMD]', 'magenta'),  color(`${command}[${args.length}]`),  'de', color(pushname),  'en',  color (groupName),  'a las: ',color(moment().tz('America/Bogota').format('h:mm a'), 'yellow') ) }
@@ -451,9 +471,9 @@ module.exports = async (msg ,client) => {
             }
             if (args[0].startsWith('name')){
                 log(AnyWASocket)
-                /*if (args.length == 1) return sendReply('mensaje vacio, por favor escribe un nombre')
+                if (args.length == 1) return sendReply('mensaje vacio, por favor escribe un nombre')
                 if (q.slice(7).length > 15) return sendReply('a')
-                client.updateProfileName(q.slice(7))*/
+                client.updateProfileName(q.slice(7))
                 sendReply('[INFORMACIÒN]\n\n_Lamentamos informarle que la funcion de cambio de nombre no esta disponible por el momento, estaremos trabajando para brindarte una solucion lo mas pronto posible._')
             }
             if (args[0].startsWith('profile')){
@@ -732,7 +752,6 @@ module.exports = async (msg ,client) => {
         case 'autostickers': 
             if (!isGroup) return sendReply(alertas.groups)
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
             const autostickersCheck = isAutostickers ? 'funcion autostickers *ACTIVADA* \n\n!autostickers off para desactivar' : 'funcion autostickers *DESACTIVADA* \n\n!autostickers on para activar'
             if (args.length == 0){ if (isAutostickers) return sendReply(autostickersCheck) ; if (!isAutostickers) return sendReply(autostickersCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -1236,80 +1255,55 @@ module.exports = async (msg ,client) => {
                 let media = './media/temp/sticker.png'
                 const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
                 await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
-                var ran = `${Math.floor(Math.random() * 10000)}${'.webp'}`
-                ffmpeg(media)
-                .input(media)
-                .addOutputOptions([`-vcodec`,`libwebp`,`-vf`,`scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`])
-                    .toFormat('webp')
-                    .save(ran)
-                .on('error', () => {
-                    unlinkSync(media)
-                    unlinkSync(ran)
-                })
-                .on('end', async () =>{
-                    await client.sendMessage(from, {sticker: readFileSync(ran)},{quoted:msg})
-                    unlinkSync(media)
-                    unlinkSync(ran)
-                })
+                sendSticker(client,msg,from,media)
             } 
             if (isImage){
                 let media = './media/temp/sticker.png'
                 await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)})
-                var ran = `${Math.floor(Math.random() * 10000)}${'.webp'}`
-                ffmpeg(media)
-                .input(media)
-                .addOutputOptions([`-vcodec`,`libwebp`,`-vf`,`scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`])
-                    .toFormat('webp')
-                    .save(ran)
-                .on('error', () => {
-                    unlinkSync(media)
-                    unlinkSync(ran)
-                })
-                .on('end', async () =>{
-                    await client.sendMessage(from, {sticker: readFileSync(ran)},{quoted:msg})
-                    unlinkSync(media)
-                    unlinkSync(ran)
-                })
+                sendSticker(client,msg,from,media)
             }
             if (isQuotedVideo ){
-                const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+                if(msg.message.extendedTextMessage.contextInfo.quotedMessage.videoMessage.seconds > 10 ) return sendReply(toast.longSticker())
                 let media = './media/temp/sticker.mp4'
+                const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
                 await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
-                var ran = `${Math.floor(Math.random() * 10000)}${'.webp'}`
-                ffmpeg(media)
-                .input(media)
-                .addOutputOptions([`-vcodec`,`libwebp`,`-vf`,`scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`])
-                    .toFormat('webp')
-                    .save(ran)
-                .on('error', () => {
-                    unlinkSync(media)
-                    unlinkSync(ran)
-                })
-                .on('end', async () =>{
-                    await client.sendMessage(from, {sticker: readFileSync(ran)},{quoted:msg})
-                    unlinkSync(media)
-                    unlinkSync(ran)
-                })
+                sendSticker(client,msg,from,media)
             }
             if (isVideo){
+                if(msg.message.videoMessage.seconds > 10) return sendReply(toast.longSticker())
                 let media = './media/temp/sticker.mp4'
                 await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)})
-                var ran = `${Math.floor(Math.random() * 10000)}${'.webp'}`
-                ffmpeg(media)
-                .input(media)
-                .addOutputOptions([`-vcodec`,`libwebp`,`-vf`,`scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`])
-                    .toFormat('webp')
-                    .save(ran)
-                .on('error', () => {
-                    unlinkSync(media)
-                    unlinkSync(ran)
-                })
-                .on('end', async () =>{
-                    await client.sendMessage(from, {sticker: readFileSync(ran)},{quoted:msg})
-                    unlinkSync(media)
-                    unlinkSync(ran)
-                })
+                sendSticker(client,msg,from,media)
             }
             break
+    }
+/*--------COMANDOS TEST-------- */
+    switch(command){
+        case 'sacame':
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (args[0] == 'si') { sendReply(toast.sacamesi(pushname, tipoDeUsr));await client.groupParticipantsUpdate(from,[sender], 'remove').then(()=>{sendReply('[Eliminacion Finalizada]')})}
+            if (args[0] == 'no') return sendReply(toast.sacameno())
+            const texto = toast.sacame(pushname, tipoDeUsr)
+            const buttons = [{buttonId: `${prefix}sacame si`, buttonText: {displayText: 'SI⚠️'}, type: 1}, {buttonId: `${prefix}sacame no`, buttonText: {displayText: 'NO✅'}, type: 1}]
+            sendButtonText(texto, buttons)
+            break
+        case 'casino':
+            try {
+                var casino = ['- 🍒 ', '- 🎃 ', '- 🍐 ', '- 🍋 ', '- 7️⃣ ', '- 🍇 ']
+                var resultado = randomizer(casino) + randomizer(casino) + randomizer(casino) + '-'
+                if (resultado == '- 🍒 - 🍒 - 🍒 -' || resultado == '- 🍐 - 🍐 - 🍐 -' || resultado == '- 🎃 - 🎃 - 🎃 -' || resultado == '- 🍋 - 🍋 - 🍋 -' || resultado == '- 7️⃣ - 7️⃣ - 7️⃣ -' || resultado == '- 🍇 - 🍇 - 🍇 -')  { 
+                    await sendReply(toast.casinoWin(resultado)) 
+                } else { 
+                    await sendReply(toast.casinoLoose(resultado, looser)) 
+                }
+            } catch (e){
+                return logerror(e)
+            }
+            break
+        case 'dado': case 'dados':
+            const dados = ['./media/resources/dados/1.webp','./media/resources/dados/2.webp','./media/resources/dados/3.webp','./media/resources/dados/4.webp','./media/resources/dados/5.webp','./media/resources/dados/6.webp']
+            let random = dados[Math.floor(Math.random() * dados.length)]
+            sentSticker(random)
+            break        
     }
 }

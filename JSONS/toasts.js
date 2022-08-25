@@ -67,3 +67,10 @@ exports.akiPlay = (pushname) => `*👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀�
 exports.akiEnd = () => `*👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀𝐌𝐄𝐒 - 𝐀𝐊𝐈𝐍𝐀𝐓𝐎𝐑]🧞‍♂️*\nPara iniciar un nuevo juego primero es necesario finalizarlo`
 exports.akiFail = () => `*👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀𝐌𝐄𝐒 - 𝐀𝐊𝐈𝐍𝐀𝐓𝐎𝐑]🧞‍♂️*\n[Error] la sesion del juego se ha cerrado, intentare crear una nueva, si no funciona, por favor contactate con mi desarrollador.`
 exports.akiStoped = () => `*👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀𝐌𝐄𝐒 - 𝐀𝐊𝐈𝐍𝐀𝐓𝐎𝐑]🧞‍♂️*\n[Error] No hay ninguna sesion del juego iniciada por favor envia el comando ${prefix}akinator para iniciar un nuevo juego`
+
+exports.longSticker = () => `[Error] El video que has enviado es demasiado largo, por favor intenta con un video de menos de 10 segundos.`
+exports.sacame = (pushname, tipoDeUsr) => `Hola *${pushname} - ${tipoDeUsr}* estas segur@ que quieres que te elimine? \n\n🚨NO OPRIMAS EL BOTON *"SI"* SI NO QUIERES SER ELIMINADO🚨`
+exports.sacamesi = (pushname, tipoDeUsr) => `[Solicitud Aceptada] => Eliminando *${tipoDeUsr} ${pushname}`
+exports.sacameno = () => `[Eliminacion Cancelada]`
+exports.casinoWin = (resultado) => `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆* \n_*⋆⋅⊱∘[✧🎉GANASTE🎉✧]∘⊰⋅⋆*_ \n🚨---------🚨--------🚨\n_La respuesta del casino fue..._\n*·${resultado}·*\n\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`
+exports.casinoLoose = (resultado, looser) => `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆* \n_*⋆⋅⊱∘[✧🕳️PERDISTE🕳️✧]∘⊰⋅⋆*_ \n\n_Obtuviste una respuesta de..._\n*·${resultado}·*\n\n_${looser}_ \n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`

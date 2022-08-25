@@ -1,3 +1,4 @@
+exports.sendSticker=require('./stickerprocess')
 exports.inWA=require('./inWA')
 exports.getAdmins=require('./getAdmins')
 exports.getAll=require('./getAll')
