@@ -281,9 +281,17 @@ module.exports = async (msg ,client) => {
 
 /*----------FUNCIONES----------*/
     if (isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) await client.groupParticipantsUpdate(from,[sender], 'remove')
-    
+    if (!isOwner && chats && !isGroup) return
+    if (!isMe && !isCmd && (chats).toLowerCase().startsWith('@everyone')){
+        escribiendo(from)
+        const msg = chats.slice(10)
+        sendTextWithMentions('@everyone ' + msg, groupParticipants)
+    }
+    if (!isMe && !isCmd && chats.toLowerCase().includes('bot') && chats.toLowerCase().includes('te amo')){
+        sendReaction(from, '')
+    }
 /*----------RESPUESTAS DE LA BOT----------*/
-    if (!isMe && (chats).toLowerCase().startsWith('....')){
+    if (!isMe && (chats).toLowerCase().startsWith('..')){
         escribiendo(from)
         sendReply(`Hola *${pushname}* ${saludo}`)
     }
@@ -296,6 +304,14 @@ module.exports = async (msg ,client) => {
         })
     }
 /*----------CHAT BOTS----------*/
+    if(isQuoted && !isCmd){
+        const idMsg = msg.message.extendedTextMessage.contextInfo.participant
+        if (idMsg != numeroBotId) return 
+        const {data} = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(chats)}&lc=es&cf=false`)
+        const {success} = data
+        await escribiendo(from)
+        sendReply(success)
+    }
     if (!isCmd && chats.toLowerCase().startsWith('simi ')){
         const text = chats.slice(5)
         const {data} = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(text)}&lc=es&cf=false`)
@@ -1245,12 +1261,30 @@ module.exports = async (msg ,client) => {
             const text = toast.akiPlay(pushname)
             const image = `https://es.akinator.com/bundles/elokencesite/images/akinator.png?v94`
             const buttons = [{  buttonId:`${prefix}akinator start`, buttonText:{ displayText:'[ JUGAR ]' }, type:1  }]
-            return sendButtonImage(image, text, buttons)        
+            return sendButtonImage(image, text, buttons)  
+        case 'casino':
+            try {
+                var casino = ['- 🍒 ', '- 🎃 ', '- 🍐 ', '- 🍋 ', '- 7️⃣ ', '- 🍇 ']
+                var resultado = randomizer(casino) + randomizer(casino) + randomizer(casino) + '-'
+                if (resultado == '- 🍒 - 🍒 - 🍒 -' || resultado == '- 🍐 - 🍐 - 🍐 -' || resultado == '- 🎃 - 🎃 - 🎃 -' || resultado == '- 🍋 - 🍋 - 🍋 -' || resultado == '- 7️⃣ - 7️⃣ - 7️⃣ -' || resultado == '- 🍇 - 🍇 - 🍇 -')  { 
+                    await sendReply(toast.casinoWin(resultado)) 
+                } else { 
+                    await sendReply(toast.casinoLoose(resultado, looser)) 
+                }
+            } catch (e){
+                return logerror(e)
+            }
+            break
+        case 'dado': case 'dados':
+            const dados = ['./media/resources/dados/1.webp','./media/resources/dados/2.webp','./media/resources/dados/3.webp','./media/resources/dados/4.webp','./media/resources/dados/5.webp','./media/resources/dados/6.webp']
+            let random = dados[Math.floor(Math.random() * dados.length)]
+            sentSticker(random)
+            break              
     }
 
 /*--------STICKERS Y MAS-------- */
-    switch(command){
-        case 'sticker':
+    switch(command){ 
+        case 'sticker': case 's': case 'stiker':
             if(isQuotedImage){
                 let media = './media/temp/sticker.png'
                 const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
@@ -1287,23 +1321,6 @@ module.exports = async (msg ,client) => {
             const buttons = [{buttonId: `${prefix}sacame si`, buttonText: {displayText: 'SI⚠️'}, type: 1}, {buttonId: `${prefix}sacame no`, buttonText: {displayText: 'NO✅'}, type: 1}]
             sendButtonText(texto, buttons)
             break
-        case 'casino':
-            try {
-                var casino = ['- 🍒 ', '- 🎃 ', '- 🍐 ', '- 🍋 ', '- 7️⃣ ', '- 🍇 ']
-                var resultado = randomizer(casino) + randomizer(casino) + randomizer(casino) + '-'
-                if (resultado == '- 🍒 - 🍒 - 🍒 -' || resultado == '- 🍐 - 🍐 - 🍐 -' || resultado == '- 🎃 - 🎃 - 🎃 -' || resultado == '- 🍋 - 🍋 - 🍋 -' || resultado == '- 7️⃣ - 7️⃣ - 7️⃣ -' || resultado == '- 🍇 - 🍇 - 🍇 -')  { 
-                    await sendReply(toast.casinoWin(resultado)) 
-                } else { 
-                    await sendReply(toast.casinoLoose(resultado, looser)) 
-                }
-            } catch (e){
-                return logerror(e)
-            }
-            break
-        case 'dado': case 'dados':
-            const dados = ['./media/resources/dados/1.webp','./media/resources/dados/2.webp','./media/resources/dados/3.webp','./media/resources/dados/4.webp','./media/resources/dados/5.webp','./media/resources/dados/6.webp']
-            let random = dados[Math.floor(Math.random() * dados.length)]
-            sentSticker(random)
-            break        
     }
+        
 }

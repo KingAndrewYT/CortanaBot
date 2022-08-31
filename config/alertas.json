@@ -1,0 +1,37 @@
+{
+    "owners" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n\n_Este comando esta disponible solo para_\n_*Usuarios Rango 👾 Desarrollador👨🏻‍💻*_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+	"bots" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_Este comando esta disponible solo para_\n_*Usuarios Rango *•🤖Bot🤖•*_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+    "vips" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_Este comando esta disponible solo para_\n_*Usuarios Rango *•⚜Vip⚜•*_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+	"premiums" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_Este comando esta disponible solo para_\n_*Usuarios Rango *•🌟Premium🌟•*_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+    "admins" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_Este comando esta disponible solo para_\n_*Usuarios Rango *•🪀Administrador💬•*_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+	
+	"groups" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_Este comando solo esta disponible dentro de grupos._\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+	"novip" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_¡Ups! parece que no estas autorizad@ para usar mis comandos, si quieres obtener acceso a mis comandos contactate con mis desarrollador a travez del numero +573228125090, y obten nuestro servicio VIP para que puedas usar completamente todos mis comandos disponibles._\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+    "userbanned" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_usuario baneado._\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+    "nsfw" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n\n_Los comandos NSFW estan deshabilitados, no podras ejecutar ningun comando con contenido NSFW._\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+	"porn" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n\n_Los comandos con contenido pornografico estan deshabilitados, no podras ejecutar ningun comando con contenido pornografico._\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+
+	"adminbot" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_Por favor agregame como Administradora del grupo._\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+
+    "promotebot":"*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No me puedo promover a mi misma, ya soy Admin del grupo·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+	"demotebot":"*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No me puedo degradar a mi misma·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+    "removebot":"*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No me puedo eliminar a mi misma·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+    "addbot":"*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No me puedo añadir a mi misma, ya me encuentro dentro del grupo·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+    "promoteowner" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No puedo promover a la persona que creó el grupo, ya es Admin·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+	"demoteowner" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No puedo degradar a la persona que creó el grupo.·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+	"removeowner" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No puedo eliminar a la persona que creó el grupo.·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+    "addowner" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No puedo añadir a la persona que creó el grupo, ya se encuentra dentro del grupo.·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+
+	"noregister" : "*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_No estas registrado en nuestro sistema, para registrarte solo debes oprimir el boton *·REGISTRAR·* o escribir la palabra *registrar*_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*",
+	
+    "processing" : "*⋆⋅⋅⋅⊱∘───[✧WAIT✧]───∘⊰⋅⋅⋅⋆*\n_*Procesando… por favor espera*_\n*█▒▒▒▒▒▒▒▒▒*\n*⋆⋅⋅⋅⊱∘───[✧WAIT✧]───∘⊰⋅⋅⋅⋆*",
+	"processed" : "*⋆⋅⋅⋅⊱∘───[✧SUCCESS✧]───∘⊰⋅⋅⋅⋆*\n_*Proceso Finalizado*_\n*██████████*\n*⋆⋅⋅⋅⊱∘───[✧SUCCESS✧]───∘⊰⋅⋅⋅⋆*",
+	"searching": "*⋆⋅⋅⋅⊱∘───[✧WAIT✧]───∘⊰⋅⋅⋅⋆*\n_*Buscando... por favor espera.*_\n*█▒▒▒▒▒▒▒▒▒*\n*⋆⋅⋅⋅⊱∘───[✧WAIT✧]───∘⊰⋅⋅⋅⋆*",
+    "searched": "*⋆⋅⋅⋅⊱∘───[✧SUCCESS✧]───∘⊰⋅⋅⋅⋆*\n_*Busqueda Finalizada*_\n*██████████*\n*⋆⋅⋅⋅⊱∘───[✧SUCCESS✧]───∘⊰⋅⋅⋅⋆*",
+	
+	"msgonlyowners" : "_comandos disponibles solo para usuarios con rango *Desarrollador*._",
+    "msgonlybots" : "_comandos disponibles solo para usuarios con rango *Bot*._",
+	"msgonlyvips" : "_comandos disponibles solo para usuarios con rango *Vip*._",
+	"msgonlypremiums" : "_comandos disponibles solo para usuarios con rango *Premium*._",
+	"msgonlyadms" : "_comandos disponibles solo para usuarios con rango *Administrador*._"
+}

@@ -22,7 +22,6 @@
     "fs-extra": "^10.1.0",
     "https": "^1.0.0",
     "jimp": "^0.16.1",
-    "link-preview-js": "^3.0.3",
     "mintake": "^1.0.2",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.34",
