@@ -7,7 +7,6 @@ const moment = require ('moment-timezone')
 const gtts = require ('node-gtts')
 const ffmpeg = require ('fluent-ffmpeg')
 const axios = require ('axios')
-const fetch = require ('node-fetch')
 moment.tz.setDefault('America/Bogota').locale('es')
 const fs = require('fs')
 const translate = require ('./funciones/traductor.js')
@@ -20,7 +19,7 @@ const mintake = require('mintake')
 const { text } = require('figlet')
 const { Aki } = require('aki-api')
 
-let {inWA, groupSettings, getAdmins, getAll, sendSticker} = funciones
+let {inWA, groupSettings, getAdmins, getAll, getParticipants, sendSticker} = funciones
 let { readFileSync, writeFileSync, unlinkSync, existsSync} = fs
 let { stringify, parse } = JSON
 
@@ -48,6 +47,7 @@ const promote = parse(readFileSync('./JSONS/promote.json'))
 const demote = parse(readFileSync('./JSONS/demote.json'))
 const vip = parse(readFileSync('./JSONS/vip.json'))
 const antienlaces = parse(readFileSync('./JSONS/antienlaces.json'))
+const ceroenlaces = parse(readFileSync('./JSONS/ceroenlaces.json'))
 const premium = parse(readFileSync('./JSONS/premium.json'))
 const _afk = parse(readFileSync('./JSONS/afk.json'))
 const _leveling = parse(readFileSync('./JSONS/leveling.json'))
@@ -188,6 +188,7 @@ module.exports = async (msg ,client) => {
     const groupMembers = isGroup ? groupMetadata.participants : ''
     const groupAdmins = isGroup ? getAdmins(groupMembers) : ''
     const groupParticipants = isGroup ? getAll(groupMembers) : ''
+    const miembros = isGroup ? getParticipants(groupMembers) : ''
     const isEphemeral = isGroup ? groupMetadata.ephemeralDuration != undefined : ''
     const isRestrict = isGroup ? groupMetadata.restrict : false
     const restrict = isRestrict ? 'administradores' : 'todos'
@@ -213,6 +214,7 @@ module.exports = async (msg ,client) => {
     const isLevelingOn = isGroup ? _leveling.includes(from) : false
     //const isAfkOn = isGroup ? checkAfkUser(sender, _afk) : false
     const isAntienlaces = isGroup ? antienlaces.includes(from) : false
+    const isCeroenlaces = isGroup ? ceroenlaces.includes(from) : false
     const isLeveling = isGroup ? _leveling.includes(from) : false
     const isAntiarabes = isGroup ? antiarabes.includes(from) : false
     const isAntifakes = isGroup ? antifakes.includes(from) : false
@@ -244,6 +246,7 @@ module.exports = async (msg ,client) => {
     const isTelegram = chats.match(new RegExp(/https?:\/\/(www\.)?t\.me\/addstickers/gi))    
     const isWaLink = url.match(new RegExp(/https?:\/\/(www\.)?chat.whatsapp.com/gi))
     const isLinkWa = chats.includes('chat.whatsapp.com/')
+    const isLink = chats.match(new RegExp(/((?:(http|https|Http|Https|rtsp|Rtsp):\/\/(?:(?:[a-zA-Z0-9\$\-\_\.\+\!\*\'\(\)\,\;\?\&\=]|(?:\%[a-fA-F0-9]{2})){1,64}(?:\:(?:[a-zA-Z0-9\$\-\_\.\+\!\*\'\(\)\,\;\?\&\=]|(?:\%[a-fA-F0-9]{2})){1,25})?\@)?)?((?:(?:[a-zA-Z0-9][a-zA-Z0-9\-]{0,64}\.)+(?:(?:aero|arpa|asia|a[cdefgilmnoqrstuwxz])|(?:biz|b[abdefghijmnorstvwyz])|(?:cat|com|coop|c[acdfghiklmnoruvxyz])|d[ejkmoz]|(?:edu|e[cegrstu])|f[ijkmor]|(?:gov|g[abdefghilmnpqrstuwy])|h[kmnrtu]|(?:info|int|i[delmnoqrst])|(?:jobs|j[emop])|k[eghimnrwyz]|l[abcikrstuvy]|(?:mil|mobi|museum|m[acdghklmnopqrstuvwxyz])|(?:name|net|n[acefgilopruz])|(?:org|om)|(?:pro|p[aefghklmnrstwy])|qa|r[eouw]|s[abcdeghijklmnortuvyz]|(?:tel|travel|t[cdfghjklmnoprtvwz])|u[agkmsyz]|v[aceginu]|w[fs]|y[etu]|z[amw]))|(?:(?:25[0-5]|2[0-4][0-9]|[0-1][0-9]{2}|[1-9][0-9]|[1-9])\.(?:25[0-5]|2[0-4][0-9]|[0-1][0-9]{2}|[1-9][0-9]|[1-9]|0)\.(?:25[0-5]|2[0-4][0-9]|[0-1][0-9]{2}|[1-9][0-9]|[1-9]|0)\.(?:25[0-5]|2[0-4][0-9]|[0-1][0-9]{2}|[1-9][0-9]|[0-9])))(?:\:\d{1,5})?)(\/(?:(?:[a-zA-Z0-9\;\/\?\:\@\&\=\#\~\-\.\+\!\*\'\(\)\,\_])|(?:\%[a-fA-F0-9]{2}))*)?(?:\b|$)/gi))
     const linkWA = q.split('https://chat.whatsapp.com/')[1]
 
 /*----------VARIABLES----------*/
@@ -280,16 +283,26 @@ module.exports = async (msg ,client) => {
     }*/
 
 /*----------FUNCIONES----------*/
-    if (isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) await client.groupParticipantsUpdate(from,[sender], 'remove')
     if (!isOwner && chats && !isGroup) return
+    if (isGroup && isLink && isCeroenlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
+    if (isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
     if (!isMe && !isCmd && (chats).toLowerCase().startsWith('@everyone')){
         escribiendo(from)
         const msg = chats.slice(10)
         sendTextWithMentions('@everyone ' + msg, groupParticipants)
     }
-    if (!isMe && !isCmd && chats.toLowerCase().includes('bot') && chats.toLowerCase().includes('te amo')){
-        sendReaction(from, '')
+    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@participantes')){
+        escribiendo(from)
+        const msg = chats.slice(15)
+        sendTextWithMentions('@participantes ' + msg, miembros)
     }
+    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@admins')){
+        escribiendo(from)
+        const msg = chats.slice(8)
+        sendTextWithMentions('@admins ' + msg, groupAdmins)
+    }
+    if (!isMe && !isCmd && chats.toLowerCase().includes('bot') && chats.toLowerCase().includes('te')&& chats.toLowerCase().includes('amo')){ sendReaction('❤️', from ) }
+
 /*----------RESPUESTAS DE LA BOT----------*/
     if (!isMe && (chats).toLowerCase().startsWith('..')){
         escribiendo(from)
@@ -304,7 +317,7 @@ module.exports = async (msg ,client) => {
         })
     }
 /*----------CHAT BOTS----------*/
-    if(isQuoted && !isCmd){
+    if(!isMe && isQuoted && !isCmd){
         const idMsg = msg.message.extendedTextMessage.contextInfo.participant
         if (idMsg != numeroBotId) return 
         const {data} = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(chats)}&lc=es&cf=false`)
@@ -312,14 +325,14 @@ module.exports = async (msg ,client) => {
         await escribiendo(from)
         sendReply(success)
     }
-    if (!isCmd && chats.toLowerCase().startsWith('simi ')){
+    if (!isMe && !isCmd && chats.toLowerCase().startsWith('simi ')){
         const text = chats.slice(5)
         const {data} = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(text)}&lc=es&cf=false`)
         const {success} = data
         await escribiendo(from)
         sendReply(success)
     }
-    if (!isCmd && chats.toLowerCase().startsWith('cortana ')){
+    if (!isMe && !isCmd && chats.toLowerCase().startsWith('cortana ')){
         await escribiendo(from)
         const text = chats.slice(8)
         await translate(text, 'en').then(async (res)=>{
@@ -416,13 +429,13 @@ module.exports = async (msg ,client) => {
             }
             break
         case 'borrar': //ELIMINAR MENSAJES ENVIADOS POR EL BOT
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
                 if (!isQuoted) return sendReply('_*Borrador de Mensajes*_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!borrar*_')
                 const identificacion = msg.message.extendedTextMessage.contextInfo.participant
                 if (identificacion != numeroBotId) return sendReply('_*Borrador de Mensajes*_\n\n_!Error! lamentablemente en este momento aun no esta disponible la funcion de eliminar mensajes de otras personas_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!eliminar*_')              
                 const stanza = msg.message.extendedTextMessage.contextInfo.stanzaId
                 const key = {remoteJid: from,id: stanza, fromMe: true }
-                client.sendMessage(from, { delete: key })
-                log('_Proceso finalizado, he eliminado mi mensaje correctamente._')
+                client.sendMessage(from, { delete: key }).then(() => {sendReaction('👍', from)})
                 break
         case 'chat':// MUTEAR, DESMUTEAR, ARCHIVAR, DESARCHIVAR, LEER, MARCAR COMO NO LEIDO
             if (args.length == 0) return sendReply('funciones disponibles para administracion del chat:\n\n1. !chat mute\n2. !chat unmute \n3. !chat archive\n4. chat unarchive\n5. !chat read\n6.0')
@@ -585,6 +598,24 @@ module.exports = async (msg ,client) => {
     }
 /*---------ACTIVADORES----------*/
     switch (command){
+        case 'ceroenlaces': case 'cerolink': case 'cerolinks':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const ceroenlacesCheck = isCeroenlaces ? 'funcion ceroenlaces *ACTIVADA* \n\n!ceroenlaces off para desactivar' : 'funcion ceroenlaces *DESACTIVADA* \n\n!ceroenlaces on para activar'
+            if (args.length == 0){ if (isCeroenlaces) return sendReply(ceroenlacesCheck) ; if (!isCeroenlaces) return sendReply(ceroenlacesCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
+                ceroenlaces.push(from)
+                writeFileSync('./JSONS/ceroenlaces.json', stringify(ceroenlaces))
+                sendReply('[ACTIVANDO CEROENLACES]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = ceroenlaces.indexOf(from)
+                ceroenlaces.splice(del, 1)
+                writeFileSync('./JSONS/ceroenlaces.json', stringify(ceroenlaces))
+                sendReply('[DESACTIVANDO CEROENLACES]')
+            }
+        break
         case 'antienlaces': case 'antilink': case 'antilinks':
             if (!isGroup) return sendReply(alertas.groups)
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
@@ -906,7 +937,7 @@ module.exports = async (msg ,client) => {
             const demtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido degradado del rango *Administrador*`
             inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'demote'); sendReplyWithMentions(demtext, [`${regExp}@s.whatsapp.net`])}})
             break
-        case 'eliminar': case 'remove': case 'kick':
+        case 'eliminar': case 'remove': case 'kick': case 'ban':
             if (!isGroup) return sendReply(alertas.groups)
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
@@ -973,6 +1004,7 @@ module.exports = async (msg ,client) => {
             client.groupRevokeInvite(from).then(()=>{sendReply(toast.revoke())})
             break
         case 'salir': case 'leave':
+            if (!isOwner) return (alertas.owners)
             if (!isGroup) return sendReply(alertas.groups)
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             client.groupLeave(from).then(() => {client.sendMessage(sender, {text: toast.leave()}, {quoted: msg})})
@@ -1321,6 +1353,11 @@ module.exports = async (msg ,client) => {
             const buttons = [{buttonId: `${prefix}sacame si`, buttonText: {displayText: 'SI⚠️'}, type: 1}, {buttonId: `${prefix}sacame no`, buttonText: {displayText: 'NO✅'}, type: 1}]
             sendButtonText(texto, buttons)
             break
+        case 'test':
+            log(miembros)
+            break
     }
+    const commandStick = isSticker ? msg.message.stickerMessage.fileSha256.toString('base64') : ''
+    log(commandStick)
         
 }

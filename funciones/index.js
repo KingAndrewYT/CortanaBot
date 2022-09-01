@@ -1,5 +1,6 @@
 exports.sendSticker=require('./stickerprocess')
 exports.inWA=require('./inWA')
 exports.getAdmins=require('./getAdmins')
+exports.getParticipants=require('./getParticipants')
 exports.getAll=require('./getAll')
 exports.groupSettings=require('./groups')
