@@ -156,7 +156,7 @@ module.exports = async (msg ,client) => {
     const chats = isText && msg.message[messageType] ? msg.message[messageType]: isQuoted && msg.message[messageType].text ? msg.message[messageType].text : ''
     const selectedButton = isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : ''
     const selectedList = isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : ''
-    //const responseList = msg.message.listResponseMessage != null ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : false
+    const responseList = msg.message.listResponseMessage != null ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : false
     
 /*----------PROCESAMIENTO DE MENSAJES----------*/
     const command = cmd.slice(1).trim().split(/ +/).shift().toLowerCase()
@@ -270,7 +270,7 @@ module.exports = async (msg ,client) => {
     const akil0 = [{ rows: [{ title: `Si`, rowId: `${prefix}aki 0` },{ title: `No`, rowId: `${prefix}aki 1` }, { title: `No lo se`, rowId: `${prefix}aki 2` }, { title: `Probablemente`, rowId: `${prefix}aki 3` },{ title: `Probablemente no`, rowId: `${prefix}aki 4` }] }]
     const akil1 = [{ rows: [{ title: `Si`, rowId: `${prefix}aki 0` },{ title: `No`, rowId: `${prefix}aki 1` }, { title: `No lo se`, rowId: `${prefix}aki 2` }, { title: `Probablemente`, rowId: `${prefix}aki 3` },{ title: `Probablemente no`, rowId: `${prefix}aki 4` },{ title: `<= Anterior`, rowId: `${prefix}aki atras` }] }]
     
-    /*if (isReaction){
+    if (isReaction){
         const emojiReaction = msg.message.reactionMessage.text
         var reactionEmoji = 'Reaccion Desconocida'
         if (emojiReaction === '😂'){var reactionEmoji = 'Reaccion de Risa 😂'}
@@ -279,11 +279,10 @@ module.exports = async (msg ,client) => {
         if (emojiReaction === '😢'){var reactionEmoji = 'Reaccion de Tristeza 😢'}
         if (emojiReaction === '👍'){var reactionEmoji = 'Reaccion de Gusto 👍'}
         if (emojiReaction === '🙏'){var reactionEmoji = 'Reaccion de Agradecimiento 🙏'}
-        await sendText(reactionEmoji)
-    }*/
+        log(reactionEmoji)
+    }
 
 /*----------FUNCIONES----------*/
-    if (!isOwner && chats && !isGroup) return
     if (isGroup && isLink && isCeroenlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
     if (isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
     if (!isMe && !isCmd && (chats).toLowerCase().startsWith('@everyone')){
@@ -304,18 +303,9 @@ module.exports = async (msg ,client) => {
     if (!isMe && !isCmd && chats.toLowerCase().includes('bot') && chats.toLowerCase().includes('te')&& chats.toLowerCase().includes('amo')){ sendReaction('❤️', from ) }
 
 /*----------RESPUESTAS DE LA BOT----------*/
-    if (!isMe && (chats).toLowerCase().startsWith('..')){
-        escribiendo(from)
-        sendReply(`Hola *${pushname}* ${saludo}`)
-    }
-    if (!isCmd && (chats).toLowerCase().startsWith('di ')){
-        const tts = gtts('es')
-        const text = chats.slice(3)
-        tts.save('./media/temp/di.mp3', text, async function(){
-            grabando(from)
-            await sendPttReply('./media/temp/di.mp3').catch(e => {return sendReply('¡ERROR 404! Not Found.')})
-        })
-    }
+    if (!isMe && chats.toLowerCase().startsWith('..')){ sendReaction('🫶', from)}
+    if (!isCmd && (chats).toLowerCase().startsWith('di ')){ const tts = gtts('es') ;const text = chats.slice(3) ; tts.save('./media/temp/di.mp3', text, async function(){ grabando(from) ; await sendPttReply('./media/temp/di.mp3').catch(e => {return sendReply('¡ERROR 404! Not Found.')}) })}
+
 /*----------CHAT BOTS----------*/
     if(!isMe && isQuoted && !isCmd){
         const idMsg = msg.message.extendedTextMessage.contextInfo.participant
@@ -341,6 +331,7 @@ module.exports = async (msg ,client) => {
             log(decodeURIComponent(response))
             await translate(response, 'es').then(async (res) =>{ await escribiendo(from); await sendReply(res) }).catch(e => sendReply('¡ERROR 404!')) }).catch(e => sendReply('¡ERROR 405!'))
     }
+
 /*----------ENVIO DE AUDIOS----------*/
     if (!isCmd && chats.toLowerCase() === 'yamete'){
         const yamete = ['./media/yamete/1.mp3','./media/yamete/2.mp3','./media/yamete/3.mp3','./media/yamete/4.mp3']
@@ -387,217 +378,212 @@ module.exports = async (msg ,client) => {
             sendSticker(client,msg,from,media)
         }
     }
+
 /*----------LOGS----------*/    
     if (isCmd && !isGroup) { log(color('[CMD]', 'magenta'),  color(`${command}[${args.length}]`),  'de', color(pushname), 'a las: ' ,color(moment().tz('America/Bogota').format('h:mm a'), 'yellow') ) }
     if (isCmd && isGroup) { log(color('[CMD]', 'magenta'),  color(`${command}[${args.length}]`),  'de', color(pushname),  'en',  color (groupName),  'a las: ',color(moment().tz('America/Bogota').format('h:mm a'), 'yellow') ) }
-    //if (!isOwner && command) return sendReply('{\n    modo desarrollador activado\n}')
+    if (!isOwner && isAdmin && isCmd) return sendReply('{modo desarrollador activado}')
 
-    client.chatModify({markRead: true, lastMessages: [msg]}, from)
     switch(command){
-        case 'repite':
-            if (args.length == 0) return sendReply('*⋆⊱∘[✧repite✧]∘⊰⋆*\n_Si deseas que yo repita algo envia un mensaje con el siguiente formato: *${prefix}repite + mensaje que quieres que repita*_\n\n_Ejemplo: *${prefix}repite Hola usuario como estas?*_\n*⋆⊱∘[✧cortana✧]∘⊰⋆*')
-            sendReply(q)
-            break
-        case 'traducir': //TRADUCIR MENSAJES ENVIADOS O ELIMINADOS
-            try {
-                const alerta = `*⋆⊱∘[✧traductor✧]∘⊰⋆*\n_Si deseas traducir un mensaje enviado responde al mensaje con el comando: *${prefix}traducir + código de idioma*_\n⋆⊱∘[✧cortana✧]∘⊰⋆*`
-                const alerta2 = `*⋆⊱∘[✧traductor✧]∘⊰⋆*\n_Si deseas traducir un texto o un mensaje escribe o etiqueta el mensaje con el comando: *${prefix}traducir + código de idioma*_ ó \n*${prefix}traducir + codigo de idioma + texto*\n\n_Ejemplo: *${prefix}traducir es Hi, I Love You*_\n⋆⊱∘[✧cortana✧]∘⊰⋆*`
-                const error1 = `*⋆⊱∘[✧traductor✧]∘⊰⋆*\n¡Error! por favor envia un codigo de idioma compatible seguido del texto a traducir\n\n${prefix}idiomas para ver la lista de idiomas compatibles con la funcion traductor.\n\n_Si deseas traducir un texto o un mensaje escribe o etiqueta el mensaje con el comando: *${prefix}traducir + código de idioma*_ ó \n*${prefix}traducir + codigo de idioma + texto*\n\n_Ejemplo: *${prefix}traducir es Hi, I Love You*_\n⋆⊱∘[✧cortana✧]∘⊰⋆*`
-                const error2 = `*⋆⊱∘[✧traductor✧]∘⊰⋆*\n¡Error! por favor envia un codigo de idioma compatible\n\n${prefix}idiomas para ver la lista de idiomas compatibles con la funcion traductor.\n\n_Si deseas traducir un mensaje enviado responde al mensaje con el comando: *${prefix}traducir + código de idioma*_\n⋆⊱∘[✧cortana✧]∘⊰⋆*`
-                if (isQuotedText){
-                    var mensaje = msg.message.extendedTextMessage.contextInfo.quotedMessage.conversation
-                    if (args.length < 1 ) return sendReply(alerta)
-                    if (args.length == 1) {
-                        await translate(mensaje, args[0])
-                        .then(async (res) => { sendReply(res) })
-                        .catch(() => { return sendReply(error2) })
-                    } else {
-                        await translate(cmd.slice(12), args[0])
-                        .then(async (res) => { sendReply(res) })
-                        .catch(() => { return sendReply(error1) })
-                    }
-                } else if (isText){
-                    if (args.length == 0) return await sendReply(alerta2)
-                    if (args.length == 1) return await sendReply(error1)
-                    const texto = cmd.slice(12)
-                    await translate(texto, args[0])
-                    .then(async (res) =>{ sendReply(res) })
-                    .catch(() => { return sendReply(error1)})
-                } else { sendReply(alerta2) }
-            } catch (e) {
-                error(e)
-            }
-            break
-        case 'borrar': //ELIMINAR MENSAJES ENVIADOS POR EL BOT
+        /*---------AJUSTES DE GRUPOS----------*/
+        case 'abrir': case 'open': case 'desmutear':
+            if (!isGroup) return sendReply(alertas.groups)
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-                if (!isQuoted) return sendReply('_*Borrador de Mensajes*_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!borrar*_')
-                const identificacion = msg.message.extendedTextMessage.contextInfo.participant
-                if (identificacion != numeroBotId) return sendReply('_*Borrador de Mensajes*_\n\n_!Error! lamentablemente en este momento aun no esta disponible la funcion de eliminar mensajes de otras personas_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!eliminar*_')              
-                const stanza = msg.message.extendedTextMessage.contextInfo.stanzaId
-                const key = {remoteJid: from,id: stanza, fromMe: true }
-                client.sendMessage(from, { delete: key }).then(() => {sendReaction('👍', from)})
-                break
-        case 'chat':// MUTEAR, DESMUTEAR, ARCHIVAR, DESARCHIVAR, LEER, MARCAR COMO NO LEIDO
-            if (args.length == 0) return sendReply('funciones disponibles para administracion del chat:\n\n1. !chat mute\n2. !chat unmute \n3. !chat archive\n4. chat unarchive\n5. !chat read\n6.0')
-            if (q2 == 'archive') return await client.chatModify({archive: true, lastMessages:[msg]}, from)
-            if (q2 == 'unarchive') return await client.chatModify({archive: false, lastMessages:[msg]}, from)
-            if (q2 == 'mute') return client.chatModify({ mute: new Date(new Date().getTime()+ 8*60*60*1000).getTime() },from, [])
-            if (q2 == 'unmute') return await client.chatModify({ mute: null },from, [])
-            if (q2 == 'read') return await client.chatModify({markRead: true, lastMessages: [msg]}, from)
-            if (q2 == 'unread') return await client.chatModify({markRead: false, lastMessages: [msg]}, from)
-            if (q2 == 'pin') return await client.chatModify({ pin: true },from, [])
-            if (q2 == 'unpin') return await client.chatModify({ pin: false },from, [])
-            if (q2 == 'delete') return await client.chatModify({delete: true, lastMessages:[msg]}, from)
-            //if (args[0] == 'nombre') return await client.chatModify({pushNameSetting: q},from, [])
-            //if (q2 == 'clear') return await client.chatModify({clear:true}, from)
-            sendReply('funciones disponibles para administracion del chat:\n\n1. !chat mute\n2. !chat unmute \n3. !chat archive\n4. chat unarchive\n5. !chat read\n6.0')
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isAnnounce) return sendReply(toast.notannounce(pushname))
+            client.groupSettingUpdate(from, 'not_announcement')
             break
-        case 'temporales': //MENSAJES TEMPORALES 24 HORAS - 7 DIAS - 90 DIAS
-            if (args.length == 0) return
-            if (q2 == 'on') client.sendMessage(from,{disappearingMessagesInChat:  WA_DEFAULT_EPHEMERAL})
-            if (q2 == 'off') client.sendMessage(from,{disappearingMessagesInChat:  null})
-            if (q2 == '1') client.sendMessage(from,{disappearingMessagesInChat:  24 * 60 * 60})
-            if (q2 == '7') client.sendMessage(from,{disappearingMessagesInChat:  7 * 24 * 60 * 60})
-            if (q2 == '90') client.sendMessage(from,{disappearingMessagesInChat:  90 * 24 * 60 * 60})
+        case 'cerrar': case 'close': case 'mutear':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (isAnnounce) return sendReply(toast.announce(pushname))
+            await client.groupSettingUpdate(from, 'announcement')
             break
-        case 'check': //VERIFICAR SI UN NUMERO EXISTE EN WHATSAPP
-            if (args.length == 0 ) return sendReply('por vavor ingresa el numero de telefono despues del comando')
-            inWA(msg,client,q).then((res) => {if (res == true){
-                const regExp = q.replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
-                return sendReply(`¡Busqueda finalizada!\nEl numero ${regExp} si existe en whatsapp.\n\nclick en el siguiente enlace para ir a su chat directamente: https://wa.me/${regExp}`)
-            }})
+        case 'bloquear': case 'lock':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (isRestrict) return sendReply(toast.desclock(pushname))
+            client.groupSettingUpdate(from, 'locked')
             break
-        case 'info': //EXTRAER FOTO DE PERFIL Y ESTADO DE UNA PERSONA
-            if (args.length == 0 ) return sendReply('Si deseas obtener informacion de una cuenta de whatsapp como su foto de perfil y estado por favor envia un mensaje con el comando *!info + numero de whatsapp con codigo de pais*\n\nEjemplo: !info 573228125090')
-            inWA(msg,client,q).then(async (res) => { if (res == true){
-                const regExp = q.replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
-                const isB = await client.getBusinessProfile(`${regExp}@s.whatsapp.net`)
-                if (isB != undefined) {
-                    const { address, description, website, email, category, business_hours} = isB
-                    log(business_hours)
-                    try { var status = await client.fetchStatus(`${regExp}@s.whatsapp.net`)  } catch (e){ var status = {status: '', setAt: ''} }
-                    try { var profile = await client.profilePictureUrl(`${regExp}@s.whatsapp.net`, 'image') } catch (e){ var profile = './media/test.jpg' }
-                    var time = moment(status.setAt).tz('America/Bogota').format('DD/MM/YY h:mm a')
-                    if (time == 'Fecha inválida') var time = ''
-                    const texto = `*🪀[ CUENTA DE EMPRESA DETECTADA ]🪀*\n\n*INFORMACION DE: _${q}_*\n\n❯ Direccion: ${address}\n❯ Descripcion: ${description}\n❯ Sitios Web: ${website}\n❯ Email: ${email}\n❯ Categoria: ${category}\n❯ Estado: ${status.status}.\n❯ Cambiado el: ${time}`
-                    sendImageReply(profile, texto.replace(/undefined/g, 'No Disponible'))
-                    return
-                } 
-                try { var status = await client.fetchStatus(`${regExp}@s.whatsapp.net`)  } catch (e){ var status = {status: '', setAt: ''} }
-                try { var profile = await client.profilePictureUrl(`${regExp}@s.whatsapp.net`, 'image') } catch (e){ var profile = './media/test.jpg' }
-                var time = moment(status.setAt).tz('America/Bogota').format('DD/MM/YY h:mm a')
-                if (time == 'Fecha inválida') var time = ''
-                const texto = `[*🪀CUENTA NORMAL DETECTADA🪀*]\n\n*INFORMACION DE: _${q}_*\n\n_*[Estado]:* ${status.status}._\n_*[Fecha]:* ${time}._`
-                sendImageReply(profile, texto)
-            }})
+        case 'desbloquear': case 'unlock':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isRestrict) return sendReply(toast.descunclock(pushname))
+            client.groupSettingUpdate(from, 'unlocked')
             break
-        case 'change':
-            if (args.length == 0) return sendReply('Si deseas realizar cambios en mi perfil o estado envia un mensaje con los siguientes comandos.\n\n1. !change profile + imagen (para cambiar mi foto de perfil)\n2. !change status + texto (para cambiar mi informacion de estado)\n3. !change name + nombre (para cambiar mi nombre)')
-            if (args[0].startsWith('status')) {
-                if (args.length == 1) return sendReply('mensaje vacio, por favor escribe un estado')
-                if (q.slice(7).length > 256) return sendReply('Lo siento, el texto ingresado supera los 256 caracteres permitidos por la aplicacion, por favor intenta de nuevo con un estado mas corto.')
-                client.updateProfileStatus(q.slice(7)).then(()=>{sendReply('¡GENIAL! He cambiado mi estado correctamente.')})
+        case 'promover': case 'promote':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (isTag){
+                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
+                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
+                if (etiqueta == numeroBotId) return sendReply(toast.prombot(pushname))
+                if (groupAdmins.includes(etiqueta)) return sendReply(toast.promadmin(pushname))
+                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido promovido al rango *Administrador*`
+                return client.groupParticipantsUpdate(from,[etiqueta], 'promote').then(()=>{sendReplyWithMentions(text, [etiqueta])})
+            } 
+            if (isMentionedTag){
+                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
+                if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
+                if (mentionedTag == numeroBotId) return sendReply(toast.prombot(pushname))
+                if (groupAdmins.includes(isMentionedTag)) return sendReply(toast.promadmin(pushname))
+                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido promovido al rango *Administrador*`
+                return client.groupParticipantsUpdate(from,[mentionedTag], 'promote').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
             }
-            if (args[0].startsWith('name')){
-                log(AnyWASocket)
-                if (args.length == 1) return sendReply('mensaje vacio, por favor escribe un nombre')
-                if (q.slice(7).length > 15) return sendReply('a')
-                client.updateProfileName(q.slice(7))
-                sendReply('[INFORMACIÒN]\n\n_Lamentamos informarle que la funcion de cambio de nombre no esta disponible por el momento, estaremos trabajando para brindarte una solucion lo mas pronto posible._')
+            if (args.length == 0) return sendReplyWithMentions(toast.noprom(informacion), ['573228125090@s.whatsapp.net'])
+            if (!groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
+            if (regExp == numeroBot) return sendReply(toast.prombot(pushname))
+            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.promadmin(pushname))
+            const text = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido promovido al rango *Administrador*`
+            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'promote'); sendReplyWithMentions(text, [`${regExp}@s.whatsapp.net`])}})
+            break
+        case 'degradar': case 'demote':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (isTag){
+                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
+                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
+                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
+                if (etiqueta == numeroBotId) return sendReply(toast.dembot(pushname))
+                if (!groupAdmins.includes(etiqueta)) return sendReply(toast.demadmin(pushname))
+                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido degradado rango *Administrador*`
+                return client.groupParticipantsUpdate(from,[etiqueta], 'demote').then(()=>{sendReplyWithMentions(text, [etiqueta])})
+            } 
+            if (isMentionedTag){
+                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
+                if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
+                if (mentionedTag == numeroBotId) return sendReply(toast.dembot(pushname))
+                if (!groupAdmins.includes(isMentionedTag)) return sendReply(toast.demadmin(pushname))
+                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido degradado del rango *Administrador*`
+                return client.groupParticipantsUpdate(from,[mentionedTag], 'demote').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
             }
-            if (args[0].startsWith('profile')){
-                //if (!isImage || !isQuotedImage) return sendReply('¡ERROR! por favor envia o etiqueta una imagen con el comando !change profile')
-                if (isImage){
-                    const buffer = await downloadMediaMessage(msg, 'buffer', {})
-                    await writeFile('./media/profile.jpg', buffer)
-                    await client.updateProfilePicture(numeroBotId, {url: './media/profile.jpg'}).then(()=>{sendReply('¡Genial! he actualizado mi foto de perfil correctamente')}).catch(()=>{sendReply('¡Ups! ha ocurrido un error por favor intentalo de nuevo')})
-                    //fs.unlinkSync('./media/profile.jpg')
-                }
-                if (isQuotedImage){
-                    const profile = msg.message.extendedTextMessage.contextInfo.quotedMessage.imageMessage
-                    stream = await downloadContentFromMessage(profile, "image");
-                    let buffer = Buffer.from([]);
-                    for await (const chunk of stream) {
-                      buffer = Buffer.concat([buffer, chunk]);
-                    }
-                    await writeFile('./media/profile.jpg', buffer)
-                    await client.updateProfilePicture(numeroBotId, {url: './media/profile.jpg'}).then(()=>{sendReply('¡Genial! he actualizado mi foto de perfil correctamente')}).catch(()=>{sendReply('¡Ups! ha ocurrido un error por favor intentalo de nuevo')})
-                    fs.unlinkSync('./media/profile.jpg')
-                }
+            if (args.length == 0) return sendReplyWithMentions(toast.nodem(informacion), ['573228125090@s.whatsapp.net'])
+            if (!groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
+            if (regExp == numeroBot) return sendReply(toast.dembot(pushname))
+            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.demadmin(pushname))
+            const demtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido degradado del rango *Administrador*`
+            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'demote'); sendReplyWithMentions(demtext, [`${regExp}@s.whatsapp.net`])}})
+            break
+        case 'eliminar': case 'remove': case 'kick': case 'ban':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (isTag){
+                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
+                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
+                if (etiqueta == numeroBotId) return sendReply(toast.rembot(pushname))
+                if (groupAdmins.includes(etiqueta)) return sendReply(toast.remadmin(pushname))
+                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido eliminado grupo`
+                return client.groupParticipantsUpdate(from,[etiqueta], 'remove').then(()=>{sendReplyWithMentions(text, [etiqueta])})
+            } 
+            if (isMentionedTag){
+                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
+                if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
+                if (mentionedTag == numeroBotId) return sendReply(toast.rembot(pushname))
+                if (groupAdmins.includes(isMentionedTag)) return sendReply(toast.remadmin(pushname))
+                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido eliminado del grupo`
+                return client.groupParticipantsUpdate(from,[mentionedTag], 'remove').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
             }
-            break        
-        case 'ephemeral':
-            client.sendMessage(from, {text: q}, {ephemeralExpiration : WA_DEFAULT_EPHEMERAL})
+            if (args.length == 0) return sendReplyWithMentions(toast.norem(informacion), ['573228125090@s.whatsapp.net'])
+            if (!groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
+            if (regExp == numeroBot) return sendReply(toast.rembot(pushname))
+            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.remadmin(pushname))
+            const remtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido eliminado del grupo`
+            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'remove'); sendReplyWithMentions(remtext, [`${regExp}@s.whatsapp.net`])}})
             break
-        case 'block':
-            if (!isGroup) return client.updateBlockStatus(from, 'block')
-            if (isGroup){
-                if (isQuoted) {
-                    const jid  = msg.message.extendedTextMessage.contextInfo.participant
-                    if (jid == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
-                    client.updateBlockStatus(jid, 'block')
-                } else {
-                    if (args.length == 0 ) return sendReply('')
-                    inWA(msg,client,q).then(async (res) => {if (res != true)return})
-                    const numero = q+'@s.whatsapp.net'
-                    if (numero == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
-                    client.updateBlockStatus(numero, 'block')
-                }
+        case 'añadir': case 'add':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (isTag){
+                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
+                if (groupParticipants.includes(etiqueta)) return sendReply(toast.onGroup(pushname))
+                if (etiqueta == numeroBotId) return sendReply(toast.addbot(pushname))
+                if (groupAdmins.includes(etiqueta)) return sendReply(toast.addadmin(pushname))
+                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido añadido al grupo`
+                return client.groupParticipantsUpdate(from,[etiqueta], 'add').then(()=>{sendReplyWithMentions(text, [etiqueta])})
+            } 
+            if (isMentionedTag){
+                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
+                if (groupParticipants.includes(mentionedTag)) return sendReply(toast.onGroup(pushname))
+                if (mentionedTag == numeroBotId) return sendReply(toast.addbot(pushname))
+                if (groupAdmins.includes(isMentionedTag)) return sendReply(toast.addadmin(pushname))
+                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido añadido al grupo`
+                return client.groupParticipantsUpdate(from,[mentionedTag], 'add').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
             }
+            if (args.length == 0) return sendReplyWithMentions(toast.noadd(informacion), ['573228125090@s.whatsapp.net'])
+            if (groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
+            if (regExp == numeroBot) return sendReply(toast.addbot(pushname))
+            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.addadmin(pushname))
+            const addtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido añadido al grupo`
+            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'add'); sendReplyWithMentions(addtext, [`${regExp}@s.whatsapp.net`])}})
             break
-        case 'unblock':
-            if (!isGroup) return client.updateBlockStatus(from, 'block')
-            if (isGroup){
-                if (isQuoted) {
-                    const jid  = msg.message.extendedTextMessage.contextInfo.participant
-                    if (jid == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
-                    client.updateBlockStatus(jid, 'unblock')
-                } else {
-                    if (args.length == 0 ) return sendReply('por vavor ingresa el numero de telefono despues del comando')
-                    inWA(msg,client,q).then(async (res) => {if (res != true)return})
-                    const numero = q+'@s.whatsapp.net'
-                    if (numero == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
-                    client.updateBlockStatus(numero, 'unblock')
-                }
-            }
+        case 'enlace': case 'link':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            await client.groupInviteCode(from).then((res) => {sendReply(toast.link(res))})
             break
-        case 'bimage':
-            const bimage = [ {buttonId: 'id1', buttonText: {displayText: 'Boton 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Boton 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Boton 3'}, type: 1} ]
-            sendButtonImage('./media/test.jpg','¡Hola! Esto es una prueba de envio de botones con imagen',bimage)
+        case 'anular': case 'revoke':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            client.groupRevokeInvite(from).then(()=>{sendReply(toast.revoke())})
             break
-        case 'btext':
-            const btext = [ {buttonId: 'id1', buttonText: {displayText: 'Boton 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Boton 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Boton 3'}, type: 1} ]
-            sendButtonText('¡Hola! Esto es una prueba de envio de botones',btext)
+        case 'salir': case 'leave':
+            if (!isOwner) return (alertas.owners)
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            client.groupLeave(from).then(() => {client.sendMessage(sender, {text: toast.leave()}, {quoted: msg})})
             break
-        case 'tbt':
-            const tbt = [ {index: 1, urlButton: {displayText: 'Suscribete', url: 'https://www.youtube.com/c/KingAndrewYT'}}, {index: 2, callButton: {displayText: 'llamame', phoneNumber: '+57 322 8125090'}}, {index: 3, quickReplyButton: {displayText: 'Menu', id: '!menu'}}]
-            sendTemplateButtonText('¡Hola! Esto es una prueba de envio de una plantilla de botones', tbt)
+        case 'entrar': case 'join':
+            if (!isOwner) return sendReply(alertas.owners)
+            if (args.length == 0) return sendReply(toast.nojoin(informacion))
+            if (!isWaLink) return sendReply(toast.nowalink())
+            await client.groupAcceptInvite(linkWA).then(() => {sendReply(toast.join())}).catch(() => {sendReply(toast.nowalink())})
             break
-        case 'tbi':
-            const tbi = [ {index: 1, urlButton: {displayText: 'Suscribete', url: 'https://www.youtube.com/c/KingAndrewYT'}}, {index: 2, callButton: {displayText: 'llamame', phoneNumber: '+57 322 8125090'}}, {index: 3, quickReplyButton: {displayText: 'Menu', id: '!menu'}}]
-            sendTemplateButtonImage('./media/text.jpg', '¡Hola! Esto es una prueba de envio de plantilla de botones con imagen', tbi)
+        case 'nombre': case 'name':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (args.length == 0) return sendReply(toast.name())
+            if (q.length > 35 ) return sendReply(toast.longname())
+            client.groupUpdateSubject(from, q).then(()=>{sendReply(toast.namechanged(groupName))})
             break
-        case'infolink':case'entrar':case'infogrupo':case'anular':case'enlace':case'crear':case'añadir':case'eliminar':case'promover':case'degradar':case'nombre':case'descripcion':case'perfil':case'mutear':case'desmutear':case'lockdesc':case'unlockdesc':case'salir':
-            //if (!isGroup) return sendReply('esta opcion solo esta disponible dentro de grupos')
-            groupSettings(msg, client, q, args, command)
+        case 'descripcion': case 'desc': case 'description':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (args.length == 0) return sendReply(toast.desc())
+            if (q.length > 522 ) return sendReply(toast.longdesc())
+            client.groupUpdateDescription(from, q).then(() => {sendReply(toast.descchanged(groupDesc))})
             break
-        case 'gpperfil':
-            groupSettings(msg, client, q, args, command)
+        case 'icono': case 'icon':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (isQuotedImage){
+                const profile = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+                await downloadMediaMessage(profile).then(async res => {await writeFile('./media/profile.jpg', res)})
+                return client.updateProfilePicture(from,readFileSync('./media/profile.jpg')).then(()=>{sendReply(toast.profileg())})
+            }; if(isImage){
+                await downloadMediaMessage(msg).then(async res => {await writeFile('./media/profile.jpg', res)})
+                return client.updateProfilePicture(from,readFileSync('./media/profile.jpg')).then(()=>{sendReply(toast.profileg())})
+            }; sendReply(toast.noprofileg(informacion))
             break
-        case 'acceppt':
-            const inviteMessage = msg.message.extendedTextMessage.contextInfo.quotedMessage.groupInviteMessage
-            await client.groupAcceptInviteV4(from, inviteMessage)        
+        case 'creargrupo': case 'groupcreate':
+            if (!isOwner) return sendReply(alertas.owners)
+            if (args.length == 0) return sendReply(toast.groupcreate(informacion))
+            if(q.length > 35 ) return sendReply(toast.longname())
+            await client.groupCreate(q, [sender]).then(res => { client.groupInviteCode(res.id).then((link) => {client.sendMessage(res.id, {text: toast.joinmessage()});sendReply(toast.gpcreate(link))})})
             break
-        case 'admins':
-            sendReplyWithMentions(q, groupAdmins)
-        break
-        case 'todos':
-            sendReplyWithMentions(q, groupParticipants)
-            break
-    default:
-    }
-/*---------ACTIVADORES----------*/
-    switch (command){
+    
+    /*---------ACTIVADORES----------*/
         case 'ceroenlaces': case 'cerolink': case 'cerolinks':
             if (!isGroup) return sendReply(alertas.groups)
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
@@ -849,211 +835,221 @@ module.exports = async (msg ,client) => {
                 sendReply('[DESACTIVANDO PORNO]')
             }
         break
-        default:
-    }
-
-/*---------AJUSTES DE GRUPOS----------*/
-    switch(command){
-        case 'abrir': case 'open': case 'desmutear':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+    
+    /*--------COMANDOS TEST-------- */
+        case 'sacame':
             if (!isBotAdmin) return sendReply(alertas.adminbot)
-            if (!isAnnounce) return sendReply(toast.notannounce(pushname))
-            client.groupSettingUpdate(from, 'not_announcement')
+            if (args[0] == 'si') { sendReply(toast.sacamesi(pushname, tipoDeUsr));await client.groupParticipantsUpdate(from,[sender], 'remove').then(()=>{sendReply('[Eliminacion Finalizada]')})}
+            if (args[0] == 'no') return sendReply(toast.sacameno())
+            const texto = toast.sacame(pushname, tipoDeUsr)
+            const buttons = [{buttonId: `${prefix}sacame si`, buttonText: {displayText: 'SI⚠️'}, type: 1}, {buttonId: `${prefix}sacame no`, buttonText: {displayText: 'NO✅'}, type: 1}]
+            sendButtonText(texto, buttons)
             break
-        case 'cerrar': case 'close': case 'mutear':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            if (isAnnounce) return sendReply(toast.announce(pushname))
-            await client.groupSettingUpdate(from, 'announcement')
+        case 'test':
+            log(miembros)
             break
-        case 'bloquear': case 'lock':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            if (isRestrict) return sendReply(toast.desclock(pushname))
-            client.groupSettingUpdate(from, 'locked')
+        case 'repite':
+            if (args.length == 0) return sendReply('*⋆⊱∘[✧repite✧]∘⊰⋆*\n_Si deseas que yo repita algo envia un mensaje con el siguiente formato: *${prefix}repite + mensaje que quieres que repita*_\n\n_Ejemplo: *${prefix}repite Hola usuario como estas?*_\n*⋆⊱∘[✧cortana✧]∘⊰⋆*')
+            sendReply(q)
             break
-        case 'desbloquear': case 'unlock':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            if (!isRestrict) return sendReply(toast.descunclock(pushname))
-            client.groupSettingUpdate(from, 'unlocked')
-            break
-        case 'promover': case 'promote':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            if (isTag){
-                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
-                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
-                if (etiqueta == numeroBotId) return sendReply(toast.prombot(pushname))
-                if (groupAdmins.includes(etiqueta)) return sendReply(toast.promadmin(pushname))
-                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido promovido al rango *Administrador*`
-                return client.groupParticipantsUpdate(from,[etiqueta], 'promote').then(()=>{sendReplyWithMentions(text, [etiqueta])})
-            } 
-            if (isMentionedTag){
-                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
-                if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
-                if (mentionedTag == numeroBotId) return sendReply(toast.prombot(pushname))
-                if (groupAdmins.includes(isMentionedTag)) return sendReply(toast.promadmin(pushname))
-                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido promovido al rango *Administrador*`
-                return client.groupParticipantsUpdate(from,[mentionedTag], 'promote').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
+        case 'traducir': //TRADUCIR MENSAJES ENVIADOS O ELIMINADOS
+            try {
+                const alerta = `*⋆⊱∘[✧traductor✧]∘⊰⋆*\n_Si deseas traducir un mensaje enviado responde al mensaje con el comando: *${prefix}traducir + código de idioma*_\n⋆⊱∘[✧cortana✧]∘⊰⋆*`
+                const alerta2 = `*⋆⊱∘[✧traductor✧]∘⊰⋆*\n_Si deseas traducir un texto o un mensaje escribe o etiqueta el mensaje con el comando: *${prefix}traducir + código de idioma*_ ó \n*${prefix}traducir + codigo de idioma + texto*\n\n_Ejemplo: *${prefix}traducir es Hi, I Love You*_\n⋆⊱∘[✧cortana✧]∘⊰⋆*`
+                const error1 = `*⋆⊱∘[✧traductor✧]∘⊰⋆*\n¡Error! por favor envia un codigo de idioma compatible seguido del texto a traducir\n\n${prefix}idiomas para ver la lista de idiomas compatibles con la funcion traductor.\n\n_Si deseas traducir un texto o un mensaje escribe o etiqueta el mensaje con el comando: *${prefix}traducir + código de idioma*_ ó \n*${prefix}traducir + codigo de idioma + texto*\n\n_Ejemplo: *${prefix}traducir es Hi, I Love You*_\n⋆⊱∘[✧cortana✧]∘⊰⋆*`
+                const error2 = `*⋆⊱∘[✧traductor✧]∘⊰⋆*\n¡Error! por favor envia un codigo de idioma compatible\n\n${prefix}idiomas para ver la lista de idiomas compatibles con la funcion traductor.\n\n_Si deseas traducir un mensaje enviado responde al mensaje con el comando: *${prefix}traducir + código de idioma*_\n⋆⊱∘[✧cortana✧]∘⊰⋆*`
+                if (isQuotedText){
+                    var mensaje = msg.message.extendedTextMessage.contextInfo.quotedMessage.conversation
+                    if (args.length < 1 ) return sendReply(alerta)
+                    if (args.length == 1) {
+                        await translate(mensaje, args[0])
+                        .then(async (res) => { sendReply(res) })
+                        .catch(() => { return sendReply(error2) })
+                    } else {
+                        await translate(cmd.slice(12), args[0])
+                        .then(async (res) => { sendReply(res) })
+                        .catch(() => { return sendReply(error1) })
+                    }
+                } else if (isText){
+                    if (args.length == 0) return await sendReply(alerta2)
+                    if (args.length == 1) return await sendReply(error1)
+                    const texto = cmd.slice(12)
+                    await translate(texto, args[0])
+                    .then(async (res) =>{ sendReply(res) })
+                    .catch(() => { return sendReply(error1)})
+                } else { sendReply(alerta2) }
+            } catch (e) {
+                error(e)
             }
-            if (args.length == 0) return sendReplyWithMentions(toast.noprom(informacion), ['573228125090@s.whatsapp.net'])
-            if (!groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
-            if (regExp == numeroBot) return sendReply(toast.prombot(pushname))
-            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.promadmin(pushname))
-            const text = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido promovido al rango *Administrador*`
-            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'promote'); sendReplyWithMentions(text, [`${regExp}@s.whatsapp.net`])}})
             break
-        case 'degradar': case 'demote':
-            if (!isGroup) return sendReply(alertas.groups)
+        case 'borrar': //ELIMINAR MENSAJES ENVIADOS POR EL BOT
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            if (isTag){
-                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
-                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
-                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
-                if (etiqueta == numeroBotId) return sendReply(toast.dembot(pushname))
-                if (!groupAdmins.includes(etiqueta)) return sendReply(toast.demadmin(pushname))
-                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido degradado rango *Administrador*`
-                return client.groupParticipantsUpdate(from,[etiqueta], 'demote').then(()=>{sendReplyWithMentions(text, [etiqueta])})
-            } 
-            if (isMentionedTag){
-                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
-                if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
-                if (mentionedTag == numeroBotId) return sendReply(toast.dembot(pushname))
-                if (!groupAdmins.includes(isMentionedTag)) return sendReply(toast.demadmin(pushname))
-                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido degradado del rango *Administrador*`
-                return client.groupParticipantsUpdate(from,[mentionedTag], 'demote').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
+                if (!isQuoted) return sendReply('_*Borrador de Mensajes*_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!borrar*_')
+                const identificacion = msg.message.extendedTextMessage.contextInfo.participant
+                if (identificacion != numeroBotId) return sendReply('_*Borrador de Mensajes*_\n\n_!Error! lamentablemente en este momento aun no esta disponible la funcion de eliminar mensajes de otras personas_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!eliminar*_')              
+                const stanza = msg.message.extendedTextMessage.contextInfo.stanzaId
+                const key = {remoteJid: from,id: stanza, fromMe: true }
+                client.sendMessage(from, { delete: key }).then(() => {sendReaction('👍', from)})
+                break
+        case 'chat':// MUTEAR, DESMUTEAR, ARCHIVAR, DESARCHIVAR, LEER, MARCAR COMO NO LEIDO
+            if (args.length == 0) return sendReply('funciones disponibles para administracion del chat:\n\n1. !chat mute\n2. !chat unmute \n3. !chat archive\n4. chat unarchive\n5. !chat read\n6.0')
+            if (q2 == 'archive') return await client.chatModify({archive: true, lastMessages:[msg]}, from)
+            if (q2 == 'unarchive') return await client.chatModify({archive: false, lastMessages:[msg]}, from)
+            if (q2 == 'mute') return client.chatModify({ mute: new Date(new Date().getTime()+ 8*60*60*1000).getTime() },from, [])
+            if (q2 == 'unmute') return await client.chatModify({ mute: null },from, [])
+            if (q2 == 'read') return await client.chatModify({markRead: true, lastMessages: [msg]}, from)
+            if (q2 == 'unread') return await client.chatModify({markRead: false, lastMessages: [msg]}, from)
+            if (q2 == 'pin') return await client.chatModify({ pin: true },from, [])
+            if (q2 == 'unpin') return await client.chatModify({ pin: false },from, [])
+            if (q2 == 'delete') return await client.chatModify({delete: true, lastMessages:[msg]}, from)
+            //if (args[0] == 'nombre') return await client.chatModify({pushNameSetting: q},from, [])
+            //if (q2 == 'clear') return await client.chatModify({clear:true}, from)
+            sendReply('funciones disponibles para administracion del chat:\n\n1. !chat mute\n2. !chat unmute \n3. !chat archive\n4. chat unarchive\n5. !chat read\n6.0')
+            break
+        case 'temporales': //MENSAJES TEMPORALES 24 HORAS - 7 DIAS - 90 DIAS
+            if (args.length == 0) return
+            if (q2 == 'on') client.sendMessage(from,{disappearingMessagesInChat:  WA_DEFAULT_EPHEMERAL})
+            if (q2 == 'off') client.sendMessage(from,{disappearingMessagesInChat:  null})
+            if (q2 == '1') client.sendMessage(from,{disappearingMessagesInChat:  24 * 60 * 60})
+            if (q2 == '7') client.sendMessage(from,{disappearingMessagesInChat:  7 * 24 * 60 * 60})
+            if (q2 == '90') client.sendMessage(from,{disappearingMessagesInChat:  90 * 24 * 60 * 60})
+            break
+        case 'check': //VERIFICAR SI UN NUMERO EXISTE EN WHATSAPP
+            if (args.length == 0 ) return sendReply('por vavor ingresa el numero de telefono despues del comando')
+            inWA(msg,client,q).then((res) => {if (res == true){
+                const regExp = q.replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
+                return sendReply(`¡Busqueda finalizada!\nEl numero ${regExp} si existe en whatsapp.\n\nclick en el siguiente enlace para ir a su chat directamente: https://wa.me/${regExp}`)
+            }})
+            break
+        case 'info': //EXTRAER FOTO DE PERFIL Y ESTADO DE UNA PERSONA
+            if (args.length == 0 ) return sendReply('Si deseas obtener informacion de una cuenta de whatsapp como su foto de perfil y estado por favor envia un mensaje con el comando *!info + numero de whatsapp con codigo de pais*\n\nEjemplo: !info 573228125090')
+            inWA(msg,client,q).then(async (res) => { if (res == true){
+                const regExp = q.replace(new RegExp(/[-a-zA-Z@:%._ +()~#=]/g), '')
+                const isB = await client.getBusinessProfile(`${regExp}@s.whatsapp.net`)
+                if (isB != undefined) {
+                    const { address, description, website, email, category, business_hours} = isB
+                    log(business_hours)
+                    try { var status = await client.fetchStatus(`${regExp}@s.whatsapp.net`)  } catch (e){ var status = {status: '', setAt: ''} }
+                    try { var profile = await client.profilePictureUrl(`${regExp}@s.whatsapp.net`, 'image') } catch (e){ var profile = './media/test.jpg' }
+                    var time = moment(status.setAt).tz('America/Bogota').format('DD/MM/YY h:mm a')
+                    if (time == 'Fecha inválida') var time = ''
+                    const texto = `*🪀[ CUENTA DE EMPRESA DETECTADA ]🪀*\n\n*INFORMACION DE: _${q}_*\n\n❯ Direccion: ${address}\n❯ Descripcion: ${description}\n❯ Sitios Web: ${website}\n❯ Email: ${email}\n❯ Categoria: ${category}\n❯ Estado: ${status.status}.\n❯ Cambiado el: ${time}`
+                    sendImageReply(profile, texto.replace(/undefined/g, 'No Disponible'))
+                    return
+                } 
+                try { var status = await client.fetchStatus(`${regExp}@s.whatsapp.net`)  } catch (e){ var status = {status: '', setAt: ''} }
+                try { var profile = await client.profilePictureUrl(`${regExp}@s.whatsapp.net`, 'image') } catch (e){ var profile = './media/test.jpg' }
+                var time = moment(status.setAt).tz('America/Bogota').format('DD/MM/YY h:mm a')
+                if (time == 'Fecha inválida') var time = ''
+                const texto = `[*🪀CUENTA NORMAL DETECTADA🪀*]\n\n*INFORMACION DE: _${q}_*\n\n_*[Estado]:* ${status.status}._\n_*[Fecha]:* ${time}._`
+                sendImageReply(profile, texto)
+            }})
+            break
+        case 'change':
+            if (args.length == 0) return sendReply('Si deseas realizar cambios en mi perfil o estado envia un mensaje con los siguientes comandos.\n\n1. !change profile + imagen (para cambiar mi foto de perfil)\n2. !change status + texto (para cambiar mi informacion de estado)\n3. !change name + nombre (para cambiar mi nombre)')
+            if (args[0].startsWith('status')) {
+                if (args.length == 1) return sendReply('mensaje vacio, por favor escribe un estado')
+                if (q.slice(7).length > 256) return sendReply('Lo siento, el texto ingresado supera los 256 caracteres permitidos por la aplicacion, por favor intenta de nuevo con un estado mas corto.')
+                client.updateProfileStatus(q.slice(7)).then(()=>{sendReply('¡GENIAL! He cambiado mi estado correctamente.')})
             }
-            if (args.length == 0) return sendReplyWithMentions(toast.nodem(informacion), ['573228125090@s.whatsapp.net'])
-            if (!groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
-            if (regExp == numeroBot) return sendReply(toast.dembot(pushname))
-            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.demadmin(pushname))
-            const demtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido degradado del rango *Administrador*`
-            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'demote'); sendReplyWithMentions(demtext, [`${regExp}@s.whatsapp.net`])}})
-            break
-        case 'eliminar': case 'remove': case 'kick': case 'ban':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            if (isTag){
-                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
-                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
-                if (etiqueta == numeroBotId) return sendReply(toast.rembot(pushname))
-                if (groupAdmins.includes(etiqueta)) return sendReply(toast.remadmin(pushname))
-                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido eliminado grupo`
-                return client.groupParticipantsUpdate(from,[etiqueta], 'remove').then(()=>{sendReplyWithMentions(text, [etiqueta])})
-            } 
-            if (isMentionedTag){
-                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
-                if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
-                if (mentionedTag == numeroBotId) return sendReply(toast.rembot(pushname))
-                if (groupAdmins.includes(isMentionedTag)) return sendReply(toast.remadmin(pushname))
-                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido eliminado del grupo`
-                return client.groupParticipantsUpdate(from,[mentionedTag], 'remove').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
+            if (args[0].startsWith('name')){
+                log(AnyWASocket)
+                if (args.length == 1) return sendReply('mensaje vacio, por favor escribe un nombre')
+                if (q.slice(7).length > 15) return sendReply('a')
+                client.updateProfileName(q.slice(7))
+                sendReply('[INFORMACIÒN]\n\n_Lamentamos informarle que la funcion de cambio de nombre no esta disponible por el momento, estaremos trabajando para brindarte una solucion lo mas pronto posible._')
             }
-            if (args.length == 0) return sendReplyWithMentions(toast.norem(informacion), ['573228125090@s.whatsapp.net'])
-            if (!groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
-            if (regExp == numeroBot) return sendReply(toast.rembot(pushname))
-            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.remadmin(pushname))
-            const remtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido eliminado del grupo`
-            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'remove'); sendReplyWithMentions(remtext, [`${regExp}@s.whatsapp.net`])}})
-            break
-        case 'añadir': case 'add':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            if (isTag){
-                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
-                if (groupParticipants.includes(etiqueta)) return sendReply(toast.onGroup(pushname))
-                if (etiqueta == numeroBotId) return sendReply(toast.addbot(pushname))
-                if (groupAdmins.includes(etiqueta)) return sendReply(toast.addadmin(pushname))
-                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido añadido al grupo`
-                return client.groupParticipantsUpdate(from,[etiqueta], 'add').then(()=>{sendReplyWithMentions(text, [etiqueta])})
-            } 
-            if (isMentionedTag){
-                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
-                if (groupParticipants.includes(mentionedTag)) return sendReply(toast.onGroup(pushname))
-                if (mentionedTag == numeroBotId) return sendReply(toast.addbot(pushname))
-                if (groupAdmins.includes(isMentionedTag)) return sendReply(toast.addadmin(pushname))
-                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido añadido al grupo`
-                return client.groupParticipantsUpdate(from,[mentionedTag], 'add').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
+            if (args[0].startsWith('profile')){
+                //if (!isImage || !isQuotedImage) return sendReply('¡ERROR! por favor envia o etiqueta una imagen con el comando !change profile')
+                if (isImage){
+                    const buffer = await downloadMediaMessage(msg, 'buffer', {})
+                    await writeFile('./media/profile.jpg', buffer)
+                    await client.updateProfilePicture(numeroBotId, {url: './media/profile.jpg'}).then(()=>{sendReply('¡Genial! he actualizado mi foto de perfil correctamente')}).catch(()=>{sendReply('¡Ups! ha ocurrido un error por favor intentalo de nuevo')})
+                    //fs.unlinkSync('./media/profile.jpg')
+                }
+                if (isQuotedImage){
+                    const profile = msg.message.extendedTextMessage.contextInfo.quotedMessage.imageMessage
+                    stream = await downloadContentFromMessage(profile, "image");
+                    let buffer = Buffer.from([]);
+                    for await (const chunk of stream) {
+                      buffer = Buffer.concat([buffer, chunk]);
+                    }
+                    await writeFile('./media/profile.jpg', buffer)
+                    await client.updateProfilePicture(numeroBotId, {url: './media/profile.jpg'}).then(()=>{sendReply('¡Genial! he actualizado mi foto de perfil correctamente')}).catch(()=>{sendReply('¡Ups! ha ocurrido un error por favor intentalo de nuevo')})
+                    fs.unlinkSync('./media/profile.jpg')
+                }
             }
-            if (args.length == 0) return sendReplyWithMentions(toast.noadd(informacion), ['573228125090@s.whatsapp.net'])
-            if (groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
-            if (regExp == numeroBot) return sendReply(toast.addbot(pushname))
-            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.addadmin(pushname))
-            const addtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido añadido al grupo`
-            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'add'); sendReplyWithMentions(addtext, [`${regExp}@s.whatsapp.net`])}})
+            break        
+        case 'ephemeral':
+            client.sendMessage(from, {text: q}, {ephemeralExpiration : WA_DEFAULT_EPHEMERAL})
             break
-        case 'enlace': case 'link':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            await client.groupInviteCode(from).then((res) => {sendReply(toast.link(res))})
+        case 'block':
+            if (!isGroup) return client.updateBlockStatus(from, 'block')
+            if (isGroup){
+                if (isQuoted) {
+                    const jid  = msg.message.extendedTextMessage.contextInfo.participant
+                    if (jid == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    client.updateBlockStatus(jid, 'block')
+                } else {
+                    if (args.length == 0 ) return sendReply('')
+                    inWA(msg,client,q).then(async (res) => {if (res != true)return})
+                    const numero = q+'@s.whatsapp.net'
+                    if (numero == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    client.updateBlockStatus(numero, 'block')
+                }
+            }
             break
-        case 'anular': case 'revoke':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            client.groupRevokeInvite(from).then(()=>{sendReply(toast.revoke())})
+        case 'unblock':
+            if (!isGroup) return client.updateBlockStatus(from, 'block')
+            if (isGroup){
+                if (isQuoted) {
+                    const jid  = msg.message.extendedTextMessage.contextInfo.participant
+                    if (jid == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    client.updateBlockStatus(jid, 'unblock')
+                } else {
+                    if (args.length == 0 ) return sendReply('por vavor ingresa el numero de telefono despues del comando')
+                    inWA(msg,client,q).then(async (res) => {if (res != true)return})
+                    const numero = q+'@s.whatsapp.net'
+                    if (numero == numeroBotId) return sendReply('¡[EROR]! No me puedo bloquear a mi misma')
+                    client.updateBlockStatus(numero, 'unblock')
+                }
+            }
             break
-        case 'salir': case 'leave':
-            if (!isOwner) return (alertas.owners)
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            client.groupLeave(from).then(() => {client.sendMessage(sender, {text: toast.leave()}, {quoted: msg})})
+        case 'bimage':
+            const bimage = [ {buttonId: 'id1', buttonText: {displayText: 'Boton 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Boton 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Boton 3'}, type: 1} ]
+            sendButtonImage('./media/test.jpg','¡Hola! Esto es una prueba de envio de botones con imagen',bimage)
             break
-        case 'entrar': case 'join':
-            if (!isOwner) return sendReply(alertas.owners)
-            if (args.length == 0) return sendReply(toast.nojoin(informacion))
-            if (!isWaLink) return sendReply(toast.nowalink())
-            await client.groupAcceptInvite(linkWA).then(() => {sendReply(toast.join())}).catch(() => {sendReply(toast.nowalink())})
+        case 'btext':
+            const btext = [ {buttonId: 'id1', buttonText: {displayText: 'Boton 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Boton 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Boton 3'}, type: 1} ]
+            sendButtonText('¡Hola! Esto es una prueba de envio de botones',btext)
             break
-        case 'nombre': case 'name':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            if (args.length == 0) return sendReply(toast.name())
-            if (q.length > 35 ) return sendReply(toast.longname())
-            client.groupUpdateSubject(from, q).then(()=>{sendReply(toast.namechanged(groupName))})
+        case 'tbt':
+            const tbt = [ {index: 1, urlButton: {displayText: 'Suscribete', url: 'https://www.youtube.com/c/KingAndrewYT'}}, {index: 2, callButton: {displayText: 'llamame', phoneNumber: '+57 322 8125090'}}, {index: 3, quickReplyButton: {displayText: 'Menu', id: '!menu'}}]
+            sendTemplateButtonText('¡Hola! Esto es una prueba de envio de una plantilla de botones', tbt)
             break
-        case 'descripcion': case 'desc': case 'description':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            if (args.length == 0) return sendReply(toast.desc())
-            if (q.length > 522 ) return sendReply(toast.longdesc())
-            client.groupUpdateDescription(from, q).then(() => {sendReply(toast.descchanged(groupDesc))})
+        case 'tbi':
+            const tbi = [ {index: 1, urlButton: {displayText: 'Suscribete', url: 'https://www.youtube.com/c/KingAndrewYT'}}, {index: 2, callButton: {displayText: 'llamame', phoneNumber: '+57 322 8125090'}}, {index: 3, quickReplyButton: {displayText: 'Menu', id: '!menu'}}]
+            sendTemplateButtonImage('./media/text.jpg', '¡Hola! Esto es una prueba de envio de plantilla de botones con imagen', tbi)
             break
-        case 'icono': case 'icon':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            if (isQuotedImage){
-                const profile = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
-                await downloadMediaMessage(profile).then(async res => {await writeFile('./media/profile.jpg', res)})
-                return client.updateProfilePicture(from,readFileSync('./media/profile.jpg')).then(()=>{sendReply(toast.profileg())})
-            }; if(isImage){
-                await downloadMediaMessage(msg).then(async res => {await writeFile('./media/profile.jpg', res)})
-                return client.updateProfilePicture(from,readFileSync('./media/profile.jpg')).then(()=>{sendReply(toast.profileg())})
-            }; sendReply(toast.noprofileg(informacion))
+        case'infolink':case'entrar':case'infogrupo':case'anular':case'enlace':case'crear':case'añadir':case'eliminar':case'promover':case'degradar':case'nombre':case'descripcion':case'perfil':case'mutear':case'desmutear':case'lockdesc':case'unlockdesc':case'salir':
+            //if (!isGroup) return sendReply('esta opcion solo esta disponible dentro de grupos')
+            groupSettings(msg, client, q, args, command)
             break
-        case 'creargrupo': case 'groupcreate':
-            if (!isOwner) return sendReply(alertas.owners)
-            if (args.length == 0) return sendReply(toast.groupcreate(informacion))
-            if(q.length > 35 ) return sendReply(toast.longname())
-            await client.groupCreate(q, [sender]).then(res => { client.groupInviteCode(res.id).then((link) => {client.sendMessage(res.id, {text: toast.joinmessage()});sendReply(toast.gpcreate(link))})})
+        case 'gpperfil':
+            groupSettings(msg, client, q, args, command)
             break
-    }
-
-/*---------MINTAKE - TEXTPRO----------*/
-    switch(command){
+        case 'acceppt':
+            const inviteMessage = msg.message.extendedTextMessage.contextInfo.quotedMessage.groupInviteMessage
+            await client.groupAcceptInviteV4(from, inviteMessage)        
+            break
+        case 'admins':
+            sendReplyWithMentions(q, groupAdmins)
+        break
+        case 'todos':
+            sendReplyWithMentions(q, groupParticipants)
+            break
+    
+    /*---------MINTAKE - TEXTPRO----------*/
         case 'textpro':
             if (args.length == 0) return sendReply(menu.textpro1(informacion))
             if (args[0] == 1) return mintake.textpro('https://textpro.me/create-gradient-neon-light-text-effect-online-1085.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Gradient Neon Light', args[0]))}).catch((err) => logerror(err))
@@ -1239,61 +1235,61 @@ module.exports = async (msg ,client) => {
             if (args[0] == 174) return mintake.textpro('https://textpro.me/carbon-text-effect-833.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Carbon', args[0]))}).catch((err) => logerror(err))
             if (args[0] == 175) return mintake.textpro('https://textpro.me/misc-style-c29-p6', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Misc Style', args[0]))}).catch((err) => logerror(err))
             break
-    }
-/*---------JUEGOS----------*/
-    switch(command){
+
+    /*---------JUEGOS----------*/
         case 'akinator': case 'aki':
-            if (sender !== usuarioJugando && haIniciado == true) return sendReply(toast.noPlayer())
-            if (q.toLowerCase() == 'start'){
-                if(haIniciado == true) return sendReply(toast.akiEnd())
-                const region = 'es'
-                aki = new Aki({region})
-                await aki.start()
-                usuarioJugando = sender
-                haIniciado = true
-                const text = toast.akiStart(aki)
-                const btext = 'Elige una opcion ✨'
-                return sendListText(text, btext, akil0)
-            } else if (q == '0' || q == '1' || q == '2' || q == '3' || q == '4'){
-                if(haIniciado == false){return sendReply(toast.akiStoped())}
-                const myAnswer = q
-                await aki.step(myAnswer)
-                if(aki.progress >= 70 || aki.currentStep >= 78){
-                    await aki.win()
-                    var akiwon = aki.answers[0]
-                    const text = toast.akiWon(akiwon)
-                    const image = akiwon.absolute_picture_path
-                    const buttons = [{buttonId: `${prefix}aki si`, buttonText: {displayText: 'SI'}, type: 1},{buttonId: `${prefix}aki 1`, buttonText: {displayText: 'NO'}, type: 1}]
-                    return sendButtonImage(image, text, buttons)
-                } else {
+                if (sender !== usuarioJugando && haIniciado == true) return sendReply(toast.noPlayer())
+                if (q.toLowerCase() == 'start'){
+                    if(haIniciado == true) return sendReply(toast.akiEnd())
+                    const region = 'es'
+                    aki = new Aki({region})
+                    await aki.start()
+                    usuarioJugando = sender
+                    haIniciado = true
+                    const text = toast.akiStart(aki)
+                    const btext = 'Elige una opcion ✨'
+                    return sendListText(text, btext, akil0)
+                } else if (q == '0' || q == '1' || q == '2' || q == '3' || q == '4'){
+                    if(haIniciado == false){return sendReply(toast.akiStoped())}
+                    const myAnswer = q
+                    await aki.step(myAnswer)
+                    if(aki.progress >= 70 || aki.currentStep >= 78){
+                        await aki.win()
+                        var akiwon = aki.answers[0]
+                        const text = toast.akiWon(akiwon)
+                        const image = akiwon.absolute_picture_path
+                        const buttons = [{buttonId: `${prefix}aki si`, buttonText: {displayText: 'SI'}, type: 1},{buttonId: `${prefix}aki 1`, buttonText: {displayText: 'NO'}, type: 1}]
+                        return sendButtonImage(image, text, buttons)
+                    } else {
+                        const text = toast.akiStep(aki)
+                        const btext = 'Elige una opcion ✨'
+                        return sendListText( text, btext, akil1)
+                    }
+                } else if (q.toLowerCase() == 'atras'){
+                    await aki.back()
                     const text = toast.akiStep(aki)
                     const btext = 'Elige una opcion ✨'
                     return sendListText( text, btext, akil1)
                 }
-            } else if (q.toLowerCase() == 'atras'){
-                await aki.back()
-                const text = toast.akiStep(aki)
-                const btext = 'Elige una opcion ✨'
-                return sendListText( text, btext, akil1)
-            }
-            if (q.toLowerCase() == 'si'){
-                const text = toast.akiWin()
-                const buttons = [{  buttonId:`${prefix}akinator start`, buttonText:{ displayText:'[ JUGAR DE NUEVO ]' }, type:3  }, { buttonId:`${prefix}akinator terminar`, buttonText:{ displayText:'[ TERMINAR ]' }, type:3  }]
-                const image = `https://es.akinator.com/bundles/elokencesite/images/akitudes_670x1096/triomphe.png?v94`
-                return sendButtonImage(image, text, buttons)
-            }
-            if (q.toLowerCase() == 'terminar'){
-                haIniciado = false
-                usuarioJugando = false
-                const text = toast.akiFinish()
-                const image = `https://es.akinator.com/bundles/elokencesite/images/logo_akinator.png?v94`
-                const buttons = [{  buttonId:`${prefix}aki start`, buttonText:{ displayText:'[JUEGO NUEVO]' }, type:1  }]    
-                return sendButtonImage(image, text, buttons)
-            }
-            const text = toast.akiPlay(pushname)
-            const image = `https://es.akinator.com/bundles/elokencesite/images/akinator.png?v94`
-            const buttons = [{  buttonId:`${prefix}akinator start`, buttonText:{ displayText:'[ JUGAR ]' }, type:1  }]
-            return sendButtonImage(image, text, buttons)  
+                if (q.toLowerCase() == 'si'){
+                    const text = toast.akiWin()
+                    const buttons = [{  buttonId:`${prefix}akinator start`, buttonText:{ displayText:'[ JUGAR DE NUEVO ]' }, type:3  }, { buttonId:`${prefix}akinator terminar`, buttonText:{ displayText:'[ TERMINAR ]' }, type:3  }]
+                    const image = `https://es.akinator.com/bundles/elokencesite/images/akitudes_670x1096/triomphe.png?v94`
+                    return sendButtonImage(image, text, buttons)
+                }
+                if (q.toLowerCase() == 'terminar'){
+                    haIniciado = false
+                    usuarioJugando = false
+                    const text = toast.akiFinish()
+                    const image = `https://es.akinator.com/bundles/elokencesite/images/logo_akinator.png?v94`
+                    const buttons = [{  buttonId:`${prefix}aki start`, buttonText:{ displayText:'[JUEGO NUEVO]' }, type:1  }]    
+                    return sendButtonImage(image, text, buttons)
+                }
+                const textAki = toast.akiPlay(pushname)
+                const image = `https://es.akinator.com/bundles/elokencesite/images/akinator.png?v94`
+                const buttonsAki = [{  buttonId:`${prefix}akinator start`, buttonText:{ displayText:'[ JUGAR ]' }, type:1  }]
+                sendButtonImage(image, textAki, buttonsAki)  
+            break
         case 'casino':
             try {
                 var casino = ['- 🍒 ', '- 🎃 ', '- 🍐 ', '- 🍋 ', '- 7️⃣ ', '- 🍇 ']
@@ -1311,11 +1307,9 @@ module.exports = async (msg ,client) => {
             const dados = ['./media/resources/dados/1.webp','./media/resources/dados/2.webp','./media/resources/dados/3.webp','./media/resources/dados/4.webp','./media/resources/dados/5.webp','./media/resources/dados/6.webp']
             let random = dados[Math.floor(Math.random() * dados.length)]
             sentSticker(random)
-            break              
-    }
-
-/*--------STICKERS Y MAS-------- */
-    switch(command){ 
+            break      
+        
+    /*--------STICKERS Y MAS-------- */
         case 'sticker': case 's': case 'stiker':
             if(isQuotedImage){
                 let media = './media/temp/sticker.png'
@@ -1342,22 +1336,8 @@ module.exports = async (msg ,client) => {
                 sendSticker(client,msg,from,media)
             }
             break
+        default:
     }
-/*--------COMANDOS TEST-------- */
-    switch(command){
-        case 'sacame':
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
-            if (args[0] == 'si') { sendReply(toast.sacamesi(pushname, tipoDeUsr));await client.groupParticipantsUpdate(from,[sender], 'remove').then(()=>{sendReply('[Eliminacion Finalizada]')})}
-            if (args[0] == 'no') return sendReply(toast.sacameno())
-            const texto = toast.sacame(pushname, tipoDeUsr)
-            const buttons = [{buttonId: `${prefix}sacame si`, buttonText: {displayText: 'SI⚠️'}, type: 1}, {buttonId: `${prefix}sacame no`, buttonText: {displayText: 'NO✅'}, type: 1}]
-            sendButtonText(texto, buttons)
-            break
-        case 'test':
-            log(miembros)
-            break
-    }
-    const commandStick = isSticker ? msg.message.stickerMessage.fileSha256.toString('base64') : ''
-    log(commandStick)
+    /*const commandStick = isSticker ? msg.message.stickerMessage.fileSha256.toString('base64') : ''*/
         
 }
