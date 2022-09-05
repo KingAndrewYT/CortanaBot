@@ -1,4 +1,5 @@
 exports.sendSticker=require('./stickerprocess')
+exports.webptomp4 = require('./webptomp4')
 exports.inWA=require('./inWA')
 exports.getAdmins=require('./getAdmins')
 exports.getParticipants=require('./getParticipants')

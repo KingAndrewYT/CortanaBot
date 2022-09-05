@@ -205,3 +205,61 @@ _*⋆⋅⊱∘[✧LISTA DE EFECTOS✧]∘⊰⋅⋆*_
 *├─174:* _⋆⋅Carbon⋅⋆_
 *╰─175:* _⋆⋅Misc Style⋅⋆_
 `
+exports.ttsList = (inf) => `${inf}
+
+*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*
+Lista de Idiomas soportados por  TTS(Texto a Voz)
+*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*
+
+_*Idiomas mas populares:*_
+
+*╭─AR:* _Árabe_
+*├─DE:* _Alemán_
+*├─EN:* _Inglés_
+*├─ES:* _Español (Castellano)_
+*├─ID:* _Indonesio_
+*├─IT:* _Italiano_
+*├─JA:* _Japonés_
+*├─KO:* _Coreano_
+*├─LA:* _Latín_
+*├─FR:* _Francés_
+*├─HI:* _Hindi (Hindú)_
+*├─PT:* _Portugués_
+*├─RU:* _Ruso_
+*├─VI:* _Vietnamita_
+*╰─ZH:* _Chino_
+
+*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*
+_*Otros Idiomas Soportados:*_
+
+*╭─AF:* _Afrikaans_
+*├─CA:* _Catalán_
+*├─CS:* _Checo_
+*├─CY:* _Galés_
+*├─DA:* _Danés_
+*├─EL:* _Griego (moderno)_
+*├─EO:* _Esperando_
+*├─FI:* _Finés (Finlandés)_
+*├─HR:* _Croata_
+*├─HU:* _Húngaro_
+*├─HY:* _Armenio_
+*├─IS:* _Islandés_
+*├─LV:* _Letón_
+*├─MK:* _Macedonio_
+*├─NL:* _Neerlandés (Holandés)_
+*├─NO:* _Noruego_
+*├─PL:* _Polaco_
+*├─RO:* _Rumano_
+*├─SK:* _Eslovaco_
+*├─SR:* _Serbio_
+*├─SQ:* _Albanés_
+*├─SV:* _Sueco_
+*├─SW:* _Suajili_
+*├─TA:* _Tamil_
+*├─TH:* _Tailandés_
+*╰─TR:* _Turco_
+*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*
+
+ _❍⌇─➭ Recomendaciones:_
+_Si deseas conocer el funcionamineto del comando Texto a Voz por favor escribe: *${prefix}tts* y sigue las instrucciones._
+*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`

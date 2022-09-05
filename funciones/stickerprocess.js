@@ -12,12 +12,12 @@ const sendSticker = async (client, msg, from, media ) => {
         .toFormat('webp')
         .save(ran)
     .on('error', () => {
-        //unlinkSync(media)
+        unlinkSync(media)
         unlinkSync(ran)
     })
     .on('end', async () =>{
         await sendSticker(ran)
-        //unlinkSync(media)
+        unlinkSync(media)
         unlinkSync(ran)
     })
 }

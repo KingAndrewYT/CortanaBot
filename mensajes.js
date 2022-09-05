@@ -2,6 +2,7 @@
 /*----------MODULOS----------*/
 const {assertMediaContent, downloadMediaMessage, WA_DEFAULT_EPHEMERAL, downloadContentFromMessage, getContentType } = require ('@adiwajshing/baileys')
 const { writeFile } =  require ('fs/promises')
+const {exec} = require ('child_process')
 const {generate} = require ('flaming-text-generator')
 const moment = require ('moment-timezone')
 const gtts = require ('node-gtts')
@@ -20,6 +21,7 @@ const { text } = require('figlet')
 const { Aki } = require('aki-api')
 
 let {inWA, groupSettings, getAdmins, getAll, getParticipants, sendSticker} = funciones
+const {getRules, addRules, checkRules, resetRules} = require('./funciones/reglas.js')
 let { readFileSync, writeFileSync, unlinkSync, existsSync} = fs
 let { stringify, parse } = JSON
 
@@ -52,6 +54,7 @@ const premium = parse(readFileSync('./JSONS/premium.json'))
 const _afk = parse(readFileSync('./JSONS/afk.json'))
 const _leveling = parse(readFileSync('./JSONS/leveling.json'))
 const _registered = parse(readFileSync('./JSONS/registered.json'))
+const _rules = parse(readFileSync('./JSONS/rules.json'))
 const _level = parse(readFileSync('./datos/level.json'))
 const antiarabes = parse(readFileSync('./JSONS/antiarabes.json'))
 const antifakes = parse(readFileSync('./JSONS/antifakes.json'))
@@ -116,6 +119,7 @@ module.exports = async (msg ,client) => {
     const isText = messageType === 'conversation' 
     const isImage = messageType === 'imageMessage'
     const isVideo = messageType === 'videoMessage'
+    const isViewOnce = messageType === 'viewOnceMessage'
     const isMedia = (isImage || isVideo)
     const isAudio = messageType === 'audioMessage'
     const isSticker = messageType === 'stickerMessage'
@@ -137,6 +141,7 @@ module.exports = async (msg ,client) => {
     const isQuotedText = quotedMessageType === 'conversation'
     const isQuotedImage = quotedMessageType === 'imageMessage'
     const isQuotedVideo = quotedMessageType === 'videoMessage'
+    const isQuotedViewOnce = quotedMessageType === 'viewOnceMessage'
     const isQuotedMedia = (isQuotedImage || isQuotedVideo)
     const isQuotedAudio = quotedMessageType === 'audioMessage'
     const isQuotedSticker = quotedMessageType === 'stickerMessage'
@@ -149,6 +154,17 @@ module.exports = async (msg ,client) => {
     const isQuotedReaction = quotedMessageType === 'reactionMessage'
     const isQuotedQuoted = quotedMessageType === 'extendedTextMessage'
     const isQuotedInviteLink = quotedMessageType === 'groupInviteMessage'
+
+/*----------VIEW ONCE MESSAGES----------*/
+    const typeVO = isViewOnce ? msg.message.viewOnceMessage.message : ''
+    var VO = Object.keys(typeVO)[0]
+    const isVOImage = VO === 'imageMessage'
+    const isVOVideo = VO === 'videoMessage'
+
+    const typeQVO = isQuotedViewOnce ? msg.message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage.message : false
+    var quotedVO = Object.keys(typeQVO)[0]
+    const isQVOImage = quotedVO === 'imageMessage'
+    const isQVOVideo = quotedVO === 'videoMessage'
 
 /*----------OBTENCION DE MENSAJES----------*/
     //const body = isText && msg.message[messageType] ? msg.message[messageType] : isImage && msg.message[messageType].caption ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption ? msg.message[messageType].caption : isQuoted && msg.message[messageType].text ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : isReaction && msg.message[messageType].text ? msg.message[messageType].text : ''
@@ -197,7 +213,8 @@ module.exports = async (msg ,client) => {
     //const groupEphemeral = isEphemeral ? groupMetadata.ephemeralDuration : ''
     const isTag = isQuoted && msg.message.extendedTextMessage.contextInfo != null ? msg.message.extendedTextMessage.contextInfo.participant != '' : false
     const isMentionedTag = isQuoted && msg.message.extendedTextMessage.contextInfo != null ? msg.message.extendedTextMessage.contextInfo.mentionedJid : false
-    
+    const isTagStick = isSticker ? msg.message.stickerMessage.contextInfo.quotedMessage != null : false
+
 /*-------------INCLUSORES---------------*/
     const isOwner = ownerNumber.includes(sender)
     const isAdmin = groupAdmins.includes(sender)
@@ -283,6 +300,7 @@ module.exports = async (msg ,client) => {
     }
 
 /*----------FUNCIONES----------*/
+    if (!isGroup && !isOwner) return
     if (isGroup && isLink && isCeroenlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
     if (isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
     if (!isMe && !isCmd && (chats).toLowerCase().startsWith('@everyone')){
@@ -310,10 +328,12 @@ module.exports = async (msg ,client) => {
     if(!isMe && isQuoted && !isCmd){
         const idMsg = msg.message.extendedTextMessage.contextInfo.participant
         if (idMsg != numeroBotId) return 
-        const {data} = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(chats)}&lc=es&cf=false`)
-        const {success} = data
-        await escribiendo(from)
-        sendReply(success)
+        await translate(chats, 'es').then(async (res) => {
+            const {data} = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(res)}&lc=es&cf=false`)
+            const {success} = data
+            await escribiendo(from)
+            sendReply(success)
+        })
     }
     if (!isMe && !isCmd && chats.toLowerCase().startsWith('simi ')){
         const text = chats.slice(5)
@@ -323,7 +343,7 @@ module.exports = async (msg ,client) => {
         sendReply(success)
     }
     if (!isMe && !isCmd && chats.toLowerCase().startsWith('cortana ')){
-        await escribiendo(from)
+        escribiendo(from)
         const text = chats.slice(8)
         await translate(text, 'en').then(async (res)=>{
             const {data} = await axios.get(`https://some-random-api.ml/chatbot?message=${encodeURIComponent(res)}&key=l00NB88YglRMSz69Uocfjgvq1`)
@@ -364,6 +384,10 @@ module.exports = async (msg ,client) => {
         sendPttReply(randomn)
     }
 
+    /*-----------STICKER COMMAND */
+    const u8 = isSticker ? msg.message.stickerMessage.fileSha256 : ''
+    const stickerCommand = Buffer.from(u8).toString('base64')
+
 /*---------FUNCION AUTOSTICKERS------ */
     if (isMedia && isGroup && isAutostickers){
         if(isImage){
@@ -382,7 +406,6 @@ module.exports = async (msg ,client) => {
 /*----------LOGS----------*/    
     if (isCmd && !isGroup) { log(color('[CMD]', 'magenta'),  color(`${command}[${args.length}]`),  'de', color(pushname), 'a las: ' ,color(moment().tz('America/Bogota').format('h:mm a'), 'yellow') ) }
     if (isCmd && isGroup) { log(color('[CMD]', 'magenta'),  color(`${command}[${args.length}]`),  'de', color(pushname),  'en',  color (groupName),  'a las: ',color(moment().tz('America/Bogota').format('h:mm a'), 'yellow') ) }
-    if (!isOwner && isAdmin && isCmd) return sendReply('{modo desarrollador activado}')
 
     switch(command){
         /*---------AJUSTES DE GRUPOS----------*/
@@ -453,7 +476,7 @@ module.exports = async (msg ,client) => {
                 if (!groupAdmins.includes(etiqueta)) return sendReply(toast.demadmin(pushname))
                 const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido degradado rango *Administrador*`
                 return client.groupParticipantsUpdate(from,[etiqueta], 'demote').then(()=>{sendReplyWithMentions(text, [etiqueta])})
-            } 
+            }
             if (isMentionedTag){
                 const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
                 if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
@@ -844,9 +867,6 @@ module.exports = async (msg ,client) => {
             const texto = toast.sacame(pushname, tipoDeUsr)
             const buttons = [{buttonId: `${prefix}sacame si`, buttonText: {displayText: 'SI⚠️'}, type: 1}, {buttonId: `${prefix}sacame no`, buttonText: {displayText: 'NO✅'}, type: 1}]
             sendButtonText(texto, buttons)
-            break
-        case 'test':
-            log(miembros)
             break
         case 'repite':
             if (args.length == 0) return sendReply('*⋆⊱∘[✧repite✧]∘⊰⋆*\n_Si deseas que yo repita algo envia un mensaje con el siguiente formato: *${prefix}repite + mensaje que quieres que repita*_\n\n_Ejemplo: *${prefix}repite Hola usuario como estas?*_\n*⋆⊱∘[✧cortana✧]∘⊰⋆*')
@@ -1311,33 +1331,174 @@ module.exports = async (msg ,client) => {
         
     /*--------STICKERS Y MAS-------- */
         case 'sticker': case 's': case 'stiker':
-            if(isQuotedImage){
-                let media = './media/temp/sticker.png'
-                const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
-                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
-                sendSticker(client,msg,from,media)
-            } 
-            if (isImage){
-                let media = './media/temp/sticker.png'
-                await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)})
-                sendSticker(client,msg,from,media)
-            }
-            if (isQuotedVideo ){
-                if(msg.message.extendedTextMessage.contextInfo.quotedMessage.videoMessage.seconds > 10 ) return sendReply(toast.longSticker())
-                let media = './media/temp/sticker.mp4'
-                const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
-                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
+            if(isQuotedImage ){ let media = './media/temp/sticker.png';  const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo; await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});  sendSticker(client,msg,from,media) } ;            
+            if (isImage){ let media = './media/temp/sticker.png'; await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media) };            
+            if (isQuotedVideo ){ if(msg.message.extendedTextMessage.contextInfo.quotedMessage.videoMessage.seconds > 10 ) return sendReply(toast.longSticker()); let media = './media/temp/sticker.mp4'; const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo; await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media) };            
+            if (isVideo){ if (msg.message.videoMessage.seconds > 10) return sendReply(toast.longSticker()); let media = './media/temp/sticker.mp4'; await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media); };            
+            if (isQVOImage){ let media = './media/temp/reveal.png'; const encmedia = msg.message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage; await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media) }
+            if (isVOImage){
+                let media = './media/temp/sticker.png';
+                const encmedia = msg.message.viewOnceMessage;
+                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});
                 sendSticker(client,msg,from,media)
             }
-            if (isVideo){
-                if(msg.message.videoMessage.seconds > 10) return sendReply(toast.longSticker())
-                let media = './media/temp/sticker.mp4'
-                await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)})
+            if (isQVOVideo){
+                let media = './media/temp/sticker.mp4';
+                const encmedia = msg.message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage;
+                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});
                 sendSticker(client,msg,from,media)
+            }
+            break
+        
+    /*--------PROCESADORES DE AUDIO, IMAGEN Y VIDEO-------- */
+        case 'toimg': case 'stimg':
+            if (isQuotedSticker){
+                var ran = `${Math.floor(Math.random() * 10000)}${'.png'}`
+                let media = './media/temp/toimg.png'
+                const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
+                exec(`ffmpeg -i ${media} ${ran}`, () => {client.sendMessage(from, {image: readFileSync(ran), caption: alertas.processed},{quoted: msg}); unlinkSync(ran); unlinkSync(media)})
+            }
+            break
+        case 'tovid': case 'stvid':
+            if (isQuotedSticker){
+                let media = './media/temp/tovid.webp'
+                const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
+                webptomp4(media)
+            }
+            break
+        case 'tovn':
+            return sendReply('Funcion en desarrollo')
+            if (isQuotedAudio || isQuotedVideo){
+                var ran = `${Math.floor(Math.random() * 10000)}${'.mp4'}`
+                let media = './media/temp/tovn.mp4'
+                const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
+                exec(`ffmpeg -i ${media} ${ran}`, () => { const buffer = readFileSync(ran); client.sendMessage(from, { audio: buffer, mimetype: 'audio/mp4', ptt: true},{quoted: msg}); unlinkSync(ran); unlinkSync(media)})
+            }
+            break
+        case 'tomp3':
+            if (isQuotedAudio || isQuotedVideo){
+                var ran = `${Math.floor(Math.random() * 10000)}${'.mp4'}`
+                let media = './media/temp/tovn.mp4'
+                const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
+                exec(`ffmpeg -i ${media} ${ran}`, () => { const buffer = readFileSync(ran) ; client.sendMessage(from, { audio: buffer, mimetype: 'audio/mp4' },{quoted: msg}); unlinkSync(ran); unlinkSync(media) })
+            }
+            break
+        case 'tts':
+            try {
+                if (args.length == 0) return sendButtonText(toast.tts(), [{  buttonId:`${prefix}listatts`, buttonText:{ displayText:'·Lista Idiomas·' }, type:1  }])
+                const dataText = q.slice(3)
+                const ttsGB = gtts(args[0])
+                if (dataText == '') return sendReply(toast.ttsError()) 
+                ttsGB.save('./media/temp/tts.mp3', dataText, async function(){ grabando(from); await sendPttReply('./media/temp/tts.mp3').catch(() => {sendReply(toast.error())})})
+            } catch(e){
+                log(e)
+            }
+            break
+        case 'listatts':
+            sendReply(menu.ttsList(informacion))
+            break
+        case 'clima':
+            if(args.length == 0) return sendReply(toast.clima())
+            const {data} = await axios.get(`https://api.weatherapi.com/v1/current.json?key=0a00314faabd4e3ab39175815211712&q=${encodeURIComponent(q)}&aqi=no`)
+            const {name, region, country, lat, lon, tz_id, localtime} = data.location
+            const {temp_c, temp_f, condition} = data.current
+            translate(condition.text, 'es').then(async (res) => {
+                const text = `*⋆⋅⋅⋅⊱∘──[✧CLIMA✧]──∘⊰⋅⋅⋅⋆*\n_*${name} - ${region} - ${country}*_\n*${localtime}*\n*${res}*\n\n*${temp_c}ºc - ${temp_f}ºf*\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`
+                sendImageReply(`https:${condition.icon}`, text)
+            })
+            break
+        case 'newrule': case 'addrule': case 'nuevaregla':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            addRules(groupId,q)
+            sendReply(toast.rulesUpdated(q))
+            break
+        case 'reglas': case 'rules':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            const isRule = checkRules(groupId)
+            if (isRule === false){
+                if (groupDesc === undefined){ var reglas = 'Este grupo aun no tiene reglas definidas.' } else { var reglas = groupDesc }
+                sendReply(toast.rules(groupName, reglas))
+            } else {
+                const rules = getRules(groupId)
+                sendReply(toast.rules(groupName, rules))
+            }
+            break
+        case 'resetrules':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            try {
+                const isRule = checkRules(groupId)
+                if (isRule == false) return sendReply(toast.notRules())
+                resetRules(groupId)
+                sendReply(toast.rulesReset())
+            } catch (e) {
+                log(e)
+            }
+            break
+        case 'test':
+            log(msg.message.extendedTextMessage.contextInfo)
+            break
+        case 'revelar':
+            if(isQuotedViewOnce){
+                const encmedia = msg.message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage
+                let media = './media/temp/reveal.png'
+                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
+                sendImageReply(media, alertas.sucess)
+            } else {
+                sendReply('[Error] => Funcion no disponible para mensajes normales')
             }
             break
         default:
     }
-    /*const commandStick = isSticker ? msg.message.stickerMessage.fileSha256.toString('base64') : ''*/
-        
+
+    switch(stickerCommand){
+        case 'G9tTADIZWkqyKB46Hhxlg5qex17XLQ9e/H6psMqX/aY=': //degradar
+            if (!isGroup) return 
+            if (!isAdmin && !isOwner && !isVip) return sentSticker('./media/resources/noeresadmin.webp')
+            if (!isBotAdmin) return sentSticker('./media/resources/nosoyadmin.webp')
+            if (isTagStick){
+                const etiqueta = msg.message.stickerMessage.contextInfo.participant
+                /*if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
+                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
+                if (etiqueta == numeroBotId) return sendReply(toast.dembot(pushname))
+                if (!groupAdmins.includes(etiqueta)) return sendReply(toast.demadmin(pushname))
+                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido degradado rango *Administrador*`*/
+                client.groupParticipantsUpdate(from,[etiqueta], 'demote')//.then(()=>{sendReplyWithMentions(text, [etiqueta])})
+            }
+            break
+        case 'bpBZYs84+GEOkiydmHJx3gTW/y0+DgSFxR8lTDRDytI=': //promover
+            if (!isGroup) return 
+            if (!isAdmin && !isOwner && !isVip) return sentSticker('./media/resources/noeresadmin.webp')
+            if (!isBotAdmin) return sentSticker('./media/resources/nosoyadmin.webp')
+            if (isTagStick){
+                const etiqueta = msg.message.stickerMessage.contextInfo.participant
+                /*if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
+                if (etiqueta == numeroBotId) return sendReply(toast.prombot(pushname))
+                if (groupAdmins.includes(etiqueta)) return sendReply(toast.promadmin(pushname))
+                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido promovido al rango *Administrador*`*/
+                return client.groupParticipantsUpdate(from,[etiqueta], 'promote')//.then(()=>{sendReplyWithMentions(text, [etiqueta])})
+            }
+            break
+        case 'Qh+dbYtW4U6tyUzYXZBlvaQf3bqP3lUVy7pMFdxEKvE=' : //ban
+            if (!isGroup) return 
+            if (!isAdmin && !isOwner && !isVip) return sentSticker('./media/resources/noeresadmin.webp')
+            if (!isBotAdmin) return sentSticker('./media/resources/nosoyadmin.webp')
+            if (isTagStick){
+                const etiqueta = msg.message.stickerMessage.contextInfo.participant
+                /*if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
+                if (etiqueta == numeroBotId) return sendReply(toast.rembot(pushname))
+                if (groupAdmins.includes(etiqueta)) return sendReply(toast.remadmin(pushname))
+                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido eliminado grupo`*/
+                return client.groupParticipantsUpdate(from,[etiqueta], 'remove')//.then(()=>{sendReplyWithMentions(text, [etiqueta])})
+            } 
+        break
+        default:
+    }
+    //if (isSticker) {log(stickerCommand)}
 }
