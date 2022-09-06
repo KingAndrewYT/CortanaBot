@@ -68,7 +68,7 @@ exports.akiEnd = () => `*👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀𝐌𝐄𝐒
 exports.akiFail = () => `*👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀𝐌𝐄𝐒 - 𝐀𝐊𝐈𝐍𝐀𝐓𝐎𝐑]🧞‍♂️*\n[Error] la sesion del juego se ha cerrado, intentare crear una nueva, si no funciona, por favor contactate con mi desarrollador.`
 exports.akiStoped = () => `*👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀𝐌𝐄𝐒 - 𝐀𝐊𝐈𝐍𝐀𝐓𝐎𝐑]🧞‍♂️*\n[Error] No hay ninguna sesion del juego iniciada por favor envia el comando ${prefix}akinator para iniciar un nuevo juego`
 
-exports.longSticker = () => `[Error] El video que has enviado es demasiado largo, por favor intenta con un video de menos de 10 segundos.`
+exports.longSticker = () => `[Error] El video que has enviado es demasiado largo, por favor intenta con un video de menos de 1s0 segundos.`
 exports.sacame = (pushname, tipoDeUsr) => `Hola *${pushname} - ${tipoDeUsr}* estas segur@ que quieres que te elimine? \n\n🚨NO OPRIMAS EL BOTON *"SI"* SI NO QUIERES SER ELIMINADO🚨`
 exports.sacamesi = (pushname, tipoDeUsr) => `[Solicitud Aceptada] => Eliminando *${tipoDeUsr} ${pushname}`
 exports.sacameno = () => `[Eliminacion Cancelada]`
@@ -82,6 +82,13 @@ exports.error = () => `[Error] 404 Not Found.`
 exports.clima = () => `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_‼️Para usar el comando *${prefix}clima*_ \n_Envía un mensaje con el comando *${prefix}clima <nombre de tu ciudad>*_\n\n_❍⌇─➭Ejemplo: *${prefix}clima bogota*_\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n\n_❍⌇─➭Recomendaciones:_\n_1. No colocar tildes en los nombres de las ciudades._\n_2. No colocar nombres de países._\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*` 
 
 exports.rulesUpdated = (rules) => `[SUCCESS] => Se han actualizado las reglas de este grupo: \n\nNuevas reglas:\n\n ${rules}`
-exports.rules = (groupName, reglas) => `*·Reglas del grupo:* \n\n*${groupName}·*\n\n${reglas}`
+exports.rules = (groupName, reglas) => `[NORMAS DEL GRUPO]\n\n${reglas}`
 exports.notRules = () => `[ERROR] => Este grupo no tiene reglas personalizadas\n\nSi quieres añadir reglas personalizadas envia el comando ${prefix}nuevaregla + regla del grupo `
 exports.rulesReset = () => `[Success] => Las reglas personalizadas del grupo han sido eliminadas, se enviara la descripcion del grupo cada ves que se ponga el comando ${prefix}reglas\n\nSi quieres añadir reglas personalizadas envia el comando ${prefix}nuevaregla + regla del grupo `
+
+exports.avoactive = () => `[Anti Ver Una Vez Activado]`
+
+exports.userRegistered = () => `[Error] ya estas registrado en nuestro sistema`
+exports.registering = () => `[...] Registrando por favor espere`
+exports.unregister = () => `[...] Eliminando registros por favor espere...`
+exports.unregistered = () => `[Success] Registros eliminados correctamente`

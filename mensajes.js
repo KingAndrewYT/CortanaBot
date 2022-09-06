@@ -22,6 +22,7 @@ const { Aki } = require('aki-api')
 
 let {inWA, groupSettings, getAdmins, getAll, getParticipants, sendSticker} = funciones
 const {getRules, addRules, checkRules, resetRules} = require('./funciones/reglas.js')
+const {unRegisterUser, getRandomUserId, getRegisteredAge, getRegisteredId, getRegisteredName, getRegisteredSerial, getRegisteredTime, addRegisteredUser, createSerial, checkRegisteredUser} = require('./funciones/register.js')
 let { readFileSync, writeFileSync, unlinkSync, existsSync} = fs
 let { stringify, parse } = JSON
 
@@ -64,6 +65,7 @@ const onlypremium = parse(readFileSync('./JSONS/onlypremium.json'))
 const onlyadmins = parse(readFileSync('./JSONS/onlyadmins.json'))
 const nsfw = parse(readFileSync('./JSONS/nsfw.json'))
 const porno = parse(readFileSync('./JSONS/porno.json'))
+const antivuv = parse(readFileSync('./JSONS/antivuv.json'))
 const simi = parse(readFileSync('./JSONS/simi.json'))
 const cortana = parse(readFileSync('./JSONS/cortana.json'))
 const autostickers = parse(readFileSync('./JSONS/autostickers.json'))
@@ -99,9 +101,9 @@ module.exports = async (msg ,client) => {
     const sendListText = async (text, btext, sections) => { client.sendMessage(from, {text: text, footer: copyright, title: '', buttonText: btext, sections })}
     const sendReaction = async (texto, para) => {client.sendMessage(para, { react: { text: texto, key: msg.key } })}
     const sendGif = async (ubicacion, texto) => {client.sendMessage(from, {video: {url: ubicacion}, caption: texto, gifPlayback: true})}
-    const sendGifReply = async (ubicacion, texto) => {client.sendMessage(from, {video: {url: ubicacion}, caption: texto, gifPlayback: true},{quoted: msg})}
+    const sendGifReply = async (ubicacion, texto) => {client.sendMessage(from, {video: ubicacion, caption: texto, gifPlayback: true},{quoted: msg})}
     const sendVideo = async (ubicacion, texto) => {client.sendMessage(from, {video: {url: ubicacion, caption: texto}})}
-    const sendVideoReply = async (ubicacion, texto) => {client.sendMessage(from, {video: {url:ubicacion, caption: texto}},{quoted: msg})}
+    const sendVideoReply = async (ubicacion, texto) => {client.sendMessage(from, {video: ubicacion, caption: texto},{quoted: msg})}
     const sendImageReply = async (ubicacion, texto) => {client.sendMessage(from, {image: {url:ubicacion}, caption: texto},{quoted: msg})}
     const sendAudio = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4' })}
     const sendAudioReply = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4' },{quoted: msg})}
@@ -167,8 +169,8 @@ module.exports = async (msg ,client) => {
     const isQVOVideo = quotedVO === 'videoMessage'
 
 /*----------OBTENCION DE MENSAJES----------*/
-    //const body = isText && msg.message[messageType] ? msg.message[messageType] : isImage && msg.message[messageType].caption ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption ? msg.message[messageType].caption : isQuoted && msg.message[messageType].text ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : isReaction && msg.message[messageType].text ? msg.message[messageType].text : ''
-    const cmd = isText && msg.message[messageType].startsWith(prefix) ? msg.message[messageType] : isImage && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption :  isQuoted && msg.message[messageType].text.startsWith(prefix) ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId.startsWith(prefix) ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId.startsWith(prefix) ? msg.message.listResponseMessage.singleSelectReply.selectedRowId: isReaction && msg.message[messageType].text ? msg.message[messageType].text : '' 
+    //const body = isText && msg.message[messageType] ? msg.message[messageType] : isImage && msg.message[messageType].caption ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption ? msg.message[messageType].caption : isQuoted && msg.message[messageType].text ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : isReaction && msg.message[messageType].text ? msg.message[messageType].text : isViewOnce && msg.message[messageType].message[VO].caption.startsWith(prefix) ? msg.message[messageType].message[VO].caption : '' 
+    const cmd = isText && msg.message[messageType].startsWith(prefix) ? msg.message[messageType] : isImage && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption :  isQuoted && msg.message[messageType].text.startsWith(prefix) ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId.startsWith(prefix) ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId.startsWith(prefix) ? msg.message.listResponseMessage.singleSelectReply.selectedRowId: isReaction && msg.message[messageType].text ? msg.message[messageType].text : isViewOnce && msg.message[messageType].message[VO].caption.startsWith(prefix) ? msg.message[messageType].message[VO].caption : '' 
     const chats = isText && msg.message[messageType] ? msg.message[messageType]: isQuoted && msg.message[messageType].text ? msg.message[messageType].text : ''
     const selectedButton = isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : ''
     const selectedList = isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : ''
@@ -219,7 +221,7 @@ module.exports = async (msg ,client) => {
     const isOwner = ownerNumber.includes(sender)
     const isAdmin = groupAdmins.includes(sender)
     const isBotAdmin = groupAdmins.includes(numeroBotId)
-    //const isRegistered = checkRegisteredUser(sender)
+    const isRegistered = checkRegisteredUser(sender)
     const isBot = numeroBotId.includes(sender)
     const isBanned = banned.includes(sender)
     const isVip = vip.includes(sender)
@@ -242,6 +244,7 @@ module.exports = async (msg ,client) => {
     const isOnlyadmins = isGroup ? onlyadmins.includes(from) : false
     const isNsfw = isGroup ? nsfw.includes(from) : false
     const isPorno = isGroup ? porno.includes(from) : false
+    const isAntivuv = isGroup ? antivuv.includes(from) : false
     const isSimi = isGroup ? simi.includes(from) : false
     const isCortana = isGroup ? cortana.includes(from) : false
     const isAutostickers = isGroup ? autostickers.includes(from) : false
@@ -266,7 +269,7 @@ module.exports = async (msg ,client) => {
     const isLink = chats.match(new RegExp(/((?:(http|https|Http|Https|rtsp|Rtsp):\/\/(?:(?:[a-zA-Z0-9\$\-\_\.\+\!\*\'\(\)\,\;\?\&\=]|(?:\%[a-fA-F0-9]{2})){1,64}(?:\:(?:[a-zA-Z0-9\$\-\_\.\+\!\*\'\(\)\,\;\?\&\=]|(?:\%[a-fA-F0-9]{2})){1,25})?\@)?)?((?:(?:[a-zA-Z0-9][a-zA-Z0-9\-]{0,64}\.)+(?:(?:aero|arpa|asia|a[cdefgilmnoqrstuwxz])|(?:biz|b[abdefghijmnorstvwyz])|(?:cat|com|coop|c[acdfghiklmnoruvxyz])|d[ejkmoz]|(?:edu|e[cegrstu])|f[ijkmor]|(?:gov|g[abdefghilmnpqrstuwy])|h[kmnrtu]|(?:info|int|i[delmnoqrst])|(?:jobs|j[emop])|k[eghimnrwyz]|l[abcikrstuvy]|(?:mil|mobi|museum|m[acdghklmnopqrstuvwxyz])|(?:name|net|n[acefgilopruz])|(?:org|om)|(?:pro|p[aefghklmnrstwy])|qa|r[eouw]|s[abcdeghijklmnortuvyz]|(?:tel|travel|t[cdfghjklmnoprtvwz])|u[agkmsyz]|v[aceginu]|w[fs]|y[etu]|z[amw]))|(?:(?:25[0-5]|2[0-4][0-9]|[0-1][0-9]{2}|[1-9][0-9]|[1-9])\.(?:25[0-5]|2[0-4][0-9]|[0-1][0-9]{2}|[1-9][0-9]|[1-9]|0)\.(?:25[0-5]|2[0-4][0-9]|[0-1][0-9]{2}|[1-9][0-9]|[1-9]|0)\.(?:25[0-5]|2[0-4][0-9]|[0-1][0-9]{2}|[1-9][0-9]|[0-9])))(?:\:\d{1,5})?)(\/(?:(?:[a-zA-Z0-9\;\/\?\:\@\&\=\#\~\-\.\+\!\*\'\(\)\,\_])|(?:\%[a-fA-F0-9]{2}))*)?(?:\b|$)/gi))
     const linkWA = q.split('https://chat.whatsapp.com/')[1]
 
-/*----------VARIABLES----------*/
+/*----------VARIABLES----------*/ 
     const horario = moment().format('HH')
     var saludo = 'feliz media noche 🌃' 
     if (horario >= '01' && horario <= '04') { var saludo = 'feliz madrugada 🌃'}
@@ -287,7 +290,7 @@ module.exports = async (msg ,client) => {
     const akil0 = [{ rows: [{ title: `Si`, rowId: `${prefix}aki 0` },{ title: `No`, rowId: `${prefix}aki 1` }, { title: `No lo se`, rowId: `${prefix}aki 2` }, { title: `Probablemente`, rowId: `${prefix}aki 3` },{ title: `Probablemente no`, rowId: `${prefix}aki 4` }] }]
     const akil1 = [{ rows: [{ title: `Si`, rowId: `${prefix}aki 0` },{ title: `No`, rowId: `${prefix}aki 1` }, { title: `No lo se`, rowId: `${prefix}aki 2` }, { title: `Probablemente`, rowId: `${prefix}aki 3` },{ title: `Probablemente no`, rowId: `${prefix}aki 4` },{ title: `<= Anterior`, rowId: `${prefix}aki atras` }] }]
     
-    if (isReaction){
+    /*if (isReaction){
         const emojiReaction = msg.message.reactionMessage.text
         var reactionEmoji = 'Reaccion Desconocida'
         if (emojiReaction === '😂'){var reactionEmoji = 'Reaccion de Risa 😂'}
@@ -297,8 +300,7 @@ module.exports = async (msg ,client) => {
         if (emojiReaction === '👍'){var reactionEmoji = 'Reaccion de Gusto 👍'}
         if (emojiReaction === '🙏'){var reactionEmoji = 'Reaccion de Agradecimiento 🙏'}
         log(reactionEmoji)
-    }
-
+    }*/
 /*----------FUNCIONES----------*/
     if (!isGroup && !isOwner) return
     if (isGroup && isLink && isCeroenlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
@@ -320,18 +322,35 @@ module.exports = async (msg ,client) => {
     }
     if (!isMe && !isCmd && chats.toLowerCase().includes('bot') && chats.toLowerCase().includes('te')&& chats.toLowerCase().includes('amo')){ sendReaction('❤️', from ) }
 
+/*----------FUNCION DE REGISTRO----------*/
+    if (chats.toLowerCase() === 'registrar'){
+        if (isRegistered) return sendReply(toast.userRegistered())
+        const serialUser = createSerial(10); sendReply(toast.registering())
+        try { var profile = await client.profilePictureUrl(sender, 'image') } catch { var profile = 'https://i.ibb.co/j4rsNvy/nopp.png' }
+        const text = `◢┏━━━━━━━━━━━━━━━┓◣\n┏┫Registro: • Exitoso •\n┃┗┯┯┯┯┯┯┯┯┯┯┯┯┯┯┯┛\n┃┏┷┷┷┷┷┷┷┷┷┷┷┷┷┷┷┓\n┣┫• Id: ${serialUser}\n┣┫• Fecha: ${date}\n┣┫• Hora: ${time}\n┗┃• Nombre: ${pushname}\n◥┗━━━━━━━━━━━━━━━┛◤`
+        const buttons = [{  buttonId:`${prefix}menu`, buttonText:{ displayText:'·MENU·' }, type:1  }]
+        addRegisteredUser(sender, pushname, time, serialUser)
+        sendButtonImage(profile, text, buttons)
+    }
+    if(chats.toLowerCase() === 'unregister'){
+        if (!isRegistered) return sendReply(toast.userUnRegistered())
+        unRegisterUser(sender)
+        await sendReply(toast.unregister())
+        sendReply(toast.unregistered())
+    }
+
+
 /*----------RESPUESTAS DE LA BOT----------*/
     if (!isMe && chats.toLowerCase().startsWith('..')){ sendReaction('🫶', from)}
     if (!isCmd && (chats).toLowerCase().startsWith('di ')){ const tts = gtts('es') ;const text = chats.slice(3) ; tts.save('./media/temp/di.mp3', text, async function(){ grabando(from) ; await sendPttReply('./media/temp/di.mp3').catch(e => {return sendReply('¡ERROR 404! Not Found.')}) })}
-
 /*----------CHAT BOTS----------*/
-    if(!isMe && isQuoted && !isCmd){
+    if(!isMe && isTag && !isCmd){
         const idMsg = msg.message.extendedTextMessage.contextInfo.participant
         if (idMsg != numeroBotId) return 
         await translate(chats, 'es').then(async (res) => {
             const {data} = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(res)}&lc=es&cf=false`)
             const {success} = data
-            await escribiendo(from)
+            escribiendo(from)
             sendReply(success)
         })
     }
@@ -384,22 +403,44 @@ module.exports = async (msg ,client) => {
         sendPttReply(randomn)
     }
 
-    /*-----------STICKER COMMAND */
+/*-----------STICKER COMMAND */
     const u8 = isSticker ? msg.message.stickerMessage.fileSha256 : ''
     const stickerCommand = Buffer.from(u8).toString('base64')
 
 /*---------FUNCION AUTOSTICKERS------ */
-    if (isMedia && isGroup && isAutostickers){
-        if(isImage){
-            let media = './media/temp/autsticker.png'
-            await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)})
+    if (!isMe && isMedia || isViewOnce && isGroup && isAutostickers){
+        if(isImage){ let media = './media/temp/autsticker.png'; await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media);  }
+        if(isVideo){ if(msg.message.videoMessage.seconds > 10) return; let media = './media/temp/sticker.mp4'; await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media)}
+        if (isVOImage){
+            let media = './media/temp/sticker.png';
+            const encmedia = msg.message.viewOnceMessage;
+            await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});
             sendSticker(client,msg,from,media)
         }
-        if(isVideo){
-            if(msg.message.videoMessage.seconds > 10) return
-            let media = './media/temp/sticker.mp4'
-            await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)})
+        if (isVOVideo){
+            let media = './media/temp/sticker.mp4';
+            const encmedia = msg.message.viewOnceMessage;
+            if(encmedia.message.videoMessage.seconds > 10) return
+            await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});
             sendSticker(client,msg,from,media)
+        }
+    }
+
+/*---------FUNCION ANTI VER UNA VEZ------ */
+    if (isAntivuv){
+        if(isVOImage){
+            log('[ ViewOnce Image Detected ]')
+            let media = './media/temp/antivo.png';
+            const encmedia = msg.message.viewOnceMessage;
+            await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});
+            sendImageReply(media, toast.avoactive())
+        }
+        if(isVOVideo){
+            log('[ ViewOnce Video Detected ]')
+            let media = './media/temp/antivo.mp4';
+            const encmedia = msg.message.viewOnceMessage;
+            await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});
+            sendVideoReply(readFileSync(media), toast.avoactive())
         }
     }
 
@@ -858,6 +899,24 @@ module.exports = async (msg ,client) => {
                 sendReply('[DESACTIVANDO PORNO]')
             }
         break
+        case 'antivuv': 
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            const antivuvCheck = isAntivuv ? 'funcion antivuv *ACTIVADA* \n\n!antivuv off para desactivar' : 'funcion antivuv *DESACTIVADA* \n\n!antivuv on para activar'
+            if (args.length == 0){ if (isAntivuv) return sendReply(antivuvCheck) ; if (!isAntivuv) return sendReply(antivuvCheck)}
+            if (args[0] == 'on' || args[0] == '1') {
+                antivuv.push(from)
+                writeFileSync('./JSONS/antivuv.json', stringify(antivuv))
+                sendReply('[ACTIVANDO ANTIVUV]')
+            }
+            if (args[0] == 'off' || args[0] == '0') {
+                let del = antivuv.indexOf(from)
+                antivuv.splice(del, 1)
+                writeFileSync('./JSONS/antivuv.json', stringify(antivuv))
+                sendReply('[DESACTIVANDO ANTIVUV]')
+            }
+        break
     
     /*--------COMANDOS TEST-------- */
         case 'sacame':
@@ -903,6 +962,7 @@ module.exports = async (msg ,client) => {
             }
             break
         case 'borrar': //ELIMINAR MENSAJES ENVIADOS POR EL BOT
+            if (!isGroup) return sendReply(alertas.groups)
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
                 if (!isQuoted) return sendReply('_*Borrador de Mensajes*_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!borrar*_')
                 const identificacion = msg.message.extendedTextMessage.contextInfo.participant
@@ -912,6 +972,7 @@ module.exports = async (msg ,client) => {
                 client.sendMessage(from, { delete: key }).then(() => {sendReaction('👍', from)})
                 break
         case 'chat':// MUTEAR, DESMUTEAR, ARCHIVAR, DESARCHIVAR, LEER, MARCAR COMO NO LEIDO
+            if(!isOwner) return sendReply(alertas.owners)
             if (args.length == 0) return sendReply('funciones disponibles para administracion del chat:\n\n1. !chat mute\n2. !chat unmute \n3. !chat archive\n4. chat unarchive\n5. !chat read\n6.0')
             if (q2 == 'archive') return await client.chatModify({archive: true, lastMessages:[msg]}, from)
             if (q2 == 'unarchive') return await client.chatModify({archive: false, lastMessages:[msg]}, from)
@@ -927,6 +988,8 @@ module.exports = async (msg ,client) => {
             sendReply('funciones disponibles para administracion del chat:\n\n1. !chat mute\n2. !chat unmute \n3. !chat archive\n4. chat unarchive\n5. !chat read\n6.0')
             break
         case 'temporales': //MENSAJES TEMPORALES 24 HORAS - 7 DIAS - 90 DIAS
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (args.length == 0) return
             if (q2 == 'on') client.sendMessage(from,{disappearingMessagesInChat:  WA_DEFAULT_EPHEMERAL})
             if (q2 == 'off') client.sendMessage(from,{disappearingMessagesInChat:  null})
@@ -966,6 +1029,7 @@ module.exports = async (msg ,client) => {
             }})
             break
         case 'change':
+            if(!isOwner) return sendReply(alertas.owners)
             if (args.length == 0) return sendReply('Si deseas realizar cambios en mi perfil o estado envia un mensaje con los siguientes comandos.\n\n1. !change profile + imagen (para cambiar mi foto de perfil)\n2. !change status + texto (para cambiar mi informacion de estado)\n3. !change name + nombre (para cambiar mi nombre)')
             if (args[0].startsWith('status')) {
                 if (args.length == 1) return sendReply('mensaje vacio, por favor escribe un estado')
@@ -1004,6 +1068,7 @@ module.exports = async (msg ,client) => {
             client.sendMessage(from, {text: q}, {ephemeralExpiration : WA_DEFAULT_EPHEMERAL})
             break
         case 'block':
+            if(!isOwner) return sendReply(alertas.owners)
             if (!isGroup) return client.updateBlockStatus(from, 'block')
             if (isGroup){
                 if (isQuoted) {
@@ -1020,6 +1085,7 @@ module.exports = async (msg ,client) => {
             }
             break
         case 'unblock':
+            if(!isOwner) return sendReply(alertas.owners)
             if (!isGroup) return client.updateBlockStatus(from, 'block')
             if (isGroup){
                 if (isQuoted) {
@@ -1035,230 +1101,221 @@ module.exports = async (msg ,client) => {
                 }
             }
             break
-        case 'bimage':
-            const bimage = [ {buttonId: 'id1', buttonText: {displayText: 'Boton 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Boton 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Boton 3'}, type: 1} ]
-            sendButtonImage('./media/test.jpg','¡Hola! Esto es una prueba de envio de botones con imagen',bimage)
-            break
-        case 'btext':
-            const btext = [ {buttonId: 'id1', buttonText: {displayText: 'Boton 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Boton 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Boton 3'}, type: 1} ]
-            sendButtonText('¡Hola! Esto es una prueba de envio de botones',btext)
-            break
-        case 'tbt':
-            const tbt = [ {index: 1, urlButton: {displayText: 'Suscribete', url: 'https://www.youtube.com/c/KingAndrewYT'}}, {index: 2, callButton: {displayText: 'llamame', phoneNumber: '+57 322 8125090'}}, {index: 3, quickReplyButton: {displayText: 'Menu', id: '!menu'}}]
-            sendTemplateButtonText('¡Hola! Esto es una prueba de envio de una plantilla de botones', tbt)
-            break
-        case 'tbi':
-            const tbi = [ {index: 1, urlButton: {displayText: 'Suscribete', url: 'https://www.youtube.com/c/KingAndrewYT'}}, {index: 2, callButton: {displayText: 'llamame', phoneNumber: '+57 322 8125090'}}, {index: 3, quickReplyButton: {displayText: 'Menu', id: '!menu'}}]
-            sendTemplateButtonImage('./media/text.jpg', '¡Hola! Esto es una prueba de envio de plantilla de botones con imagen', tbi)
-            break
-        case'infolink':case'entrar':case'infogrupo':case'anular':case'enlace':case'crear':case'añadir':case'eliminar':case'promover':case'degradar':case'nombre':case'descripcion':case'perfil':case'mutear':case'desmutear':case'lockdesc':case'unlockdesc':case'salir':
+        case'infolink':case'infogrupo':
             //if (!isGroup) return sendReply('esta opcion solo esta disponible dentro de grupos')
             groupSettings(msg, client, q, args, command)
             break
         case 'gpperfil':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             groupSettings(msg, client, q, args, command)
             break
-        case 'acceppt':
+        case 'acceppt':if (!isGroup) return sendReply(alertas.groups)
+            if (!isOwner) return sendReply(alertas.owners)
             const inviteMessage = msg.message.extendedTextMessage.contextInfo.quotedMessage.groupInviteMessage
             await client.groupAcceptInviteV4(from, inviteMessage)        
             break
         case 'admins':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             sendReplyWithMentions(q, groupAdmins)
         break
         case 'todos':
+            if (!isGroup) return sendReply(alertas.groups)
+            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             sendReplyWithMentions(q, groupParticipants)
             break
     
     /*---------MINTAKE - TEXTPRO----------*/
         case 'textpro':
             if (args.length == 0) return sendReply(menu.textpro1(informacion))
-            if (args[0] == 1) return mintake.textpro('https://textpro.me/create-gradient-neon-light-text-effect-online-1085.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Gradient Neon Light', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 2) return mintake.textpro('https://textpro.me/create-neon-light-blackpink-logo-text-effect-online-1081.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('BlackPink', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 3) return mintake.textpro('https://textpro.me/create-a-summer-neon-light-text-effect-online-1076.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Summer Neon', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 4) return mintake.textpro('https://textpro.me/create-light-glow-sliced-text-effect-online-1068.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Light Glow Sliced', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 5) return mintake.textpro('https://textpro.me/neon-light-glitch-text-generator-online-1063.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Neon Light Glitch', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 6) return mintake.textpro('https://textpro.me/create-neon-light-on-brick-wall-online-1062.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Neon Light On Brick', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 7) return mintake.textpro('https://textpro.me/create-glowing-neon-light-text-effect-online-free-1061.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Glowing Neon Light', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 8) return mintake.textpro('https://textpro.me/online-thunder-text-effect-generator-1031.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Thunder', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 9) return mintake.textpro('https://textpro.me/create-3d-neon-light-text-effect-online-1028.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('3D Neon Light', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 10) return mintake.textpro('https://textpro.me/create-impressive-glitch-text-effects-online-1027.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Glitch Text', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 11) return mintake.textpro('https://textpro.me/create-neon-devil-wings-text-effect-online-free-1014.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Devil Wings', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 12) return mintake.textpro('https://textpro.me/create-a-futuristic-technology-neon-light-text-effect-1006.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Futuristic Tecnology', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 13) return mintake.textpro('https://textpro.me/neon-light-text-effect-with-galaxy-style-981.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Neon Galaxy', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 14) return mintake.textpro('https://textpro.me/holographic-3d-text-effect-975.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Holographic 3D', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 15) return mintake.textpro('https://textpro.me/neon-text-effect-online-963.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Neon Text', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 16) return mintake.textpro('https://textpro.me/happ-new-year-card-firework-gif-959.html', [q.slice(3)]).then(res => {sendGifReply(res, toast.mintake('New Year Card', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 17) return mintake.textpro('https://textpro.me/firework-sparkle-text-effect-930.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Firework Sparkle', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 18) return mintake.textpro('https://textpro.me/rainbow-equalizer-text-effect-902.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Equializer', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 19) return mintake.textpro('https://textpro.me/matrix-style-text-effect-online-884.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Matrix', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 20) return mintake.textpro('https://textpro.me/neon-light-text-effect-online-882.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Neon Wall', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 21) return mintake.textpro('https://textpro.me/create-thunder-text-effect-online-881.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Lightning', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 22) return mintake.textpro('https://textpro.me/neon-text-effect-online-879.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Neon Simple', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 23) return mintake.textpro('https://textpro.me/bokeh-text-effect-876.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Bokeh', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 24) return mintake.textpro('https://textpro.me/green-neon-text-effect-874.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Green Neon', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 25) return mintake.textpro('https://textpro.me/free-advanced-glow-text-effect-873.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Butterfly Neon', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 26) return mintake.textpro('https://textpro.me/create-decorative-gold-glitter-3d-text-effect-online-1089.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Gold Glitter', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 27) return mintake.textpro('https://textpro.me/create-a-rusted-metal-text-effect-online-1087.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Rushed Metal', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 28) return mintake.textpro('https://textpro.me/create-realistic-golden-text-effect-on-red-sparkles-online-1082.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Golden Valentine', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 29) return mintake.textpro('https://textpro.me/free-creative-3d-golden-text-effect-online-1075.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Golden', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 30) return mintake.textpro('https://textpro.me/create-a-3d-luxury-metallic-text-effect-for-free-1071.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Luxury Metallic', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 31) return mintake.textpro('https://textpro.me/elegant-white-gold-3d-text-effect-online-free-1070.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('White Gold', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 32) return mintake.textpro('https://textpro.me/create-text-effects-arcane-tv-series-online-1067.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Arcane', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 33) return mintake.textpro('https://textpro.me/3d-golden-ancient-text-effect-online-free-1060.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Ancient', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 34) return mintake.textpro('https://textpro.me/create-3d-deep-sea-metal-text-effect-online-1053.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Deep Sea', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 35) return mintake.textpro('https://textpro.me/create-a-metallic-text-effect-free-online-1041.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Black Metalic', args[0]))}).catch((err) => logerror(err))
-            //if (args[0] == 36) return mintake.textpro('https://textpro.me/creat-glossy-metalic-text-effect-free-online-1040.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Glossy Metalic', args[0]))}).catch((err) => logerror(err))
+            if (args[0] == 1) return mintake.textpro('https://textpro.me/create-gradient-neon-light-text-effect-online-1085.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Gradient Neon Light', args[0]))}).catch((err) => error(err))
+            if (args[0] == 2) return mintake.textpro('https://textpro.me/create-neon-light-blackpink-logo-text-effect-online-1081.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('BlackPink', args[0]))}).catch((err) => error(err))
+            if (args[0] == 3) return mintake.textpro('https://textpro.me/create-a-summer-neon-light-text-effect-online-1076.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Summer Neon', args[0]))}).catch((err) => error(err))
+            if (args[0] == 4) return mintake.textpro('https://textpro.me/create-light-glow-sliced-text-effect-online-1068.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Light Glow Sliced', args[0]))}).catch((err) => error(err))
+            if (args[0] == 5) return mintake.textpro('https://textpro.me/neon-light-glitch-text-generator-online-1063.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Neon Light Glitch', args[0]))}).catch((err) => error(err))
+            if (args[0] == 6) return mintake.textpro('https://textpro.me/create-neon-light-on-brick-wall-online-1062.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Neon Light On Brick', args[0]))}).catch((err) => error(err))
+            if (args[0] == 7) return mintake.textpro('https://textpro.me/create-glowing-neon-light-text-effect-online-free-1061.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Glowing Neon Light', args[0]))}).catch((err) => error(err))
+            if (args[0] == 8) return mintake.textpro('https://textpro.me/online-thunder-text-effect-generator-1031.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('Thunder', args[0]))}).catch((err) => error(err))
+            if (args[0] == 9) return mintake.textpro('https://textpro.me/create-3d-neon-light-text-effect-online-1028.html', [q.slice(2)]).then(res => {sendImageReply(res, toast.mintake('3D Neon Light', args[0]))}).catch((err) => error(err))
+            if (args[0] == 10) return mintake.textpro('https://textpro.me/create-impressive-glitch-text-effects-online-1027.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Glitch Text', args[0]))}).catch((err) => error(err))
+            if (args[0] == 11) return mintake.textpro('https://textpro.me/create-neon-devil-wings-text-effect-online-free-1014.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Devil Wings', args[0]))}).catch((err) => error(err))
+            if (args[0] == 12) return mintake.textpro('https://textpro.me/create-a-futuristic-technology-neon-light-text-effect-1006.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Futuristic Tecnology', args[0]))}).catch((err) => error(err))
+            if (args[0] == 13) return mintake.textpro('https://textpro.me/neon-light-text-effect-with-galaxy-style-981.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Neon Galaxy', args[0]))}).catch((err) => error(err))
+            if (args[0] == 14) return mintake.textpro('https://textpro.me/holographic-3d-text-effect-975.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Holographic 3D', args[0]))}).catch((err) => error(err))
+            if (args[0] == 15) return mintake.textpro('https://textpro.me/neon-text-effect-online-963.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Neon Text', args[0]))}).catch((err) => error(err))
+            if (args[0] == 16) return mintake.textpro('https://textpro.me/happ-new-year-card-firework-gif-959.html', [q.slice(3)]).then(res => {sendGifReply(readFileSync(res), toast.mintake('New Year Card', args[0]))}).catch((err) => error(err))
+            if (args[0] == 17) return mintake.textpro('https://textpro.me/firework-sparkle-text-effect-930.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Firework Sparkle', args[0]))}).catch((err) => error(err))
+            if (args[0] == 18) return mintake.textpro('https://textpro.me/rainbow-equalizer-text-effect-902.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Equializer', args[0]))}).catch((err) => error(err))
+            if (args[0] == 19) return mintake.textpro('https://textpro.me/matrix-style-text-effect-online-884.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Matrix', args[0]))}).catch((err) => error(err))
+            if (args[0] == 20) return mintake.textpro('https://textpro.me/neon-light-text-effect-online-882.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Neon Wall', args[0]))}).catch((err) => error(err))
+            if (args[0] == 21) return mintake.textpro('https://textpro.me/create-thunder-text-effect-online-881.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Lightning', args[0]))}).catch((err) => error(err))
+            if (args[0] == 22) return mintake.textpro('https://textpro.me/neon-text-effect-online-879.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Neon Simple', args[0]))}).catch((err) => error(err))
+            if (args[0] == 23) return mintake.textpro('https://textpro.me/bokeh-text-effect-876.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Bokeh', args[0]))}).catch((err) => error(err))
+            if (args[0] == 24) return mintake.textpro('https://textpro.me/green-neon-text-effect-874.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Green Neon', args[0]))}).catch((err) => error(err))
+            if (args[0] == 25) return mintake.textpro('https://textpro.me/free-advanced-glow-text-effect-873.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Butterfly Neon', args[0]))}).catch((err) => error(err))
+            if (args[0] == 26) return mintake.textpro('https://textpro.me/create-decorative-gold-glitter-3d-text-effect-online-1089.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Gold Glitter', args[0]))}).catch((err) => error(err))
+            if (args[0] == 27) return mintake.textpro('https://textpro.me/create-a-rusted-metal-text-effect-online-1087.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Rushed Metal', args[0]))}).catch((err) => error(err))
+            if (args[0] == 28) return mintake.textpro('https://textpro.me/create-realistic-golden-text-effect-on-red-sparkles-online-1082.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Golden Valentine', args[0]))}).catch((err) => error(err))
+            if (args[0] == 29) return mintake.textpro('https://textpro.me/free-creative-3d-golden-text-effect-online-1075.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Golden', args[0]))}).catch((err) => error(err))
+            if (args[0] == 30) return mintake.textpro('https://textpro.me/create-a-3d-luxury-metallic-text-effect-for-free-1071.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Luxury Metallic', args[0]))}).catch((err) => error(err))
+            if (args[0] == 31) return mintake.textpro('https://textpro.me/elegant-white-gold-3d-text-effect-online-free-1070.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('White Gold', args[0]))}).catch((err) => error(err))
+            if (args[0] == 32) return mintake.textpro('https://textpro.me/create-text-effects-arcane-tv-series-online-1067.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Arcane', args[0]))}).catch((err) => error(err))
+            if (args[0] == 33) return mintake.textpro('https://textpro.me/3d-golden-ancient-text-effect-online-free-1060.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Ancient', args[0]))}).catch((err) => error(err))
+            if (args[0] == 34) return mintake.textpro('https://textpro.me/create-3d-deep-sea-metal-text-effect-online-1053.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Deep Sea', args[0]))}).catch((err) => error(err))
+            if (args[0] == 35) return mintake.textpro('https://textpro.me/create-a-metallic-text-effect-free-online-1041.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Black Metalic', args[0]))}).catch((err) => error(err))
+            //if (args[0] == 36) return mintake.textpro('https://textpro.me/creat-glossy-metalic-text-effect-free-online-1040.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Glossy Metalic', args[0]))}).catch((err) => error(err))
             if (args[0] == 36) return sendReply(toast.noeffect())
-            if (args[0] == 37) return mintake.textpro('https://textpro.me/create-a-transformer-text-effect-online-1035.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Transformers', args[0]))}).catch((err) => logerror(err))
-            //if (args[0] == 38) return mintake.textpro('https://textpro.me/create-harry-potter-text-effect-online-1025.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Harry Potter', args[0]))}).catch((err) => logerror(err))
+            if (args[0] == 37) return mintake.textpro('https://textpro.me/create-a-transformer-text-effect-online-1035.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Transformers', args[0]))}).catch((err) => error(err))
+            //if (args[0] == 38) return mintake.textpro('https://textpro.me/create-harry-potter-text-effect-online-1025.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Harry Potter', args[0]))}).catch((err) => error(err))
             if (args[0] == 38) return sendReply(toast.noeffect())
-            if (args[0] == 39) return mintake.textpro('https://textpro.me/create-a-3d-glossy-metal-text-effect-1019.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Glossy Metal', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 40) return mintake.textpro('https://textpro.me/metal-dark-gold-text-effect-984.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Dark Gold', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 41) return mintake.textpro('https://textpro.me/metal-purple-dual-effect-973.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Purple Metal', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 42) return mintake.textpro('https://textpro.me/deluxe-silver-text-effect-970.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Deluxe Silver', args[0]))}).catch((err) => logerror(err))
-            //if (args[0] == 43) return mintake.textpro('https://textpro.me/color-full-luxury-metal-text-effect-969.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Metal Luxury', args[0]))}).catch((err) => logerror(err))
+            if (args[0] == 39) return mintake.textpro('https://textpro.me/create-a-3d-glossy-metal-text-effect-1019.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Glossy Metal', args[0]))}).catch((err) => error(err))
+            if (args[0] == 40) return mintake.textpro('https://textpro.me/metal-dark-gold-text-effect-984.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Dark Gold', args[0]))}).catch((err) => error(err))
+            if (args[0] == 41) return mintake.textpro('https://textpro.me/metal-purple-dual-effect-973.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Purple Metal', args[0]))}).catch((err) => error(err))
+            if (args[0] == 42) return mintake.textpro('https://textpro.me/deluxe-silver-text-effect-970.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Deluxe Silver', args[0]))}).catch((err) => error(err))
+            //if (args[0] == 43) return mintake.textpro('https://textpro.me/color-full-luxury-metal-text-effect-969.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Metal Luxury', args[0]))}).catch((err) => error(err))
             if (args[0] == 43) return sendReply(toast.noeffect())
-            if (args[0] == 44) return mintake.textpro('https://textpro.me/glossy-blue-metal-text-effect-967.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Glossy Blue Metal', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 45) return mintake.textpro('https://textpro.me/deluxe-gold-text-effect-966.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Deluxe Gold', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 46) return mintake.textpro('https://textpro.me/metal-dark-gold-text-effect-online-939.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Dark Gold', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 47) return mintake.textpro('https://textpro.me/steel-text-effect-online-921.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Steel', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 48) return mintake.textpro('https://textpro.me/rusty-metal-text-effect-860.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Rusty Metal', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 49) return mintake.textpro('https://textpro.me/metal-rainbow-text-effect-854.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Metal Rainbow', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 50) return mintake.textpro('https://textpro.me/shiny-metal-text-effect-852.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Shiny Metal', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 51) return mintake.textpro('https://textpro.me/hot-metal-text-effect-843.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Hot Metal', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 52) return mintake.textpro('https://textpro.me/eroded-metal-text-effect-834.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Eroded Metal', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 53) return mintake.textpro('https://textpro.me/blue-metal-text-effect-831.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Blue Metal', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 54) return mintake.textpro('https://textpro.me/black-metal-text-effect-829.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Black Metal', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 55) return mintake.textpro('https://textpro.me/3d-glowing-metal-text-effect-828.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Glowing Metal', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 56) return mintake.textpro('https://textpro.me/3d-chrome-text-effect-827.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Chrome', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 57) return mintake.textpro('https://textpro.me/create-a-3d-orange-juice-text-effect-online-1084.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Orange Juice', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 58) return mintake.textpro('https://textpro.me/create-berry-text-effect-online-free-1033.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Berry', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 59) return mintake.textpro('https://textpro.me/chocolate-cake-text-effect-890.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Chocolate', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 60) return mintake.textpro('https://textpro.me/strawberry-text-effect-online-889.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Strawberry', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 61) return mintake.textpro('https://textpro.me/bread-text-effect-online-887.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Bread', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 62) return mintake.textpro('https://textpro.me/honey-text-effect-868.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Honey', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 63) return mintake.textpro('https://textpro.me/biscuit-text-effect-858.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Biscuit', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 64) return mintake.textpro('https://textpro.me/bagel-text-effect-857.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Bagel', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 65) return mintake.textpro('https://textpro.me/pink-candy-text-effect-832.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Candy', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 66) return mintake.textpro('https://textpro.me/create-a-quick-sparkling-diamonds-text-effect-1077.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Diamond', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 67) return mintake.textpro('https://textpro.me/3d-luxury-gold-text-effect-online-1003.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Luxury Gold', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 68) return mintake.textpro('https://textpro.me/peridot-stone-text-effect-916.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Peridot Stone', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 69) return mintake.textpro('https://textpro.me/pink-sparkling-jewelry-text-effect-899.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Pink Sparkling Jewerly', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 70) return mintake.textpro('https://textpro.me/marble-text-effect-863.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Marble', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 71) return mintake.textpro('https://textpro.me/abstra-gold-text-effect-859.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Abstra Gold', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 72) return mintake.textpro('https://textpro.me/purple-gem-text-effect-853.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Purple Gem', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 73) return mintake.textpro('https://textpro.me/red-jewelry-text-effect-849.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Red Jewerly', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 74) return mintake.textpro('https://textpro.me/blue-glitter-text-effect-841.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Blue Glitter', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 75) return mintake.textpro('https://textpro.me/blue-gem-text-effect-830.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Blue Gem', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 76) return mintake.textpro('https://textpro.me/hexa-golden-text-effect-842.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Hexa Golden', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 77) return mintake.textpro('https://textpro.me/create-a-3d-stone-text-effect-online-for-free-1073.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Stone', args[0]))}).catch((err) => logerror(err))
-            //if (args[0] == 78) return mintake.textpro('https://textpro.me/free-online-country-flag-3d-text-effect-generator-1052.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Country Flag 3D', args[0]))}).catch((err) => logerror(err))
+            if (args[0] == 44) return mintake.textpro('https://textpro.me/glossy-blue-metal-text-effect-967.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Glossy Blue Metal', args[0]))}).catch((err) => error(err))
+            if (args[0] == 45) return mintake.textpro('https://textpro.me/deluxe-gold-text-effect-966.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Deluxe Gold', args[0]))}).catch((err) => error(err))
+            if (args[0] == 46) return mintake.textpro('https://textpro.me/metal-dark-gold-text-effect-online-939.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Dark Gold', args[0]))}).catch((err) => error(err))
+            if (args[0] == 47) return mintake.textpro('https://textpro.me/steel-text-effect-online-921.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Steel', args[0]))}).catch((err) => error(err))
+            if (args[0] == 48) return mintake.textpro('https://textpro.me/rusty-metal-text-effect-860.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Rusty Metal', args[0]))}).catch((err) => error(err))
+            if (args[0] == 49) return mintake.textpro('https://textpro.me/metal-rainbow-text-effect-854.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Metal Rainbow', args[0]))}).catch((err) => error(err))
+            if (args[0] == 50) return mintake.textpro('https://textpro.me/shiny-metal-text-effect-852.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Shiny Metal', args[0]))}).catch((err) => error(err))
+            if (args[0] == 51) return mintake.textpro('https://textpro.me/hot-metal-text-effect-843.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Hot Metal', args[0]))}).catch((err) => error(err))
+            if (args[0] == 52) return mintake.textpro('https://textpro.me/eroded-metal-text-effect-834.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Eroded Metal', args[0]))}).catch((err) => error(err))
+            if (args[0] == 53) return mintake.textpro('https://textpro.me/blue-metal-text-effect-831.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Blue Metal', args[0]))}).catch((err) => error(err))
+            if (args[0] == 54) return mintake.textpro('https://textpro.me/black-metal-text-effect-829.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Black Metal', args[0]))}).catch((err) => error(err))
+            if (args[0] == 55) return mintake.textpro('https://textpro.me/3d-glowing-metal-text-effect-828.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Glowing Metal', args[0]))}).catch((err) => error(err))
+            if (args[0] == 56) return mintake.textpro('https://textpro.me/3d-chrome-text-effect-827.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Chrome', args[0]))}).catch((err) => error(err))
+            if (args[0] == 57) return mintake.textpro('https://textpro.me/create-a-3d-orange-juice-text-effect-online-1084.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Orange Juice', args[0]))}).catch((err) => error(err))
+            if (args[0] == 58) return mintake.textpro('https://textpro.me/create-berry-text-effect-online-free-1033.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Berry', args[0]))}).catch((err) => error(err))
+            if (args[0] == 59) return mintake.textpro('https://textpro.me/chocolate-cake-text-effect-890.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Chocolate', args[0]))}).catch((err) => error(err))
+            if (args[0] == 60) return mintake.textpro('https://textpro.me/strawberry-text-effect-online-889.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Strawberry', args[0]))}).catch((err) => error(err))
+            if (args[0] == 61) return mintake.textpro('https://textpro.me/bread-text-effect-online-887.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Bread', args[0]))}).catch((err) => error(err))
+            if (args[0] == 62) return mintake.textpro('https://textpro.me/honey-text-effect-868.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Honey', args[0]))}).catch((err) => error(err))
+            if (args[0] == 63) return mintake.textpro('https://textpro.me/biscuit-text-effect-858.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Biscuit', args[0]))}).catch((err) => error(err))
+            if (args[0] == 64) return mintake.textpro('https://textpro.me/bagel-text-effect-857.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Bagel', args[0]))}).catch((err) => error(err))
+            if (args[0] == 65) return mintake.textpro('https://textpro.me/pink-candy-text-effect-832.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Candy', args[0]))}).catch((err) => error(err))
+            if (args[0] == 66) return mintake.textpro('https://textpro.me/create-a-quick-sparkling-diamonds-text-effect-1077.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Diamond', args[0]))}).catch((err) => error(err))
+            if (args[0] == 67) return mintake.textpro('https://textpro.me/3d-luxury-gold-text-effect-online-1003.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Luxury Gold', args[0]))}).catch((err) => error(err))
+            if (args[0] == 68) return mintake.textpro('https://textpro.me/peridot-stone-text-effect-916.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Peridot Stone', args[0]))}).catch((err) => error(err))
+            if (args[0] == 69) return mintake.textpro('https://textpro.me/pink-sparkling-jewelry-text-effect-899.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Pink Sparkling Jewerly', args[0]))}).catch((err) => error(err))
+            if (args[0] == 70) return mintake.textpro('https://textpro.me/marble-text-effect-863.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Marble', args[0]))}).catch((err) => error(err))
+            if (args[0] == 71) return mintake.textpro('https://textpro.me/abstra-gold-text-effect-859.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Abstra Gold', args[0]))}).catch((err) => error(err))
+            if (args[0] == 72) return mintake.textpro('https://textpro.me/purple-gem-text-effect-853.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Purple Gem', args[0]))}).catch((err) => error(err))
+            if (args[0] == 73) return mintake.textpro('https://textpro.me/red-jewelry-text-effect-849.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Red Jewerly', args[0]))}).catch((err) => error(err))
+            if (args[0] == 74) return mintake.textpro('https://textpro.me/blue-glitter-text-effect-841.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Blue Glitter', args[0]))}).catch((err) => error(err))
+            if (args[0] == 75) return mintake.textpro('https://textpro.me/blue-gem-text-effect-830.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Blue Gem', args[0]))}).catch((err) => error(err))
+            if (args[0] == 76) return mintake.textpro('https://textpro.me/hexa-golden-text-effect-842.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Hexa Golden', args[0]))}).catch((err) => error(err))
+            if (args[0] == 77) return mintake.textpro('https://textpro.me/create-a-3d-stone-text-effect-online-for-free-1073.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Stone', args[0]))}).catch((err) => error(err))
+            //if (args[0] == 78) return mintake.textpro('https://textpro.me/free-online-country-flag-3d-text-effect-generator-1052.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Country Flag 3D', args[0]))}).catch((err) => error(err))
             if (args[0] == 78) return sendReply(toast.noeffect())
-            if (args[0] == 79) return mintake.textpro('https://textpro.me/create-american-flag-3d-text-effect-online-1051.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('American Flag 3D', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 80) return mintake.textpro('https://textpro.me/3d-rainbow-color-calligraphy-text-effect-1049.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Rainbow Calligraphy', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 81) return mintake.textpro('https://textpro.me/create-3d-water-pipe-text-effects-online-1048.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Water Pipe', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 82) return mintake.textpro('https://textpro.me/create-space-text-effects-online-free-1042.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Space 3D', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 83) return mintake.textpro('https://textpro.me/online-3d-gradient-text-effect-generator-1020.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Gradient', args[0]))}).catch((err) => logerror(err))
-            //if (args[0] == 84) return mintake.textpro('https://textpro.me/create-3d-realistic-text-effect-on-the-beach-online-1018.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Beach', args[0]))}).catch((err) => logerror(err))
+            if (args[0] == 79) return mintake.textpro('https://textpro.me/create-american-flag-3d-text-effect-online-1051.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('American Flag 3D', args[0]))}).catch((err) => error(err))
+            if (args[0] == 80) return mintake.textpro('https://textpro.me/3d-rainbow-color-calligraphy-text-effect-1049.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Rainbow Calligraphy', args[0]))}).catch((err) => error(err))
+            if (args[0] == 81) return mintake.textpro('https://textpro.me/create-3d-water-pipe-text-effects-online-1048.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Water Pipe', args[0]))}).catch((err) => error(err))
+            if (args[0] == 82) return mintake.textpro('https://textpro.me/create-space-text-effects-online-free-1042.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Space 3D', args[0]))}).catch((err) => error(err))
+            if (args[0] == 83) return mintake.textpro('https://textpro.me/online-3d-gradient-text-effect-generator-1020.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Gradient', args[0]))}).catch((err) => error(err))
+            //if (args[0] == 84) return mintake.textpro('https://textpro.me/create-3d-realistic-text-effect-on-the-beach-online-1018.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Beach', args[0]))}).catch((err) => error(err))
             if (args[0] == 84) return sendReply(toast.noeffect())
-            if (args[0] == 85) return mintake.textpro('https://textpro.me/online-multicolor-3d-paper-cut-text-effect-1016.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Paper Cut Multicolor', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 86) return mintake.textpro('https://textpro.me/3d-underwater-text-effect-generator-online-1013.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Underwater', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 87) return mintake.textpro('https://textpro.me/3d-gradient-text-effect-online-free-1002.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Gradient', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 88) return mintake.textpro('https://textpro.me/minion-text-effect-3d-online-978.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Minion 3D', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 89) return mintake.textpro('https://textpro.me/new-year-cards-3d-by-name-960.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('New Year Card', args[0]))}).catch((err) => logerror(err))
-            //if (args[0] == 90) return mintake.textpro('https://textpro.me/create-avatar-gold-online-956.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Avatar Gold', args[0]))}).catch((err) => logerror(err))
+            if (args[0] == 85) return mintake.textpro('https://textpro.me/online-multicolor-3d-paper-cut-text-effect-1016.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Paper Cut Multicolor', args[0]))}).catch((err) => error(err))
+            if (args[0] == 86) return mintake.textpro('https://textpro.me/3d-underwater-text-effect-generator-online-1013.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Underwater', args[0]))}).catch((err) => error(err))
+            if (args[0] == 87) return mintake.textpro('https://textpro.me/3d-gradient-text-effect-online-free-1002.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Gradient', args[0]))}).catch((err) => error(err))
+            if (args[0] == 88) return mintake.textpro('https://textpro.me/minion-text-effect-3d-online-978.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Minion 3D', args[0]))}).catch((err) => error(err))
+            if (args[0] == 89) return mintake.textpro('https://textpro.me/new-year-cards-3d-by-name-960.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('New Year Card', args[0]))}).catch((err) => error(err))
+            //if (args[0] == 90) return mintake.textpro('https://textpro.me/create-avatar-gold-online-956.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Avatar Gold', args[0]))}).catch((err) => error(err))
             if (args[0] == 90) return sendReply(toast.noeffect())
-            if (args[0] == 91) return mintake.textpro('https://textpro.me/3d-box-text-effect-online-880.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Box', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 92) return mintake.textpro('https://textpro.me/color-led-display-screen-text-effect-1059.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Color Led', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 93) return mintake.textpro('https://textpro.me/create-3d-sci-fi-text-effect-online-1050.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Sci-Fi', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 94) return mintake.textpro('https://textpro.me/create-blue-circuit-style-text-effect-online-1043.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Blue Circuit', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 95) return mintake.textpro('https://textpro.me/create-science-fiction-text-effect-online-free-1038.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Science Fiction', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 96) return mintake.textpro('https://textpro.me/robot-r2-d2-text-effect-903.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Star Wars', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 97) return mintake.textpro('https://textpro.me/sci-fi-text-effect-855.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Sci-Fi', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 98) return mintake.textpro('https://textpro.me/create-wonderful-graffiti-art-text-effect-1011.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Wonderful Graffiti', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 99) return mintake.textpro('https://textpro.me/happy-new-year-2022-greeting-3d-card-1058.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('New Year Greeting', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 100) return mintake.textpro('https://textpro.me/christmas-tree-text-effect-online-free-1057.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Christmass Tree', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 101) return mintake.textpro('https://textpro.me/create-christmas-candy-cane-text-effect-1056.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Christmas Candy', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 102) return mintake.textpro('https://textpro.me/3d-christmas-text-effect-by-name-1055.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Christmas', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 103) return mintake.textpro('https://textpro.me/sparkles-merry-christmas-text-effect-1054.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Sparkles Christmas', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 104) return mintake.textpro('https://textpro.me/xmas-cards-3d-online-942.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Xmas Cards 3D', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 105) return mintake.textpro('https://textpro.me/chrismast-gift-text-effect-869.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Chistmas Gift', args[0]))}).catch((err) => logerror(err))
+            if (args[0] == 91) return mintake.textpro('https://textpro.me/3d-box-text-effect-online-880.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Box', args[0]))}).catch((err) => error(err))
+            if (args[0] == 92) return mintake.textpro('https://textpro.me/color-led-display-screen-text-effect-1059.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Color Led', args[0]))}).catch((err) => error(err))
+            if (args[0] == 93) return mintake.textpro('https://textpro.me/create-3d-sci-fi-text-effect-online-1050.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('3D Sci-Fi', args[0]))}).catch((err) => error(err))
+            if (args[0] == 94) return mintake.textpro('https://textpro.me/create-blue-circuit-style-text-effect-online-1043.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Blue Circuit', args[0]))}).catch((err) => error(err))
+            if (args[0] == 95) return mintake.textpro('https://textpro.me/create-science-fiction-text-effect-online-free-1038.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Science Fiction', args[0]))}).catch((err) => error(err))
+            if (args[0] == 96) return mintake.textpro('https://textpro.me/robot-r2-d2-text-effect-903.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Star Wars', args[0]))}).catch((err) => error(err))
+            if (args[0] == 97) return mintake.textpro('https://textpro.me/sci-fi-text-effect-855.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Sci-Fi', args[0]))}).catch((err) => error(err))
+            if (args[0] == 98) return mintake.textpro('https://textpro.me/create-wonderful-graffiti-art-text-effect-1011.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('Wonderful Graffiti', args[0]))}).catch((err) => error(err))
+            if (args[0] == 99) return mintake.textpro('https://textpro.me/happy-new-year-2022-greeting-3d-card-1058.html', [q.slice(3)]).then(res => {sendImageReply(res, toast.mintake('New Year Greeting', args[0]))}).catch((err) => error(err))
+            if (args[0] == 100) return mintake.textpro('https://textpro.me/christmas-tree-text-effect-online-free-1057.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Christmass Tree', args[0]))}).catch((err) => error(err))
+            if (args[0] == 101) return mintake.textpro('https://textpro.me/create-christmas-candy-cane-text-effect-1056.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Christmas Candy', args[0]))}).catch((err) => error(err))
+            if (args[0] == 102) return mintake.textpro('https://textpro.me/3d-christmas-text-effect-by-name-1055.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Christmas', args[0]))}).catch((err) => error(err))
+            if (args[0] == 103) return mintake.textpro('https://textpro.me/sparkles-merry-christmas-text-effect-1054.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Sparkles Christmas', args[0]))}).catch((err) => error(err))
+            if (args[0] == 104) return mintake.textpro('https://textpro.me/xmas-cards-3d-online-942.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Xmas Cards 3D', args[0]))}).catch((err) => error(err))
+            if (args[0] == 105) return mintake.textpro('https://textpro.me/chrismast-gift-text-effect-869.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Chistmas Gift', args[0]))}).catch((err) => error(err))
 
-            if (args[0] == 106) return mintake.textpro('https://textpro.me/create-3d-pottery-text-effect-online-1088.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Pottery', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 107) return mintake.textpro('https://textpro.me/create-artistic-typography-online-1086.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Artistic Typography', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 108) return mintake.textpro('https://textpro.me/create-a-summer-text-effect-with-a-palm-tree-1083.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Summer Beach', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 109) return mintake.textpro('https://textpro.me/create-a-blackpink-logo-decorated-with-roses-online-free-1080.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Black Pink', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 110) return mintake.textpro('https://textpro.me/create-blackpink-style-logo-effects-online-1079.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Black Pink', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 111) return mintake.textpro('https://textpro.me/3d-business-sign-text-effect-1078.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Business', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 112) return mintake.textpro('https://textpro.me/create-carved-stone-text-effect-online-1074.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Carved Stone', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 113) return mintake.textpro('https://textpro.me/create-3d-style-glass-text-effect-online-1072.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Style Glass', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 114) return mintake.textpro('https://textpro.me/create-3d-giraffe-text-effect-online-1069.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Giraffe', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 115) return mintake.textpro('https://textpro.me/make-a-batman-logo-online-free-1066.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Batman Logo', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 116) return mintake.textpro('https://textpro.me/create-halloween-skeleton-text-effect-online-1047.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Halloween Skeleton', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 117) return mintake.textpro('https://textpro.me/create-a-sketch-text-effect-online-1044.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Sketch Text', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 118) return mintake.textpro('https://textpro.me/video-game-classic-8-bit-text-effect-1037.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Video Game Classic', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 119) return mintake.textpro('https://textpro.me/create-green-horror-style-text-effect-online-1036.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Green Horror', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 120) return mintake.textpro('https://textpro.me/create-a-magma-hot-text-effect-online-1030.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Magma Hot', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 121) return mintake.textpro('https://textpro.me/3d-stone-cracked-cool-text-effect-1029.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Stone Cracked', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 122) return mintake.textpro('https://textpro.me/create-embossed-text-effect-on-cracked-surface-1024.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Embossed Text', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 123) return mintake.textpro('https://textpro.me/broken-glass-text-effect-free-online-1023.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Broken Glass', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 124) return mintake.textpro('https://textpro.me/create-art-paper-cut-text-effect-online-1022.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Paper Cut', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 125) return mintake.textpro('https://textpro.me/create-a-free-online-watercolor-text-effect-1017.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Watercolor', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 126) return mintake.textpro('https://textpro.me/write-text-on-foggy-window-online-free-1015.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Foggy Windows', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 127) return mintake.textpro('https://textpro.me/online-black-and-white-bear-mascot-logo-creation-1012.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Black Bear', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 128) return mintake.textpro('https://textpro.me/create-a-christmas-holiday-snow-text-effect-1007.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Christmas Holiday', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 129) return mintake.textpro('https://textpro.me/create-snow-text-effects-for-winter-holidays-1005.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Snow Text', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 130) return mintake.textpro('https://textpro.me/create-a-cloud-text-effect-on-the-sky-online-1004.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Cloud text', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 131) return mintake.textpro('https://textpro.me/create-blackpink-logo-style-online-1001.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Blackpink', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 132) return mintake.textpro('https://textpro.me/create-realistic-cloud-text-effect-online-free-999.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Realistic Cloud', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 133) return mintake.textpro('https://textpro.me/create-a-cloud-text-effect-in-the-sky-online-997.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Cloud Text', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 134) return mintake.textpro('https://textpro.me/write-in-sand-summer-beach-free-online-991.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Sand Summer Beach', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 135) return mintake.textpro('https://textpro.me/sand-writing-text-effect-online-990.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Sand Writing', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 136) return mintake.textpro('https://textpro.me/sand-engraved-3d-text-effect-989.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Sand Engraved', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 137) return mintake.textpro('https://textpro.me/create-a-summery-sand-writing-text-effect-988.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Summery Sand', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 138) return mintake.textpro('https://textpro.me/foil-balloon-text-effect-for-birthday-987.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Balloon Text', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 139) return mintake.textpro('https://textpro.me/create-3d-glue-text-effect-with-realistic-style-986.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Glue', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 140) return mintake.textpro('https://textpro.me/1917-style-text-effect-online-980.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('1917', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 141) return mintake.textpro('https://textpro.me/double-exposure-text-effect-black-white-976.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Double Exposure', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 142) return mintake.textpro('https://textpro.me/glossy-carbon-text-effect-965.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Glossy Carbon', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 143) return mintake.textpro('https://textpro.me/fabric-text-effect-online-964.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Fabric', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 144) return mintake.textpro('https://textpro.me/fullcolor-balloon-text-effect-958.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Full Color Balloon', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 145) return mintake.textpro('https://textpro.me/blood-text-on-the-frosted-glass-941.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Blood Text', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 146) return mintake.textpro('https://textpro.me/halloween-fire-text-effect-940.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Halloween Fire', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 147) return mintake.textpro('https://textpro.me/create-logo-joker-online-934.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Joker Logo', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 148) return mintake.textpro('https://textpro.me/wicker-text-effect-online-932.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Wicker', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 149) return mintake.textpro('https://textpro.me/natural-leaves-text-effect-931.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Natural Leaves', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 150) return mintake.textpro('https://textpro.me/skeleton-text-effect-online-929.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Skeleton', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 151) return mintake.textpro('https://textpro.me/red-foil-balloon-text-effect-928.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Red Foil', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 152) return mintake.textpro('https://textpro.me/ultra-gloss-text-effect-online-920.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Ultra Gloss', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 153) return mintake.textpro('https://textpro.me/denim-text-effect-online-919.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Denim', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 154) return mintake.textpro('https://textpro.me/decorate-purple-text-effect-917.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Decorate Purple', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 155) return mintake.textpro('https://textpro.me/rock-text-effect-online-915.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Rock', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 156) return mintake.textpro('https://textpro.me/lava-text-effect-online-914.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Lava', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 157) return mintake.textpro('https://textpro.me/purple-glass-text-effect-912.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Purple Glass', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 158) return mintake.textpro('https://textpro.me/purple-shiny-glass-text-effect-906.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Purple Shiny', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 159) return mintake.textpro('https://textpro.me/captain-america-text-effect-905.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Captain America', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 160) return mintake.textpro('https://textpro.me/toxic-text-effect-online-901.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Toxic Effect', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 161) return mintake.textpro('https://textpro.me/purple-glass-text-effect-online-892.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Purple Glass', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 162) return mintake.textpro('https://textpro.me/decorative-glass-text-effect-891.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Decorative Glass', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 163) return mintake.textpro('https://textpro.me/koi-fish-text-effect-online-888.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Koi Fish', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 164) return mintake.textpro('https://textpro.me/horror-blood-text-effect-online-883.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Horror Blood', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 165) return mintake.textpro('https://textpro.me/road-warning-text-effect-878.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Road Warning', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 166) return mintake.textpro('https://textpro.me/dropwater-text-effect-872.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Dropwater', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 167) return mintake.textpro('https://textpro.me/break-wall-text-effect-871.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Break Wall', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 168) return mintake.textpro('https://textpro.me/plastic-bag-drug-text-effect-867.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Plastic Bag', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 169) return mintake.textpro('https://textpro.me/horror-gift-text-effect-866.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Horror Gift', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 170) return mintake.textpro('https://textpro.me/marble-slabs-text-effect-864.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Marble Slaps', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 171) return mintake.textpro('https://textpro.me/ice-cold-text-effect-862.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Ice Cold', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 172) return mintake.textpro('https://textpro.me/fruit-juice-text-effect-861.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Fruit Juice', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 173) return mintake.textpro('https://textpro.me/wood-text-effect-856.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Wood Text', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 174) return mintake.textpro('https://textpro.me/carbon-text-effect-833.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Carbon', args[0]))}).catch((err) => logerror(err))
-            if (args[0] == 175) return mintake.textpro('https://textpro.me/misc-style-c29-p6', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Misc Style', args[0]))}).catch((err) => logerror(err))
+            if (args[0] == 106) return mintake.textpro('https://textpro.me/create-3d-pottery-text-effect-online-1088.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Pottery', args[0]))}).catch((err) => error(err))
+            if (args[0] == 107) return mintake.textpro('https://textpro.me/create-artistic-typography-online-1086.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Artistic Typography', args[0]))}).catch((err) => error(err))
+            if (args[0] == 108) return mintake.textpro('https://textpro.me/create-a-summer-text-effect-with-a-palm-tree-1083.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Summer Beach', args[0]))}).catch((err) => error(err))
+            if (args[0] == 109) return mintake.textpro('https://textpro.me/create-a-blackpink-logo-decorated-with-roses-online-free-1080.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Black Pink', args[0]))}).catch((err) => error(err))
+            if (args[0] == 110) return mintake.textpro('https://textpro.me/create-blackpink-style-logo-effects-online-1079.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Black Pink', args[0]))}).catch((err) => error(err))
+            if (args[0] == 111) return mintake.textpro('https://textpro.me/3d-business-sign-text-effect-1078.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Business', args[0]))}).catch((err) => error(err))
+            if (args[0] == 112) return mintake.textpro('https://textpro.me/create-carved-stone-text-effect-online-1074.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Carved Stone', args[0]))}).catch((err) => error(err))
+            if (args[0] == 113) return mintake.textpro('https://textpro.me/create-3d-style-glass-text-effect-online-1072.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Style Glass', args[0]))}).catch((err) => error(err))
+            if (args[0] == 114) return mintake.textpro('https://textpro.me/create-3d-giraffe-text-effect-online-1069.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Giraffe', args[0]))}).catch((err) => error(err))
+            if (args[0] == 115) return mintake.textpro('https://textpro.me/make-a-batman-logo-online-free-1066.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Batman Logo', args[0]))}).catch((err) => error(err))
+            if (args[0] == 116) return mintake.textpro('https://textpro.me/create-halloween-skeleton-text-effect-online-1047.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Halloween Skeleton', args[0]))}).catch((err) => error(err))
+            if (args[0] == 117) return mintake.textpro('https://textpro.me/create-a-sketch-text-effect-online-1044.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Sketch Text', args[0]))}).catch((err) => error(err))
+            if (args[0] == 118) return mintake.textpro('https://textpro.me/video-game-classic-8-bit-text-effect-1037.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Video Game Classic', args[0]))}).catch((err) => error(err))
+            if (args[0] == 119) return mintake.textpro('https://textpro.me/create-green-horror-style-text-effect-online-1036.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Green Horror', args[0]))}).catch((err) => error(err))
+            if (args[0] == 120) return mintake.textpro('https://textpro.me/create-a-magma-hot-text-effect-online-1030.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Magma Hot', args[0]))}).catch((err) => error(err))
+            if (args[0] == 121) return mintake.textpro('https://textpro.me/3d-stone-cracked-cool-text-effect-1029.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Stone Cracked', args[0]))}).catch((err) => error(err))
+            if (args[0] == 122) return mintake.textpro('https://textpro.me/create-embossed-text-effect-on-cracked-surface-1024.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Embossed Text', args[0]))}).catch((err) => error(err))
+            if (args[0] == 123) return mintake.textpro('https://textpro.me/broken-glass-text-effect-free-online-1023.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Broken Glass', args[0]))}).catch((err) => error(err))
+            if (args[0] == 124) return mintake.textpro('https://textpro.me/create-art-paper-cut-text-effect-online-1022.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Paper Cut', args[0]))}).catch((err) => error(err))
+            if (args[0] == 125) return mintake.textpro('https://textpro.me/create-a-free-online-watercolor-text-effect-1017.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Watercolor', args[0]))}).catch((err) => error(err))
+            if (args[0] == 126) return mintake.textpro('https://textpro.me/write-text-on-foggy-window-online-free-1015.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Foggy Windows', args[0]))}).catch((err) => error(err))
+            if (args[0] == 127) return mintake.textpro('https://textpro.me/online-black-and-white-bear-mascot-logo-creation-1012.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Black Bear', args[0]))}).catch((err) => error(err))
+            if (args[0] == 128) return mintake.textpro('https://textpro.me/create-a-christmas-holiday-snow-text-effect-1007.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Christmas Holiday', args[0]))}).catch((err) => error(err))
+            if (args[0] == 129) return mintake.textpro('https://textpro.me/create-snow-text-effects-for-winter-holidays-1005.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Snow Text', args[0]))}).catch((err) => error(err))
+            if (args[0] == 130) return mintake.textpro('https://textpro.me/create-a-cloud-text-effect-on-the-sky-online-1004.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Cloud text', args[0]))}).catch((err) => error(err))
+            if (args[0] == 131) return mintake.textpro('https://textpro.me/create-blackpink-logo-style-online-1001.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Blackpink', args[0]))}).catch((err) => error(err))
+            if (args[0] == 132) return mintake.textpro('https://textpro.me/create-realistic-cloud-text-effect-online-free-999.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Realistic Cloud', args[0]))}).catch((err) => error(err))
+            if (args[0] == 133) return mintake.textpro('https://textpro.me/create-a-cloud-text-effect-in-the-sky-online-997.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Cloud Text', args[0]))}).catch((err) => error(err))
+            if (args[0] == 134) return mintake.textpro('https://textpro.me/write-in-sand-summer-beach-free-online-991.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Sand Summer Beach', args[0]))}).catch((err) => error(err))
+            if (args[0] == 135) return mintake.textpro('https://textpro.me/sand-writing-text-effect-online-990.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Sand Writing', args[0]))}).catch((err) => error(err))
+            if (args[0] == 136) return mintake.textpro('https://textpro.me/sand-engraved-3d-text-effect-989.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Sand Engraved', args[0]))}).catch((err) => error(err))
+            if (args[0] == 137) return mintake.textpro('https://textpro.me/create-a-summery-sand-writing-text-effect-988.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Summery Sand', args[0]))}).catch((err) => error(err))
+            if (args[0] == 138) return mintake.textpro('https://textpro.me/foil-balloon-text-effect-for-birthday-987.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Balloon Text', args[0]))}).catch((err) => error(err))
+            if (args[0] == 139) return mintake.textpro('https://textpro.me/create-3d-glue-text-effect-with-realistic-style-986.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('3D Glue', args[0]))}).catch((err) => error(err))
+            if (args[0] == 140) return mintake.textpro('https://textpro.me/1917-style-text-effect-online-980.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('1917', args[0]))}).catch((err) => error(err))
+            if (args[0] == 141) return mintake.textpro('https://textpro.me/double-exposure-text-effect-black-white-976.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Double Exposure', args[0]))}).catch((err) => error(err))
+            if (args[0] == 142) return mintake.textpro('https://textpro.me/glossy-carbon-text-effect-965.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Glossy Carbon', args[0]))}).catch((err) => error(err))
+            if (args[0] == 143) return mintake.textpro('https://textpro.me/fabric-text-effect-online-964.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Fabric', args[0]))}).catch((err) => error(err))
+            if (args[0] == 144) return mintake.textpro('https://textpro.me/fullcolor-balloon-text-effect-958.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Full Color Balloon', args[0]))}).catch((err) => error(err))
+            if (args[0] == 145) return mintake.textpro('https://textpro.me/blood-text-on-the-frosted-glass-941.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Blood Text', args[0]))}).catch((err) => error(err))
+            if (args[0] == 146) return mintake.textpro('https://textpro.me/halloween-fire-text-effect-940.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Halloween Fire', args[0]))}).catch((err) => error(err))
+            if (args[0] == 147) return mintake.textpro('https://textpro.me/create-logo-joker-online-934.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Joker Logo', args[0]))}).catch((err) => error(err))
+            if (args[0] == 148) return mintake.textpro('https://textpro.me/wicker-text-effect-online-932.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Wicker', args[0]))}).catch((err) => error(err))
+            if (args[0] == 149) return mintake.textpro('https://textpro.me/natural-leaves-text-effect-931.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Natural Leaves', args[0]))}).catch((err) => error(err))
+            if (args[0] == 150) return mintake.textpro('https://textpro.me/skeleton-text-effect-online-929.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Skeleton', args[0]))}).catch((err) => error(err))
+            if (args[0] == 151) return mintake.textpro('https://textpro.me/red-foil-balloon-text-effect-928.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Red Foil', args[0]))}).catch((err) => error(err))
+            if (args[0] == 152) return mintake.textpro('https://textpro.me/ultra-gloss-text-effect-online-920.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Ultra Gloss', args[0]))}).catch((err) => error(err))
+            if (args[0] == 153) return mintake.textpro('https://textpro.me/denim-text-effect-online-919.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Denim', args[0]))}).catch((err) => error(err))
+            if (args[0] == 154) return mintake.textpro('https://textpro.me/decorate-purple-text-effect-917.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Decorate Purple', args[0]))}).catch((err) => error(err))
+            if (args[0] == 155) return mintake.textpro('https://textpro.me/rock-text-effect-online-915.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Rock', args[0]))}).catch((err) => error(err))
+            if (args[0] == 156) return mintake.textpro('https://textpro.me/lava-text-effect-online-914.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Lava', args[0]))}).catch((err) => error(err))
+            if (args[0] == 157) return mintake.textpro('https://textpro.me/purple-glass-text-effect-912.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Purple Glass', args[0]))}).catch((err) => error(err))
+            if (args[0] == 158) return mintake.textpro('https://textpro.me/purple-shiny-glass-text-effect-906.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Purple Shiny', args[0]))}).catch((err) => error(err))
+            if (args[0] == 159) return mintake.textpro('https://textpro.me/captain-america-text-effect-905.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Captain America', args[0]))}).catch((err) => error(err))
+            if (args[0] == 160) return mintake.textpro('https://textpro.me/toxic-text-effect-online-901.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Toxic Effect', args[0]))}).catch((err) => error(err))
+            if (args[0] == 161) return mintake.textpro('https://textpro.me/purple-glass-text-effect-online-892.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Purple Glass', args[0]))}).catch((err) => error(err))
+            if (args[0] == 162) return mintake.textpro('https://textpro.me/decorative-glass-text-effect-891.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Decorative Glass', args[0]))}).catch((err) => error(err))
+            if (args[0] == 163) return mintake.textpro('https://textpro.me/koi-fish-text-effect-online-888.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Koi Fish', args[0]))}).catch((err) => error(err))
+            if (args[0] == 164) return mintake.textpro('https://textpro.me/horror-blood-text-effect-online-883.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Horror Blood', args[0]))}).catch((err) => error(err))
+            if (args[0] == 165) return mintake.textpro('https://textpro.me/road-warning-text-effect-878.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Road Warning', args[0]))}).catch((err) => error(err))
+            if (args[0] == 166) return mintake.textpro('https://textpro.me/dropwater-text-effect-872.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Dropwater', args[0]))}).catch((err) => error(err))
+            if (args[0] == 167) return mintake.textpro('https://textpro.me/break-wall-text-effect-871.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Break Wall', args[0]))}).catch((err) => error(err))
+            if (args[0] == 168) return mintake.textpro('https://textpro.me/plastic-bag-drug-text-effect-867.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Plastic Bag', args[0]))}).catch((err) => error(err))
+            if (args[0] == 169) return mintake.textpro('https://textpro.me/horror-gift-text-effect-866.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Horror Gift', args[0]))}).catch((err) => error(err))
+            if (args[0] == 170) return mintake.textpro('https://textpro.me/marble-slabs-text-effect-864.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Marble Slaps', args[0]))}).catch((err) => error(err))
+            if (args[0] == 171) return mintake.textpro('https://textpro.me/ice-cold-text-effect-862.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Ice Cold', args[0]))}).catch((err) => error(err))
+            if (args[0] == 172) return mintake.textpro('https://textpro.me/fruit-juice-text-effect-861.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Fruit Juice', args[0]))}).catch((err) => error(err))
+            if (args[0] == 173) return mintake.textpro('https://textpro.me/wood-text-effect-856.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Wood Text', args[0]))}).catch((err) => error(err))
+            if (args[0] == 174) return mintake.textpro('https://textpro.me/carbon-text-effect-833.html', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Carbon', args[0]))}).catch((err) => error(err))
+            if (args[0] == 175) return mintake.textpro('https://textpro.me/misc-style-c29-p6', [q.slice(4)]).then(res => {sendImageReply(res, toast.mintake('Misc Style', args[0]))}).catch((err) => error(err))
             break
 
     /*---------JUEGOS----------*/
         case 'akinator': case 'aki':
-                if (sender !== usuarioJugando && haIniciado == true) return sendReply(toast.noPlayer())
+                if (sender !== usuarioJugando && haIniciado == true && !isOwner) return sendReply(toast.noPlayer())
                 if (q.toLowerCase() == 'start'){
                     if(haIniciado == true) return sendReply(toast.akiEnd())
                     const region = 'es'
@@ -1320,7 +1377,7 @@ module.exports = async (msg ,client) => {
                     await sendReply(toast.casinoLoose(resultado, looser)) 
                 }
             } catch (e){
-                return logerror(e)
+                return error(e)
             }
             break
         case 'dado': case 'dados':
@@ -1331,24 +1388,15 @@ module.exports = async (msg ,client) => {
         
     /*--------STICKERS Y MAS-------- */
         case 'sticker': case 's': case 'stiker':
-            if(isQuotedImage ){ let media = './media/temp/sticker.png';  const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo; await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});  sendSticker(client,msg,from,media) } ;            
-            if (isImage){ let media = './media/temp/sticker.png'; await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media) };            
-            if (isQuotedVideo ){ if(msg.message.extendedTextMessage.contextInfo.quotedMessage.videoMessage.seconds > 10 ) return sendReply(toast.longSticker()); let media = './media/temp/sticker.mp4'; const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo; await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media) };            
-            if (isVideo){ if (msg.message.videoMessage.seconds > 10) return sendReply(toast.longSticker()); let media = './media/temp/sticker.mp4'; await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media); };            
+            if (isImage){ let media = './media/temp/sticker.png'; await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media) };                
+            if (isQuotedImage ){ let media = './media/temp/sticker.png';  const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo; await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});  sendSticker(client,msg,from,media) } ;            
+            if (isVOImage){ let media = './media/temp/sticker.png'; const encmedia = msg.message.viewOnceMessage; await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media)}
             if (isQVOImage){ let media = './media/temp/reveal.png'; const encmedia = msg.message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage; await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media) }
-            if (isVOImage){
-                let media = './media/temp/sticker.png';
-                const encmedia = msg.message.viewOnceMessage;
-                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});
-                sendSticker(client,msg,from,media)
-            }
-            if (isQVOVideo){
-                let media = './media/temp/sticker.mp4';
-                const encmedia = msg.message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage;
-                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});
-                sendSticker(client,msg,from,media)
-            }
-            break
+            if (isVideo){ if (msg.message.videoMessage.seconds > 10) return sendReply(toast.longSticker()); let media = './media/temp/sticker.mp4'; await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media); };            
+            if (isQuotedVideo ){ if(msg.message.extendedTextMessage.contextInfo.quotedMessage.videoMessage.seconds > 10 ) return sendReply(toast.longSticker()); let media = './media/temp/sticker.mp4'; const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo; await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media) };            
+            if (isVOVideo){ let media = './media/temp/sticker.mp4'; const encmedia = msg.message.viewOnceMessage; if(encmedia.message.videoMessage.seconds > 10) return sendReply(toast.longSticker()); await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media) }
+            if (isQVOVideo){ let media = './media/temp/sticker.mp4'; const encmedia = msg.message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage;  if(encmedia.message.videoMessage.seconds > 10) return sendReply(toast.longSticker());  await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});  sendSticker(client,msg,from,media) }
+        break
         
     /*--------PROCESADORES DE AUDIO, IMAGEN Y VIDEO-------- */
         case 'toimg': case 'stimg':
@@ -1362,14 +1410,13 @@ module.exports = async (msg ,client) => {
             break
         case 'tovid': case 'stvid':
             if (isQuotedSticker){
-                let media = './media/temp/tovid.webp'
+                let media = './media/temp/tovid.mp4'
                 const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
                 await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
-                webptomp4(media)
+                sendGifReply(readFileSync(media), alertas.processed)
             }
             break
         case 'tovn':
-            return sendReply('Funcion en desarrollo')
             if (isQuotedAudio || isQuotedVideo){
                 var ran = `${Math.floor(Math.random() * 10000)}${'.mp4'}`
                 let media = './media/temp/tovn.mp4'
@@ -1441,9 +1488,6 @@ module.exports = async (msg ,client) => {
                 log(e)
             }
             break
-        case 'test':
-            log(msg.message.extendedTextMessage.contextInfo)
-            break
         case 'revelar':
             if(isQuotedViewOnce){
                 const encmedia = msg.message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage
@@ -1485,7 +1529,7 @@ module.exports = async (msg ,client) => {
                 return client.groupParticipantsUpdate(from,[etiqueta], 'promote')//.then(()=>{sendReplyWithMentions(text, [etiqueta])})
             }
             break
-        case 'Qh+dbYtW4U6tyUzYXZBlvaQf3bqP3lUVy7pMFdxEKvE=' : //ban
+        case 'Qh+dbYtW4U6tyUzYXZBlvaQf3bqP3lUVy7pMFdxEKvE=' : case 'wp/ycr49ARhiEWFElIPsKp2wAwLl/bdXOxxTxDrSkj8=': //ban
             if (!isGroup) return 
             if (!isAdmin && !isOwner && !isVip) return sentSticker('./media/resources/noeresadmin.webp')
             if (!isBotAdmin) return sentSticker('./media/resources/nosoyadmin.webp')
