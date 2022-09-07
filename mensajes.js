@@ -23,6 +23,8 @@ const { Aki } = require('aki-api')
 let {inWA, groupSettings, getAdmins, getAll, getParticipants, sendSticker} = funciones
 const {getRules, addRules, checkRules, resetRules} = require('./funciones/reglas.js')
 const {unRegisterUser, getRandomUserId, getRegisteredAge, getRegisteredId, getRegisteredName, getRegisteredSerial, getRegisteredTime, addRegisteredUser, createSerial, checkRegisteredUser} = require('./funciones/register.js')
+const {addCooldown, isGained, getUserRank, addLevelingDiamonds, addLevelingCoins, addLevelingXp, addLevelingLevel, getLevelingDiamonds, getLevelingCoins, getLevelingXp, getLevelingLevel, getLevelingId} = require('./funciones/level.js')
+const {getAfkPosition, getAfkId, getAfkTime, getAfkReason, checkAfkUser, addAfkUser} = require('./funciones/afk.js')
 let { readFileSync, writeFileSync, unlinkSync, existsSync} = fs
 let { stringify, parse } = JSON
 
@@ -80,7 +82,7 @@ module.exports = async (msg ,client) => {
     if (!msg.message) return
     if (msg.key && msg.key.remoteJid === 'status@broadcast') return
     const isMe = msg.key.fromMe
-    var from = msg.key.remoteJid
+    var from = msg.key.remoteJid 
 
 /*----------PLANTILLAS BOTONES ETC----------*/
     //const botones = [ {buttonId: 'id1', buttonText: {displayText: 'Button 1'}, type: 1}, {buttonId: 'id2', buttonText: {displayText: 'Button 2'}, type: 1}, {buttonId: 'id3', buttonText: {displayText: 'Button 3'}, type: 1} ]        
@@ -98,7 +100,7 @@ module.exports = async (msg ,client) => {
     const sendButtonImage = async (imagen, texto, botones) => { await client.sendMessage(from, {image: {url: imagen}, caption: texto, footer: copyright, buttons: botones, headerType: 4})}
     const sendTemplateButtonText = async (texto, botones) => { await client.sendMessage(from, { text: texto, footer: copyright, templateButtons: botones}) }
     const sendTemplateButtonImage = async (imagen, texto, botones) => { await client.sendMessage(from, { text: texto, footer: copyright, templateButtons: botones, image: {url: imagen}}) }
-    const sendListText = async (text, btext, sections) => { client.sendMessage(from, {text: text, footer: copyright, title: '', buttonText: btext, sections })}
+    const sendListText = async (text, btext, sections) => { client.sendMessage(from, {text: text, footer: copyright, title: '', buttonText: btext, sections },{quoted: msg})}
     const sendReaction = async (texto, para) => {client.sendMessage(para, { react: { text: texto, key: msg.key } })}
     const sendGif = async (ubicacion, texto) => {client.sendMessage(from, {video: {url: ubicacion}, caption: texto, gifPlayback: true})}
     const sendGifReply = async (ubicacion, texto) => {client.sendMessage(from, {video: ubicacion, caption: texto, gifPlayback: true},{quoted: msg})}
@@ -160,6 +162,7 @@ module.exports = async (msg ,client) => {
 /*----------VIEW ONCE MESSAGES----------*/
     const typeVO = isViewOnce ? msg.message.viewOnceMessage.message : ''
     var VO = Object.keys(typeVO)[0]
+    const isVOContext = VO === 'messageContextInfo'
     const isVOImage = VO === 'imageMessage'
     const isVOVideo = VO === 'videoMessage'
 
@@ -169,8 +172,8 @@ module.exports = async (msg ,client) => {
     const isQVOVideo = quotedVO === 'videoMessage'
 
 /*----------OBTENCION DE MENSAJES----------*/
-    //const body = isText && msg.message[messageType] ? msg.message[messageType] : isImage && msg.message[messageType].caption ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption ? msg.message[messageType].caption : isQuoted && msg.message[messageType].text ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : isReaction && msg.message[messageType].text ? msg.message[messageType].text : isViewOnce && msg.message[messageType].message[VO].caption.startsWith(prefix) ? msg.message[messageType].message[VO].caption : '' 
-    const cmd = isText && msg.message[messageType].startsWith(prefix) ? msg.message[messageType] : isImage && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption :  isQuoted && msg.message[messageType].text.startsWith(prefix) ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId.startsWith(prefix) ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId.startsWith(prefix) ? msg.message.listResponseMessage.singleSelectReply.selectedRowId: isReaction && msg.message[messageType].text ? msg.message[messageType].text : isViewOnce && msg.message[messageType].message[VO].caption.startsWith(prefix) ? msg.message[messageType].message[VO].caption : '' 
+    const body = isText && msg.message[messageType] ? msg.message[messageType] : isImage && msg.message[messageType].caption ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption ? msg.message[messageType].caption : isQuoted && msg.message[messageType].text ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : isReaction && msg.message[messageType].text ? msg.message[messageType].text : isViewOnce && !isVOContext && msg.message[messageType].message[VO].caption.startsWith(prefix) ? msg.message[messageType].message[VO].caption : '' 
+    const cmd = isText && msg.message[messageType].startsWith(prefix) ? msg.message[messageType] : isImage && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption :  isQuoted && msg.message[messageType].text.startsWith(prefix) ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId.startsWith(prefix) ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId.startsWith(prefix) ? msg.message.listResponseMessage.singleSelectReply.selectedRowId: isReaction && msg.message[messageType].text ? msg.message[messageType].text : isViewOnce && !isVOContext && msg.message[messageType].message[VO].caption.startsWith(prefix) ? msg.message[messageType].message[VO].caption : '' 
     const chats = isText && msg.message[messageType] ? msg.message[messageType]: isQuoted && msg.message[messageType].text ? msg.message[messageType].text : ''
     const selectedButton = isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : ''
     const selectedList = isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : ''
@@ -214,7 +217,7 @@ module.exports = async (msg ,client) => {
     const announce = isAnnounce ? 'administradores' : 'todos'
     //const groupEphemeral = isEphemeral ? groupMetadata.ephemeralDuration : ''
     const isTag = isQuoted && msg.message.extendedTextMessage.contextInfo != null ? msg.message.extendedTextMessage.contextInfo.participant != '' : false
-    const isMentionedTag = isQuoted && msg.message.extendedTextMessage.contextInfo != null ? msg.message.extendedTextMessage.contextInfo.mentionedJid : false
+    const isMentionedTag = isGroup && msg.message.extendedTextMessage.contextInfo != null ? msg.message.extendedTextMessage.contextInfo.mentionedJid : false
     const isTagStick = isSticker ? msg.message.stickerMessage.contextInfo.quotedMessage != null : false
 
 /*-------------INCLUSORES---------------*/
@@ -230,8 +233,7 @@ module.exports = async (msg ,client) => {
     const isDespedida = isGroup ?  despedida.includes(from) : false
     const isPromote = isGroup ?  promote.includes(from) : false
     const isDemote = isGroup ?  demote.includes(from) : false
-    const isLevelingOn = isGroup ? _leveling.includes(from) : false
-    //const isAfkOn = isGroup ? checkAfkUser(sender, _afk) : false
+    const isAfkOn = isGroup ? checkAfkUser(sender) : false
     const isAntienlaces = isGroup ? antienlaces.includes(from) : false
     const isCeroenlaces = isGroup ? ceroenlaces.includes(from) : false
     const isLeveling = isGroup ? _leveling.includes(from) : false
@@ -302,26 +304,26 @@ module.exports = async (msg ,client) => {
         log(reactionEmoji)
     }*/
 /*----------FUNCIONES----------*/
-    if (!isGroup && !isOwner) return
-    if (isGroup && isLink && isCeroenlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
-    if (isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
-    if (!isMe && !isCmd && (chats).toLowerCase().startsWith('@everyone')){
-        escribiendo(from)
-        const msg = chats.slice(10)
-        sendTextWithMentions('@everyone ' + msg, groupParticipants)
-    }
-    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@participantes')){
-        escribiendo(from)
-        const msg = chats.slice(15)
-        sendTextWithMentions('@participantes ' + msg, miembros)
-    }
-    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@admins')){
-        escribiendo(from)
-        const msg = chats.slice(8)
-        sendTextWithMentions('@admins ' + msg, groupAdmins)
-    }
-    if (!isMe && !isCmd && chats.toLowerCase().includes('bot') && chats.toLowerCase().includes('te')&& chats.toLowerCase().includes('amo')){ sendReaction('❤️', from ) }
+    if (!isMe && !isGroup && !isOwner) return
+    if (!isMe && isBanned && !isOwner) return
 
+    if (!isMe && isCmd && !isRegistered){ const buttons = [{  buttonId:`registrar`, buttonText:{ displayText:'·REGISTRAR·' }, type:1  }]; return sendButtonText(toast.userUnRegistered(), buttons) }
+    
+    if (!isMe && isCmd && isPrivate && !isOwner ) {return sendReply('[ERROR] => Comandos deshabilitados.')}
+    if (!isMe && isCmd && !isGroup && !isVip && !isOwner) {return sendReply( alertas.novip)}
+    if (!isMe && isCmd && isOnlyowner && !isOwner) {return sendReply( alertas.msgonlyowner)}
+    if (!isMe && isCmd && isOnlyvip && !isVip && !isOwner ) {return sendReply( alertas.msgonlyvips)}
+    if (!isMe && isCmd && isOnlypremium && !isPremium && !isVip && !isOwner) {return sendReply( alertas.msgonlypremiums)}
+    if (!isMe && isCmd && isOnlyadmins && !isAdmin && !isVip && !isOwner ) {return sendReply( alertas.msgonlyadms)}
+
+    if (!isMe && isGroup && isLink && isCeroenlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
+    if (!isMe && isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
+
+    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@everyone')){ escribiendo(from); const msg = chats.slice(10); sendTextWithMentions('@everyone ' + msg, groupParticipants) }
+    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@participantes')){ escribiendo(from); const msg = chats.slice(15); sendTextWithMentions('@participantes ' + msg, miembros) }
+    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@admins')){ escribiendo(from); const msg = chats.slice(8); sendTextWithMentions('@admins ' + msg, groupAdmins) }
+    if (!isMe && !isCmd && chats.toLowerCase().includes('bot') && chats.toLowerCase().includes('te')&& chats.toLowerCase().includes('amo')){ sendReaction('❤️', from ) }
+    
 /*----------FUNCION DE REGISTRO----------*/
     if (chats.toLowerCase() === 'registrar'){
         if (isRegistered) return sendReply(toast.userRegistered())
@@ -335,14 +337,64 @@ module.exports = async (msg ,client) => {
     if(chats.toLowerCase() === 'unregister'){
         if (!isRegistered) return sendReply(toast.userUnRegistered())
         unRegisterUser(sender)
-        await sendReply(toast.unregister())
         sendReply(toast.unregistered())
+    }
+
+/*----------FUNCION DE NIVEL----------*/
+    const levelRole = getLevelingLevel(sender, _level)
+        var role = 'Pre Super Saiyajin'
+        if (levelRole >= 15){ role = 'Super Saiyajin Fase I' } 
+        if (levelRole >= 30){ role = 'Super Saiyajin Fase II' }
+        if (levelRole >= 45){ role = 'Super Saiyajin Fase III' }
+        if (levelRole >= 60){ role = 'Super Saiyajin Fase IV' }
+        if (levelRole >= 75){ role = 'Super Saiyajin Fase V' }
+        if (levelRole >= 90){ role = 'Super Saiyajin Fase VI' }
+        if (levelRole >= 105){ role = 'Super Saiyajin Legendario' }
+        if (levelRole >= 120){ role = 'Super Saiyajin Rage' }
+        if (levelRole >= 135){ role = 'Super Saiyajin Dios' }
+        if (levelRole >= 150){ role = 'Super Saiyajin Azul' }
+        if (levelRole >= 165){ role = 'Super Saiyajin Rosa' }
+        if (levelRole >= 180){ role = 'Super Saiyajin Azul Perfecto' }
+        if (levelRole >= 195){ role = 'Super Saiyajin Evolucionado' }
+        if (levelRole >= 210){ role = 'Super Saiyajin Ultrainstinto' }
+        if (levelRole >= 225){ role = 'Super Saiyajin Ultrainstinto Masterizado' }
+
+    if (!isMe && isGroup && !isGained(sender) && isLeveling) {
+        addCooldown(sender)
+        const currentLevel = getLevelingLevel(sender)
+        const amountXp = Math.floor(Math.random() * (15 - 25 + 1) + 15)
+        const requiredXp = 5 * Math.pow(currentLevel, 2) + 50 * currentLevel + 100
+        addLevelingXp(sender, amountXp)
+        if (requiredXp <= getLevelingXp(sender)){
+            addLevelingLevel(sender, 1)
+            const userLevel = getLevelingXp(sender)
+            const fetchXp = 5 * Math.pow(userLevel, 2) + 50 * userLevel + 100
+            sendReply(toast.levelUp(pushname, sender, fetchXp, currentLevel, role))
+        }
+    }
+/*----------FUNCION AFK----------*/
+    if(!isMe && isGroup){
+        let jids = [...new Set([...(msg.message.extendedTextMessage.contextInfo.mentionedJid || []), ...(isQuoted ? [msg.message.extendedTextMessage.contextInfo.participant] : [])])]
+        for (let i of jids){
+            if(checkAfkUser(i)){
+                const getId = getAfkId(i)
+                const getReason = getAfkReason(getId)
+                const getTime = getAfkTime(getId)
+                sendReplyWithMentions(`*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_⋆⋅⊱∘[✧MODO AFK✧]∘⊰⋅⋆_\n\n_¡Ssshhhh🤫! @${getId.split("@")[0]} esta *AFK* actualmente, no le molestes!_\n   \n    ➸ *Razon*: ${getReason}\n    ➸ *Tiempo*: ${getTime}\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n`, [getId])
+            }
+        }
+        if (checkAfkUser(sender) && !isCmd){
+            _afk.splice(getAfkPosition(sender), 1)
+            writeFileSync('./JSONS/afk.json', stringify(_afk))
+            sendReplyWithMentions( `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_Hola *·@${sender.split("@")[0]}·* estás de vuelta, *bienvenid@*_\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`, [sender])
+        }
     }
 
 
 /*----------RESPUESTAS DE LA BOT----------*/
     if (!isMe && chats.toLowerCase().startsWith('..')){ sendReaction('🫶', from)}
     if (!isCmd && (chats).toLowerCase().startsWith('di ')){ const tts = gtts('es') ;const text = chats.slice(3) ; tts.save('./media/temp/di.mp3', text, async function(){ grabando(from) ; await sendPttReply('./media/temp/di.mp3').catch(e => {return sendReply('¡ERROR 404! Not Found.')}) })}
+
 /*----------CHAT BOTS----------*/
     if(!isMe && isTag && !isCmd){
         const idMsg = msg.message.extendedTextMessage.contextInfo.participant
@@ -863,21 +915,21 @@ module.exports = async (msg ,client) => {
                 sendReply('[DESACTIVANDO AUTOSTICKERS]')
             }
         break
-        case 'leveling': 
+        case 'leveling': case 'nivel': case 'level':
             if (!isGroup) return sendReply(alertas.groups)
             if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
             if (!isBotAdmin) return sendReply(alertas.adminbot)
             const levelingCheck = isLeveling ? 'funcion leveling *ACTIVADA* \n\n!leveling off para desactivar' : 'funcion leveling *DESACTIVADA* \n\n!leveling on para activar'
             if (args.length == 0){ if (isLeveling) return sendReply(levelingCheck) ; if (!isLeveling) return sendReply(levelingCheck)}
             if (args[0] == 'on' || args[0] == '1') {
-                leveling.push(from)
-                writeFileSync('./JSONS/leveling.json', stringify(leveling))
+                _leveling.push(from)
+                writeFileSync('./JSONS/leveling.json', stringify(_leveling))
                 sendReply('[ACTIVANDO LEVELING]')
             }
             if (args[0] == 'off' || args[0] == '0') {
-                let del = leveling.indexOf(from)
-                leveling.splice(del, 1)
-                writeFileSync('./JSONS/leveling.json', stringify(leveling))
+                let del = _leveling.indexOf(from)
+                _leveling.splice(del, 1)
+                writeFileSync('./JSONS/leveling.json', stringify(_leveling))
                 sendReply('[DESACTIVANDO LEVELING]')
             }
         break
@@ -1315,7 +1367,7 @@ module.exports = async (msg ,client) => {
 
     /*---------JUEGOS----------*/
         case 'akinator': case 'aki':
-                if (sender !== usuarioJugando && haIniciado == true && !isOwner) return sendReply(toast.noPlayer())
+                if (sender !== usuarioJugando && haIniciado == true && !isOwner) return sendReplyWithMentions(toast.noPlayer(usuarioJugando), [usuarioJugando])
                 if (q.toLowerCase() == 'start'){
                     if(haIniciado == true) return sendReply(toast.akiEnd())
                     const region = 'es'
@@ -1498,7 +1550,16 @@ module.exports = async (msg ,client) => {
                 sendReply('[Error] => Funcion no disponible para mensajes normales')
             }
             break
-        default:
+        case 'afk':
+            if (!isGroup) return await sendReply( alertas.groups)
+            const timee = moment.tz('America/Bogota').format('DD/MM/YY HH:mm:ss')
+            if (isAfkOn) return await sendReply( `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_⋆⋅⊱∘[✧MODO AFK✧]∘⊰⋅⋆_\n\n_La función AFK ya se ha *ACTIVADO* antes._\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`)
+            const reason = q ? q : 'Ninguna.'
+            addAfkUser(sender, timee, reason)
+            await sendReply( `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_⋆⋅⊱∘[✧MODO AFK✧]∘⊰⋅⋆_\n\n_La función AFK se ha *ACTIVADO* con éxito_\n   \n    ➸ *Usuario*: ${pushname}\n    ➸ *Razón*: ${reason}\n    \n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`)
+            break
+        
+            default:
     }
 
     switch(stickerCommand){

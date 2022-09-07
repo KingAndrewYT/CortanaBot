@@ -1,5 +1,6 @@
 const fs = require('fs')
 const {prefix} = JSON.parse(fs.readFileSync('./JSONS/configs.json'))
+const {getLevelingXp, getLevelingLevel} = require('../funciones/level.js')
 
 exports.outGroup = (pushname) => `[Error] Lo siento ${pushname} el numero indicado no pertenece a este grupo, por lo tanto no puedo realizar ninguna accion.` 
 exports.onGroup = (pushname) => `[Error] Lo siento ${pushname} el numero indicado ya pertenece a este grupo, por lo tanto no puedo realizar ninguna accion.` 
@@ -56,7 +57,7 @@ exports.gpcreate = (res) => `[Success] Genial he creado el grupo correctamente c
 exports.mintake = (efecto, num) => `·✅ Edicion terminada·\n\n·Efecto: ${efecto}\n\n·Si quieres mas efectos como este envia el comando *${prefix}textpro ${num} texto*·`
 exports.noeffect = () => `[Error] Este efecto no se encuentra disponible por el momento.`
 
-exports.noPlayer = () => `[Error] Actualmente existe una sesion del juego en curso, por favor espera.`
+exports.noPlayer = (usuario) => `[Error] Actualmente existe una sesion del juego en curso con *@${usuario.split("@")[0]}*, por favor espera que termine su turno ó comunicate con el desarrollador a traves del siguiente enlace wa.me/573228125090.`
 
 exports.akiStart = (aki) => `*👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀𝐌𝐄𝐒 - 𝐀𝐊𝐈𝐍𝐀𝐓𝐎𝐑]🧞‍♂️*\n*Pregunta:* \n_${aki.question}._`
 exports.akiStep = (aki) => `*👾 [𝐂𝐎𝐑𝐓𝐀𝐍𝐀 𝐆𝐀𝐌𝐄𝐒 - 𝐀𝐊𝐈𝐍𝐀𝐓𝐎𝐑]🧞‍♂️*\n*Pregunta:* \n_${aki.question}._\n\n - Progreso: ${aki.progress}`
@@ -89,6 +90,10 @@ exports.rulesReset = () => `[Success] => Las reglas personalizadas del grupo han
 exports.avoactive = () => `[Anti Ver Una Vez Activado]`
 
 exports.userRegistered = () => `[Error] ya estas registrado en nuestro sistema`
+exports.userUnRegistered = () => `*_*✋ACCESO DENEGADO🛑*_\n_¡Ups! parece que no estas registrado en nuestro sistema, para registrarte solo debes oprimir el boton *·REGISTRAR·* o escribir la palabra *registrar*_ para poder continuar...`
 exports.registering = () => `[...] Registrando por favor espere`
 exports.unregister = () => `[...] Eliminando registros por favor espere...`
 exports.unregistered = () => `[Success] Registros eliminados correctamente`
+
+
+exports.levelUp = (pushname, sender, fetchXp, currentLevel, role) => `*🏆╚» Nivel Superado «╝🏆*\n\n_·Felicidades *${pushname}* has subido de nivel.·_\n\n*·🤺 XP:* ${getLevelingXp(sender)} / ${fetchXp}·\n*·🆙  Nivel:* ${currentLevel} -> ${getLevelingLevel(sender)}·\n*·🎓 Rango:* ${role}·`
