@@ -106,7 +106,7 @@ module.exports = async (msg ,client) => {
     const sendButtonText = async (texto, botones = []) => {client.sendMessage(from, {text: texto, footer: copyright, buttons: botones, headerType: 1})}
     const sendButtonImage = async (imagen, texto, botones) => { await client.sendMessage(from, {image: {url: imagen}, caption: texto, footer: copyright, buttons: botones, headerType: 4})}
     const sendTemplateButtonText = async (texto, botones) => { await client.sendMessage(from, { text: texto, footer: copyright, templateButtons: botones}) }
-    const sendTemplateButtonImage = async (imagen, texto, botones) => { client.sendMessage(from, { image: {url: imagen}, caption: texto, footer: copyright, templateButtons: botones }, {quoted: msg})}
+    const sendTemplateButtonImage = async (imagen, texto, botones) => { client.sendMessage(from, { image: {url: imagen}, caption: texto, footer: copyright, templateButtons: botones })}
     const sendListText = async (text, btext, sections) => { client.sendMessage(from, {text: text, footer: copyright, title: '', buttonText: btext, sections },{quoted: msg})}
     const sendReaction = async (texto, para) => {client.sendMessage(para, { react: { text: texto, key: msg.key } })}
     const sendGif = async (ubicacion, texto) => {client.sendMessage(from, {video: {url: ubicacion}, caption: texto, gifPlayback: true})}
@@ -169,6 +169,10 @@ module.exports = async (msg ,client) => {
     const isQuotedQuoted = quotedMessageType === 'extendedTextMessage'
     const isQuotedInviteLink = quotedMessageType === 'groupInviteMessage'
 
+    const isTag = isQuoted && msg.message.extendedTextMessage.contextInfo != null ? msg.message.extendedTextMessage.contextInfo.participant != '' : false
+    const isMentionedTag = isQuoted && msg.message.extendedTextMessage.contextInfo.mentionedJid != null ? msg.message.extendedTextMessage.contextInfo.mentionedJid : false
+    const isTagStick = isSticker ? msg.message.stickerMessage.contextInfo.quotedMessage != null : false
+
 /*----------VIEW ONCE MESSAGES----------*/
     const typeVO = isViewOnce ? msg.message.viewOnceMessage.message : ''
     var VO = Object.keys(typeVO)[0]
@@ -181,6 +185,13 @@ module.exports = async (msg ,client) => {
     const isQVOImage = quotedVO === 'imageMessage'
     const isQVOVideo = quotedVO === 'videoMessage'
 
+/*-----------STICKER MESSAGE----------- */
+    const typeTagStick = isTagStick ? msg.message.stickerMessage.contextInfo.quotedMessage : ''
+    var quotedTagStick = Object.keys(typeTagStick)[0]
+    const isExtendedTagStick = quotedTagStick === 'extendedTextMessage'
+    const isTextTagStick = quotedTagStick === 'conversation'
+    
+    
 /*----------OBTENCION DE MENSAJES----------*/
     const body = isText && msg.message[messageType] ? msg.message[messageType] : isImage && msg.message[messageType].caption ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption ? msg.message[messageType].caption : isQuoted && msg.message[messageType].text ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : isReaction && msg.message[messageType].text ? msg.message[messageType].text : isViewOnce && !isVOContext && msg.message[messageType].message[VO].caption.startsWith(prefix) ? msg.message[messageType].message[VO].caption : isTemplateButtonResp && msg.message[messageType].selectedId.startsWith(prefix) ? msg.message[messageType].selectedId : '' 
     const cmd = isText && msg.message[messageType].startsWith(prefix) ? msg.message[messageType] : isImage && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption :  isQuoted && msg.message[messageType].text.startsWith(prefix) ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId.startsWith(prefix) ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId.startsWith(prefix) ? msg.message.listResponseMessage.singleSelectReply.selectedRowId: isReaction && msg.message[messageType].text ? msg.message[messageType].text : isViewOnce && !isVOContext && msg.message[messageType].message[VO].caption.startsWith(prefix) ? msg.message[messageType].message[VO].caption : isTemplateButtonResp && msg.message[messageType].selectedId.startsWith(prefix) ? msg.message[messageType].selectedId : '' 
@@ -226,9 +237,6 @@ module.exports = async (msg ,client) => {
     const isAnnounce = isGroup ? groupMetadata.announce : false
     const announce = isAnnounce ? 'administradores' : 'todos'
     //const groupEphemeral = isEphemeral ? groupMetadata.ephemeralDuration : ''
-    const isTag = isQuoted && msg.message.extendedTextMessage.contextInfo != null ? msg.message.extendedTextMessage.contextInfo.participant != '' : false
-    const isMentionedTag = isQuoted && msg.message.extendedTextMessage.contextInfo.mentionedJid != null ? msg.message.extendedTextMessage.contextInfo.mentionedJid : false
-    const isTagStick = isSticker ? msg.message.stickerMessage.contextInfo.quotedMessage != null : false
 
 /*-------------INCLUSORES---------------*/
     const isOwner = ownerNumber.includes(sender)
@@ -327,9 +335,9 @@ module.exports = async (msg ,client) => {
     if (!isMe && isGroup && isLink && isCeroenlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
     if (!isMe && isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
 
-    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@everyone')){ escribiendo(from); const msg = chats.slice(10); sendTextWithMentions('@everyone ' + msg, groupParticipants) }
-    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@participantes')){ escribiendo(from); const msg = chats.slice(15); sendTextWithMentions('@participantes ' + msg, miembros) }
-    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@admins')){ escribiendo(from); const msg = chats.slice(8); sendTextWithMentions('@admins ' + msg, groupAdmins) }
+    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@everyone')){ escribiendo(); const msg = chats.slice(10); sendTextWithMentions('@everyone ' + msg, groupParticipants) }
+    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@participantes')){ escribiendo(); const msg = chats.slice(15); sendTextWithMentions('@participantes ' + msg, miembros) }
+    if (!isMe && !isCmd && chats.toLowerCase().startsWith('@admins')){ escribiendo(); const msg = chats.slice(8); sendTextWithMentions('@admins ' + msg, groupAdmins) }
     if (!isMe && !isCmd && chats.toLowerCase().includes('bot') && chats.toLowerCase().includes('te')&& chats.toLowerCase().includes('amo')){ sendReaction('❤️', from ) }
     
 /*----------FUNCION DE REGISTRO----------*/
@@ -427,7 +435,7 @@ module.exports = async (msg ,client) => {
         await translate(chats, 'es').then(async (res) => {
             const {data} = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(res)}&lc=es&cf=false`)
             const {success} = data
-            escribiendo(from)
+            escribiendo()
             sendReply(success)
         })
     }
@@ -435,17 +443,17 @@ module.exports = async (msg ,client) => {
         const text = chats.slice(5)
         const {data} = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(text)}&lc=es&cf=false`)
         const {success} = data
-        await escribiendo(from)
+        await escribiendo()
         sendReply(success)
     }
     if (!isMe && !isCmd && chats.toLowerCase().startsWith('cortana ')){
-        escribiendo(from)
+        escribiendo()
         const text = chats.slice(8)
         await translate(text, 'en').then(async (res)=>{
             const {data} = await axios.get(`https://some-random-api.ml/chatbot?message=${encodeURIComponent(res)}&key=l00NB88YglRMSz69Uocfjgvq1`)
             const {response} = data
             log(decodeURIComponent(response))
-            await translate(response, 'es').then(async (res) =>{ await escribiendo(from); await sendReply(res) }).catch(e => sendReply('¡ERROR 404!')) }).catch(e => sendReply('¡ERROR 405!'))
+            await translate(response, 'es').then(async (res) =>{ await escribiendo(); await sendReply(res) }).catch(e => sendReply('¡ERROR 404!')) }).catch(e => sendReply('¡ERROR 405!'))
     }
 
 /*----------ENVIO DE AUDIOS----------*/
@@ -464,7 +472,7 @@ module.exports = async (msg ,client) => {
     const stickerCommand = Buffer.from(u8).toString('base64')
 
 /*---------FUNCION AUTOSTICKERS------ */
-    if (!isMe && isMedia || isViewOnce && isGroup && isAutostickers){
+    if (!isMe && isMedia && isGroup && isAutostickers || isViewOnce && isGroup && isAutostickers && !isMe){
         if(isImage){ let media = './media/temp/autsticker.png'; await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media);  }
         if(isVideo){ if(msg.message.videoMessage.seconds > 10) return; let media = './media/temp/sticker.mp4'; await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)}); sendSticker(client,msg,from,media)}
         if (isVOImage){
@@ -1461,7 +1469,7 @@ module.exports = async (msg ,client) => {
                 let media = './media/temp/toimg.png'
                 const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
                 await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
-                exec(`ffmpeg -i ${media} ${ran}`, () => {client.sendMessage(from, {image: readFileSync(ran), caption: toast.processed},{quoted: msg}); unlinkSync(ran); unlinkSync(media)})
+                exec(`ffmpeg -i ${media} ${ran}`, () => {client.sendMessage(from, {image: readFileSync(ran), caption: toast.processed()},{quoted: msg}); unlinkSync(ran); unlinkSync(media)})
             }
             break
         case 'tovid': case 'stvid':
@@ -1692,38 +1700,42 @@ module.exports = async (msg ,client) => {
                 sendImageReply(res.videos[0].image, ytRes)
             })
             break
-        case 'musica': case 'musica':
+        case 'musica': case 'música': case 'music':
             if (args.length == 0) return sendReply(toast.ytmusic())
             yts(q).then(async res => {
                 const {url, title, description, image, timestamp, ago, views, author} = res.videos[0]
                 var visitas = new Intl.NumberFormat().format(views);
                 if (visitas == NaN){var visitas = 'Sin'}
                 const hace = await translate(ago, 'es')
-                const buttons = [
+                /*const buttons = [
+
                     {index: 1, urlButton: {displayText: '·URL·', url: url}},
                     {index: 2, urlButton: {displayText: '·CANAL·', url: author.url}},
                     {index: 3, quickReplyButton: {displayText: '·MP3·', id: `${prefix}ytmp3 ${url}`}},
                     {index: 4, quickReplyButton: {displayText: '·DOCUMENTO·', id: `${prefix}ytdoc ${url}`}},
                     {index: 5, quickReplyButton: {displayText: '·MAS RESULTADOS·', id: `${prefix}ytmusic ${url}`}}
+                ]*/
+                const buttons = [
+                    {  buttonId:`${prefix}ytmp3 ${url}`, buttonText:{ displayText:'·MP3·' }, type:1  },
+                    {  buttonId:`${prefix}ytdoc ${url}`, buttonText:{ displayText:'·DOCUMENTO·' }, type:1  },
+                    {  buttonId:`${prefix}yts ${q}`, buttonText:{ displayText:'·MAS RESULTADOS·' }, type:1  }
                   ]
-                sendTemplateButtonImage(image, toast.musica(author, timestamp, title, visitas, hace, description), buttons)
+                sendButtonImage(image, toast.musica(timestamp, title, visitas, hace, description), buttons)
             })
             break
-        case 'video': 
+        case 'video': case 'vídeo':
             if (args.length == 0) return sendReply(toast.ytvid())
             yts(q).then(async res => {
-                const {url, title, description, image, timestamp, ago, views, author} = res.videos[0]
+                const {url, title, description, image, timestamp, ago, views} = res.videos[0]
                 var visitas = new Intl.NumberFormat().format(views);
                 if (visitas == NaN){var visitas = 'Sin'}
                 const hace = await translate(ago, 'es')
                 const buttons = [
-                    {index: 1, urlButton: {displayText: '·URL·', url: url}},
-                    {index: 2, urlButton: {displayText: '·CANAL·', url: author.url}},
-                    {index: 3, quickReplyButton: {displayText: '·MP4·', id: `${prefix}ytmp4 ${url}`}},
-                    {index: 4, quickReplyButton: {displayText: '·DOCUMENTO·', id: `${prefix}ytvdoc ${url}`}},
-                    {index: 5, quickReplyButton: {displayText: '·MAS RESULTADOS·', id: `${prefix}ytvideo ${url}`}}
+                    {  buttonId:`${prefix}ytmp4 ${url}`, buttonText:{ displayText:'·MP4·' }, type:1  },
+                    {  buttonId:`${prefix}ytvdoc ${url}`, buttonText:{ displayText:'·DOCUMENTO·' }, type:1  },
+                    {  buttonId:`${prefix}yts ${q}`, buttonText:{ displayText:'·MAS RESULTADOS·' }, type:1  }
                   ]
-                sendTemplateButtonImage(image, toast.video(timestamp, title, visitas, hace, description), buttons)
+                return sendButtonImage(image, toast.video(timestamp, title, visitas, hace, description), buttons)
             })
             break
         case 'ytmusic':
@@ -1753,7 +1765,57 @@ module.exports = async (msg ,client) => {
         case 'test':
             if(!isOwner) return sendReply(toast.owners())
             break
-
+        case 'play': case 'reproducir':
+            if (args.length == 0) return sendReply(toast.ytplay())
+            yts(q).then(async res => {
+                const {url, title, description, image, timestamp, ago, views, author} = res.videos[0]
+                var visitas = new Intl.NumberFormat().format(views);
+                if (visitas == NaN){var visitas = 'Sin'}
+                const hace = await translate(ago, 'es')
+                const buttons = [
+                    {  buttonId:`${prefix}ytmp3 ${url}`, buttonText:{ displayText:'·MUSICA·' }, type:1  },
+                    {  buttonId:`${prefix}ytmp4 ${url}`, buttonText:{ displayText:'·VIDEO·' }, type:1  },
+                    {  buttonId:`${prefix}yts ${q}`, buttonText:{ displayText:'·MAS RESULTADOS·' }, type:1  }
+                  ]
+                sendButtonImage(image, toast.musica(timestamp, title, visitas, hace, description), buttons)
+            })
+            break
+        case 'top3':
+            if(args.length == 0) return 
+            var t3m = []; 
+            const t31 = groupMembers; const p31 = t31[Math.floor(Math.random() * t31.length)]; t3m.push(p31.id); 
+            const t32 = groupMembers; const p32 = t32[Math.floor(Math.random() * t32.length)]; t3m.push(p32.id);
+            const t33 = groupMembers; const p33 = t33[Math.floor(Math.random() * t33.length)]; t3m.push(p33.id);
+            t3m.push(sender)
+            sendReplyWithMentions(toast.top3(sender, q, groupName, p31, p32, p33), t3m)
+            break
+        case 'top5':
+            if(args.length == 0) return 
+            var t5m = []; 
+            const t51 = groupMembers; const p51 = t51[Math.floor(Math.random() * t51.length)]; t5m.push(p51.id); 
+            const t52 = groupMembers; const p52 = t52[Math.floor(Math.random() * t52.length)]; t5m.push(p52.id);
+            const t53 = groupMembers; const p53 = t53[Math.floor(Math.random() * t53.length)]; t5m.push(p53.id);
+            const t54 = groupMembers; const p54 = t54[Math.floor(Math.random() * t54.length)]; t5m.push(p54.id);
+            const t55 = groupMembers; const p55 = t55[Math.floor(Math.random() * t55.length)]; t5m.push(p55.id);
+            t5m.push(sender)
+            sendReplyWithMentions(toast.top5(sender, q, groupName, p51, p52, p53, p54, p55), t5m)
+            break
+        case 'top10':
+            if(args.length == 0) return 
+            var t10m = []; 
+            const t11 = groupMembers; const p11 = t11[Math.floor(Math.random() * t11.length)]; t10m.push(p11.id); 
+            const t12 = groupMembers; const p12 = t12[Math.floor(Math.random() * t12.length)]; t10m.push(p12.id);
+            const t13 = groupMembers; const p13 = t13[Math.floor(Math.random() * t13.length)]; t10m.push(p13.id);
+            const t14 = groupMembers; const p14 = t14[Math.floor(Math.random() * t14.length)]; t10m.push(p14.id);
+            const t15 = groupMembers; const p15 = t15[Math.floor(Math.random() * t15.length)]; t10m.push(p15.id);
+            const t16 = groupMembers; const p16 = t16[Math.floor(Math.random() * t16.length)]; t10m.push(p16.id);
+            const t17 = groupMembers; const p17 = t17[Math.floor(Math.random() * t17.length)]; t10m.push(p17.id);
+            const t18 = groupMembers; const p18 = t18[Math.floor(Math.random() * t18.length)]; t10m.push(p18.id);
+            const t19 = groupMembers; const p19 = t19[Math.floor(Math.random() * t19.length)]; t10m.push(p19.id);
+            const t110 = groupMembers; const p110 = t110[Math.floor(Math.random() * t110.length)]; t10m.push(p110.id);
+            t10m.push(sender)
+            sendReplyWithMentions(toast.top10(sender, q, groupName, p11, p12, p13, p14, p15, p16, p17, p18, p19, p110), t10m)
+            break
             default:
     }
 
@@ -1798,8 +1860,12 @@ module.exports = async (msg ,client) => {
                 return client.groupParticipantsUpdate(from,[etiqueta], 'remove')//.then(()=>{sendReplyWithMentions(text, [etiqueta])})
             } 
         break
+        case 'RAtob2atehYcVKFbWZS12dqhQXvlXLNYqLigVsLxQGY=': //repetir comandos
+            if (isTextTagStick){ const etiqueta = msg.message.stickerMessage.contextInfo.quotedMessage.conversation }
+            break
+        
         default:
     }
 
-    //if (isSticker) {log(stickerCommand)}
+    if (isSticker) {log(stickerCommand)}
 }
