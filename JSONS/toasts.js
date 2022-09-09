@@ -1,5 +1,5 @@
 const fs = require('fs')
-const {prefix} = JSON.parse(fs.readFileSync('./JSONS/configs.json'))
+const {prefix} = JSON.parse(fs.readFileSync('./JSONS/settings.json'))
 const {getLevelingXp, getLevelingLevel} = require('../funciones/level.js')
 
 exports.outGroup = (pushname) => `[Error] Lo siento ${pushname} el numero indicado no pertenece a este grupo, por lo tanto no puedo realizar ninguna accion.` 
@@ -91,9 +91,75 @@ exports.avoactive = () => `[Anti Ver Una Vez Activado]`
 
 exports.userRegistered = () => `[Error] ya estas registrado en nuestro sistema`
 exports.userUnRegistered = () => `*_*✋ACCESO DENEGADO🛑*_\n_¡Ups! parece que no estas registrado en nuestro sistema, para registrarte solo debes oprimir el boton *·REGISTRAR·* o escribir la palabra *registrar*_ para poder continuar...`
-exports.registering = () => `[...] Registrando por favor espere`
+exports.registering = () => `[Usuario Nuevo Encontrado] registrando por favor espere...`
 exports.unregister = () => `[...] Eliminando registros por favor espere...`
 exports.unregistered = () => `[Success] Registros eliminados correctamente`
 
 
 exports.levelUp = (pushname, sender, fetchXp, currentLevel, role) => `*🏆╚» Nivel Superado «╝🏆*\n\n_·Felicidades *${pushname}* has subido de nivel.·_\n\n*·🤺 XP:* ${getLevelingXp(sender)} / ${fetchXp}·\n*·🆙  Nivel:* ${currentLevel} -> ${getLevelingLevel(sender)}·\n*·🎓 Rango:* ${role}·`
+
+exports.owners = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n\n_Este comando esta disponible solo para_\n_*Usuarios Rango 👾 Desarrollador👨🏻‍💻*_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.bots = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_Este comando esta disponible solo para_\n_*Usuarios Rango *•🤖Bot🤖•*_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.vips = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_Este comando esta disponible solo para_\n_*Usuarios Rango *•⚜Vip⚜•*_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.premiums = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_Este comando esta disponible solo para_\n_*Usuarios Rango *•🌟Premium🌟•*_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.admins = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_Este comando esta disponible solo para_\n_*Usuarios Rango *•🪀Administrador💬•*_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+
+exports.groups = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_Este comando solo esta disponible dentro de grupos._\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.novip = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_¡Ups! parece que no estas autorizad@ para usar mis comandos si quieres obtener acceso a mis comandos contactate con mis desarrollador a travez del numero +573228125090 y obten nuestro servicio VIP para que puedas usar completamente todos mis comandos disponibles._\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.userbanned = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_usuario baneado._\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.nsfw = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n\n_Los comandos NSFW estan deshabilitados no podras ejecutar ningun comando con contenido NSFW._\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.porn = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n\n_Los comandos con contenido pornografico estan deshabilitados no podras ejecutar ningun comando con contenido pornografico._\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+
+exports.adminbot = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_Por favor agregame como Administradora del grupo._\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+
+exports.promotebot= () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No me puedo promover a mi misma ya soy Admin del grupo·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.demotebot= () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No me puedo degradar a mi misma·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.removebot= () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No me puedo eliminar a mi misma·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.addbot= () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No me puedo añadir a mi misma ya me encuentro dentro del grupo·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.promoteowner = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No puedo promover a la persona que creó el grupo ya es Admin·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.demoteowner = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No puedo degradar a la persona que creó el grupo.·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.removeowner = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No puedo eliminar a la persona que creó el grupo.·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+exports.addowner = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_·No puedo añadir a la persona que creó el grupo ya se encuentra dentro del grupo.·_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+
+exports.noregister = () => `*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*\n_*🛑ACCESO DENEGADO✋*_\n_No estas registrado en nuestro sistema para registrarte solo debes oprimir el boton *·REGISTRAR·* o escribir la palabra *registrar*_\n*⋆⋅⋅⋅⊱∘───[✧ERROR✧]───∘⊰⋅⋅⋅⋆*`
+
+exports.processing = () => `*⋆⋅⋅⋅⊱∘───[✧WAIT✧]───∘⊰⋅⋅⋅⋆*\n_*Procesando… por favor espera*_\n*█▒▒▒▒▒▒▒▒▒*\n*⋆⋅⋅⋅⊱∘───[✧WAIT✧]───∘⊰⋅⋅⋅⋆*`
+exports.processed = () => `*⋆⋅⋅⋅⊱∘───[✧SUCCESS✧]───∘⊰⋅⋅⋅⋆*\n_*Proceso Finalizado*_\n*██████████*\n*⋆⋅⋅⋅⊱∘───[✧SUCCESS✧]───∘⊰⋅⋅⋅⋆*`
+exports.searching= () => `*⋆⋅⋅⋅⊱∘───[✧WAIT✧]───∘⊰⋅⋅⋅⋆*\n_*Buscando... por favor espera.*_\n*█▒▒▒▒▒▒▒▒▒*\n*⋆⋅⋅⋅⊱∘───[✧WAIT✧]───∘⊰⋅⋅⋅⋆*`
+exports.searched= () => `*⋆⋅⋅⋅⊱∘───[✧SUCCESS✧]───∘⊰⋅⋅⋅⋆*\n_*Busqueda Finalizada*_\n*██████████*\n*⋆⋅⋅⋅⊱∘───[✧SUCCESS✧]───∘⊰⋅⋅⋅⋆*`
+
+exports.msgonlyowners = () => `_comandos disponibles solo para usuarios con rango *Desarrollador*._`
+exports.msgonlybots = () => `_comandos disponibles solo para usuarios con rango *Bot*._`
+exports.msgonlyvips = () => `_comandos disponibles solo para usuarios con rango *Vip*._`
+exports.msgonlypremiums = () => `_comandos disponibles solo para usuarios con rango *Premium*._`
+exports.msgonlyadms = () => `_comandos disponibles solo para usuarios con rango *Administrador*._`
+
+exports.prefixes = (pushname) => `_👋 Hola *${pushname}*, si deseas actualizar el metodo de uso de los prefijos para comandos porfavor lee la siguiente informacion._\n\n🙅🏻‍♂️*·SIN PREFIJO:* _No se necesitan prefijos antes de los comandos·_\n\n🤹🏻‍♂️*·MULTI PREFIJO:* _Para usar cualquier simbolo disponible en el teclado para anteponer a los comandos·_\n\n1️⃣*·UN PREFIJO:* _Se utiliza el prefijo predeterminado por el sistema.·_`
+exports.onepref = () => `·[UN PREFIJO ACTIVADO]·\n\n_Ahora para pedir comandos se necesitara usar el prefijo ${prefix}._`
+exports.multipref = () => `·[MULTI PREFIJO ACTIVADO]·\n\n_Ahora todos los comandos funcionaran con cualquier simbolo disponible en el teclado de sus telefonos._`
+exports.nopref = () => `·[SIN PREFIJO ACTIVADO]·\n\n_Ahora se podran pedir los comandos sin la necesidad de usar un prefijo antes del comando._`
+exports.newpref = (q) => `[Success] Prefijo cambiado exitosamente\n\n_Su nuevo Prefijo es *${q}*_`
+exports.nonewpref = () => `[Error] => Por favor indica el simbolo que deseas colocar como prefijo`
+exports.newpreflong = () => `[Error] => El prefijo indicado excede el 1 caracteres permitidos, por favor elige un solo simbolo para definir como prefijo.`
+
+exports.ytmusic = () => `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_Si deseas descargar una música desde las plataformas de:_ \n   _*·YouTube*_\n_Solamente debes enviar el link o nombre de la canción junto con el comando ${prefix}musica + link o nombre de la música._\n _(⚠️ACLARACIÓN: La función de buscar canciones por nombre solo esta disponible para la plataforma de YouTube)_\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`
+exports.ytvid = () => `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_Si deseas descargar un video desde las plataformas de:_ \n   _*·YouTube*_\n_Solamente debes enviar el link o nombre del video junto con el comando ${prefix}video + link o nombre del video._\n _(⚠️ACLARACIÓN: La función de buscar video por nombre solo esta disponible para la plataforma de YouTube)_\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`
+exports.ytmp3 = () => ``
+exports.ytmp4 = () => ``
+exports.ytdoc = () => ``
+exports.ytptt = () => ``
+exports.ytvdoc = () => ``
+exports.ytmres = (yt) => `*🎶----[YTMP3 MUSICA]----🎶*\n\n🎧 _Cancion encontrada: *${yt.title}*_\n☕ _Calidad: *${yt.audio['128kbps'].quality}*_\n📥 _Peso: *${yt.audio['128kbps'].fileSizeH}*_\n\n[...] Enviando porfavor espere.`
+exports.ytunk = () => `*🎶----[YTMP3 MUSICA]----🎶*\n\n🎧 _Cancion no encontrada: ❌_\n\n[...] Por favor verifica el enlace e intenta nuevamente.`
+exports.ytmresv = (yt) => `*🎶----[YTMP4 VIDEOS]----🎶*\n\n🎧 _Video encontrada: *${yt.title}*_\n☕ _Calidad: *${yt.video['360p'].quality}*_\n📥 _Peso: *${yt.video['360p'].fileSizeH}*_\n\n[...] Enviando porfavor espere.`
+exports.ytunkv = () => `*🎶----[YTMP4 VIDEOS]----🎶*\n\n🎧 _Video no encontrada: ❌_\n\n[...] Por favor verifica el enlace e intenta nuevamente.`
+exports.noytlink = () => `[Error] el enlace que has proporcionado no corresponde a ningun enlace de youtube compatible, por favor verifica e intenta nuevamente.`
+
+exports.girInf = () => `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_Si deseas hacer una busqueda inversa de una imagen en los servidores de google, envia una imagen o etiqueta a una imagen enviada con el comando ${prefix}inversa_\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`
+exports.gir = (result) => `_*[🔎 Google Busqueda Inversa]*_\n\n_Resultados de busqueda:_\n\nTitulo: *${result[0].title}*\nWeb: *${result[0].url}*`
+exports.gis = () => `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_Si deseas buscar una imagen en los servidores de *Google* envía un comando con el siguiente formato: *${prefix}imagen + nombre de imagen que buscas*._\n\n_Ejemplo: *${prefix}imagen naruto*_\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n\n_❍⌇─➭Recomendaciones:_\n_1. No solicitar varias imágenes seguidas ya que esto generaría una saturación en la red causando retrasos en las respuestas a los demás comandos._\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`
+
+exports.stick = () => `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_Si deseas buscar un sticker de interes, por favor envia un mensaje con el comando ${prefix}stick + nombre del sticker que buscas_\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`
+exports.yts = () => `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_Si deseas buscar videos o musica en youtube por favor envia el comando ${prefix}youtube + nombre de video o musica_\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`
+exports.musica = (timestamp, title, visitas, hace, description) => `┌────────────────────┐\n0:00 ⊙─────────── ${timestamp}\n↪️   ⏮️   ▶️   ⏭️   ↩️\n*${title}*\n*${visitas} vistas* · se estrenó *hace ${hace}*\n└────────────────────┘\n\n${description}`
+exports.video = (timestamp, title, visitas, hace, description) => `┌────────────────────┐\n0:00 ⊙─────────── ${timestamp}\n↪️   ⏮️   ▶️   ⏭️   ↩️\n*${title}*\n*${visitas} vistas* · se estrenó *hace ${hace}*\n└────────────────────┘\n\n${description}`

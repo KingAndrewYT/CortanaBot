@@ -1,5 +1,5 @@
 const fs = require('fs')
-const {prefix} = JSON.parse(fs.readFileSync('./JSONS/configs.json'))
+const {prefix} = JSON.parse(fs.readFileSync('./JSONS/settings.json'))
 
 exports.textpro1 = (inf) => `${inf}
 Si deseas crear una imagen con efectos de texto geniales ten en cuenta lo siguiente:

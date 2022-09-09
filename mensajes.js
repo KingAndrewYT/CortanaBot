@@ -1,14 +1,20 @@
 "use strict"
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 /*----------MODULOS----------*/
 const {assertMediaContent, downloadMediaMessage, WA_DEFAULT_EPHEMERAL, downloadContentFromMessage, getContentType } = require ('@adiwajshing/baileys')
+const { RAE } = require('rae-api'); const rae = new RAE();
+const gis = require('g-i-s')
+const gir = require('another-node-reverse-image-search')
+const imgbbUp = require('imgbb-uploader')
+const scraper = require('@bochilteam/scraper')
+const fetch = require('node-fetch')
 const { writeFile } =  require ('fs/promises')
 const {exec} = require ('child_process')
 const {generate} = require ('flaming-text-generator')
-const moment = require ('moment-timezone')
+const moment = require ('moment-timezone'); moment.tz.setDefault('America/Bogota').locale('es')
 const gtts = require ('node-gtts')
 const ffmpeg = require ('fluent-ffmpeg')
 const axios = require ('axios')
-moment.tz.setDefault('America/Bogota').locale('es')
 const fs = require('fs')
 const translate = require ('./funciones/traductor.js')
 const funciones = require ('./funciones')
@@ -19,8 +25,10 @@ const menu = require('./JSONS/menus.js')
 const mintake = require('mintake')
 const { text } = require('figlet')
 const { Aki } = require('aki-api')
+const yts = require('yt-search')
 
-let {inWA, groupSettings, getAdmins, getAll, getParticipants, sendSticker} = funciones
+let {inWA, groupSettings, getAdmins, getAll, getParticipants} = funciones
+const {sendSticker, sendStickerFromUrl} = require ('./funciones/stickerprocess.js')
 const {getRules, addRules, checkRules, resetRules} = require('./funciones/reglas.js')
 const {unRegisterUser, getRandomUserId, getRegisteredAge, getRegisteredId, getRegisteredName, getRegisteredSerial, getRegisteredTime, addRegisteredUser, createSerial, checkRegisteredUser} = require('./funciones/register.js')
 const {addCooldown, isGained, getUserRank, addLevelingDiamonds, addLevelingCoins, addLevelingXp, addLevelingLevel, getLevelingDiamonds, getLevelingCoins, getLevelingXp, getLevelingLevel, getLevelingId} = require('./funciones/level.js')
@@ -42,8 +50,7 @@ const loose = ['Buena suerte para la próxima crack.','Esta vez no fue, talvez l
 let looser = loose[Math.floor(Math.random() * loose.length)]
 
 /*--------------JSON'S--------------*/
-const alertas = parse(readFileSync('./JSONS/alertas.json'))
-const info = parse(readFileSync('./JSONS/configs.json'))
+const info = parse(readFileSync('./JSONS/settings.json'))
 let {numeroCreador, nombreCreador, nombreBot, copyright, igCreador, fbCreador, ytCreador, discordCreador, prefix, banChats, nopref, onepref, multipref } = info
 const banned = parse(readFileSync('./JSONS/banned.json'))
 const bienvenida = parse(readFileSync('./JSONS/bienvenida.json'))
@@ -99,7 +106,7 @@ module.exports = async (msg ,client) => {
     const sendButtonText = async (texto, botones = []) => {client.sendMessage(from, {text: texto, footer: copyright, buttons: botones, headerType: 1})}
     const sendButtonImage = async (imagen, texto, botones) => { await client.sendMessage(from, {image: {url: imagen}, caption: texto, footer: copyright, buttons: botones, headerType: 4})}
     const sendTemplateButtonText = async (texto, botones) => { await client.sendMessage(from, { text: texto, footer: copyright, templateButtons: botones}) }
-    const sendTemplateButtonImage = async (imagen, texto, botones) => { await client.sendMessage(from, { text: texto, footer: copyright, templateButtons: botones, image: {url: imagen}}) }
+    const sendTemplateButtonImage = async (imagen, texto, botones) => { client.sendMessage(from, { image: {url: imagen}, caption: texto, footer: copyright, templateButtons: botones }, {quoted: msg})}
     const sendListText = async (text, btext, sections) => { client.sendMessage(from, {text: text, footer: copyright, title: '', buttonText: btext, sections },{quoted: msg})}
     const sendReaction = async (texto, para) => {client.sendMessage(para, { react: { text: texto, key: msg.key } })}
     const sendGif = async (ubicacion, texto) => {client.sendMessage(from, {video: {url: ubicacion}, caption: texto, gifPlayback: true})}
@@ -108,7 +115,9 @@ module.exports = async (msg ,client) => {
     const sendVideoReply = async (ubicacion, texto) => {client.sendMessage(from, {video: ubicacion, caption: texto},{quoted: msg})}
     const sendImageReply = async (ubicacion, texto) => {client.sendMessage(from, {image: {url:ubicacion}, caption: texto},{quoted: msg})}
     const sendAudio = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4' })}
-    const sendAudioReply = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4' },{quoted: msg})}
+    const sendAudioReply = async (ubicacion) => {client.sendMessage(from, { audio: ubicacion, mimetype: 'audio/mp4' },{quoted: msg})}
+    const sendAudioDocReply = async (ubicacion, title) => {client.sendMessage(from, {document: ubicacion, mimetype: 'audio/mp3', fileName: `${title}.mp3`}, {quoted: msg})}
+    const sendVideoDocReply = async (ubicacion, title) => {client.sendMessage(from, {document: ubicacion, mimetype: 'video/mp4', fileName: `${title}.mp4`}, {quoted: msg})}
     const sendPresence = async (presence) => {await client.sendPresenceUpdate(presence, from)} //recording -  paused - composing - unavailable - available
     const sendPtt = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4', ptt: true})}
     const sendPttReply = async (ubicacion) => {client.sendMessage(from, { audio: { url: ubicacion }, mimetype: 'audio/mp4', ptt: true},{quoted: msg})}
@@ -136,6 +145,7 @@ module.exports = async (msg ,client) => {
     const isReaction = messageType === 'reactionMessage'
     const isQuoted = messageType === 'extendedTextMessage'
     const isButtonResp = messageType === 'buttonsResponseMessage'
+    const isTemplateButtonResp = messageType === 'templateButtonReplyMessage'
     const isListResp = messageType === 'listResponseMessage'
     const isInviteLink = messageType === 'groupInviteMessage'
 
@@ -172,8 +182,8 @@ module.exports = async (msg ,client) => {
     const isQVOVideo = quotedVO === 'videoMessage'
 
 /*----------OBTENCION DE MENSAJES----------*/
-    const body = isText && msg.message[messageType] ? msg.message[messageType] : isImage && msg.message[messageType].caption ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption ? msg.message[messageType].caption : isQuoted && msg.message[messageType].text ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : isReaction && msg.message[messageType].text ? msg.message[messageType].text : isViewOnce && !isVOContext && msg.message[messageType].message[VO].caption.startsWith(prefix) ? msg.message[messageType].message[VO].caption : '' 
-    const cmd = isText && msg.message[messageType].startsWith(prefix) ? msg.message[messageType] : isImage && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption :  isQuoted && msg.message[messageType].text.startsWith(prefix) ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId.startsWith(prefix) ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId.startsWith(prefix) ? msg.message.listResponseMessage.singleSelectReply.selectedRowId: isReaction && msg.message[messageType].text ? msg.message[messageType].text : isViewOnce && !isVOContext && msg.message[messageType].message[VO].caption.startsWith(prefix) ? msg.message[messageType].message[VO].caption : '' 
+    const body = isText && msg.message[messageType] ? msg.message[messageType] : isImage && msg.message[messageType].caption ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption ? msg.message[messageType].caption : isQuoted && msg.message[messageType].text ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : isReaction && msg.message[messageType].text ? msg.message[messageType].text : isViewOnce && !isVOContext && msg.message[messageType].message[VO].caption.startsWith(prefix) ? msg.message[messageType].message[VO].caption : isTemplateButtonResp && msg.message[messageType].selectedId.startsWith(prefix) ? msg.message[messageType].selectedId : '' 
+    const cmd = isText && msg.message[messageType].startsWith(prefix) ? msg.message[messageType] : isImage && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption : isVideo && msg.message[messageType].caption.startsWith(prefix) ? msg.message[messageType].caption :  isQuoted && msg.message[messageType].text.startsWith(prefix) ? msg.message[messageType].text : isButtonResp && msg.message[messageType].selectedButtonId.startsWith(prefix) ? msg.message[messageType].selectedButtonId : isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId.startsWith(prefix) ? msg.message.listResponseMessage.singleSelectReply.selectedRowId: isReaction && msg.message[messageType].text ? msg.message[messageType].text : isViewOnce && !isVOContext && msg.message[messageType].message[VO].caption.startsWith(prefix) ? msg.message[messageType].message[VO].caption : isTemplateButtonResp && msg.message[messageType].selectedId.startsWith(prefix) ? msg.message[messageType].selectedId : '' 
     const chats = isText && msg.message[messageType] ? msg.message[messageType]: isQuoted && msg.message[messageType].text ? msg.message[messageType].text : ''
     const selectedButton = isButtonResp && msg.message[messageType].selectedButtonId ? msg.message[messageType].selectedButtonId : ''
     const selectedList = isListResp && msg.message.listResponseMessage.singleSelectReply.selectedRowId ? msg.message.listResponseMessage.singleSelectReply.selectedRowId : ''
@@ -217,7 +227,7 @@ module.exports = async (msg ,client) => {
     const announce = isAnnounce ? 'administradores' : 'todos'
     //const groupEphemeral = isEphemeral ? groupMetadata.ephemeralDuration : ''
     const isTag = isQuoted && msg.message.extendedTextMessage.contextInfo != null ? msg.message.extendedTextMessage.contextInfo.participant != '' : false
-    const isMentionedTag = isGroup && msg.message.extendedTextMessage.contextInfo != null ? msg.message.extendedTextMessage.contextInfo.mentionedJid : false
+    const isMentionedTag = isQuoted && msg.message.extendedTextMessage.contextInfo.mentionedJid != null ? msg.message.extendedTextMessage.contextInfo.mentionedJid : false
     const isTagStick = isSticker ? msg.message.stickerMessage.contextInfo.quotedMessage != null : false
 
 /*-------------INCLUSORES---------------*/
@@ -306,15 +316,13 @@ module.exports = async (msg ,client) => {
 /*----------FUNCIONES----------*/
     if (!isMe && !isGroup && !isOwner) return
     if (!isMe && isBanned && !isOwner) return
-
-    if (!isMe && isCmd && !isRegistered){ const buttons = [{  buttonId:`registrar`, buttonText:{ displayText:'·REGISTRAR·' }, type:1  }]; return sendButtonText(toast.userUnRegistered(), buttons) }
     
     if (!isMe && isCmd && isPrivate && !isOwner ) {return sendReply('[ERROR] => Comandos deshabilitados.')}
-    if (!isMe && isCmd && !isGroup && !isVip && !isOwner) {return sendReply( alertas.novip)}
-    if (!isMe && isCmd && isOnlyowner && !isOwner) {return sendReply( alertas.msgonlyowner)}
-    if (!isMe && isCmd && isOnlyvip && !isVip && !isOwner ) {return sendReply( alertas.msgonlyvips)}
-    if (!isMe && isCmd && isOnlypremium && !isPremium && !isVip && !isOwner) {return sendReply( alertas.msgonlypremiums)}
-    if (!isMe && isCmd && isOnlyadmins && !isAdmin && !isVip && !isOwner ) {return sendReply( alertas.msgonlyadms)}
+    if (!isMe && isCmd && !isGroup && !isVip && !isOwner) {return sendReply( toast.novip())}
+    if (!isMe && isCmd && isOnlyowner && !isOwner) {return sendReply( toast.msgonlyowners())}
+    if (!isMe && isCmd && isOnlyvip && !isVip && !isOwner ) {return sendReply( toast.msgonlyvips())}
+    if (!isMe && isCmd && isOnlypremium && !isPremium && !isVip && !isOwner) {return sendReply( toast.msgonlypremiums())}
+    if (!isMe && isCmd && isOnlyadmins && !isAdmin && !isVip && !isOwner ) {return sendReply( toast.msgonlyadms())}
 
     if (!isMe && isGroup && isLink && isCeroenlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
     if (!isMe && isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
@@ -325,7 +333,7 @@ module.exports = async (msg ,client) => {
     if (!isMe && !isCmd && chats.toLowerCase().includes('bot') && chats.toLowerCase().includes('te')&& chats.toLowerCase().includes('amo')){ sendReaction('❤️', from ) }
     
 /*----------FUNCION DE REGISTRO----------*/
-    if (chats.toLowerCase() === 'registrar'){
+    if (!isMe && isCmd && !isRegistered || chats.toLowerCase() === 'registrar'){
         if (isRegistered) return sendReply(toast.userRegistered())
         const serialUser = createSerial(10); sendReply(toast.registering())
         try { var profile = await client.profilePictureUrl(sender, 'image') } catch { var profile = 'https://i.ibb.co/j4rsNvy/nopp.png' }
@@ -373,7 +381,7 @@ module.exports = async (msg ,client) => {
         }
     }
 /*----------FUNCION AFK----------*/
-    if(!isMe && isGroup){
+    if(!isMe && isGroup && isMentionedTag){
         let jids = [...new Set([...(msg.message.extendedTextMessage.contextInfo.mentionedJid || []), ...(isQuoted ? [msg.message.extendedTextMessage.contextInfo.participant] : [])])]
         for (let i of jids){
             if(checkAfkUser(i)){
@@ -390,10 +398,27 @@ module.exports = async (msg ,client) => {
         }
     }
 
-
 /*----------RESPUESTAS DE LA BOT----------*/
     if (!isMe && chats.toLowerCase().startsWith('..')){ sendReaction('🫶', from)}
     if (!isCmd && (chats).toLowerCase().startsWith('di ')){ const tts = gtts('es') ;const text = chats.slice(3) ; tts.save('./media/temp/di.mp3', text, async function(){ grabando(from) ; await sendPttReply('./media/temp/di.mp3').catch(e => {return sendReply('¡ERROR 404! Not Found.')}) })}
+
+/*----------COMANDOS SIN PREFIJO----------*/
+    if (!isMe && chats.toLowerCase().startsWith('define')){
+        const Tts = gtts('es')
+        const word = chats.slice(7)
+        log(word)
+        if (word == '') return Tts.save('./media/temp/dict.mp3', 'Por favor escribe la palabra que quieres que defina para ti.', function (){ sendPtt('./media/temp/dict.mp3') })
+        const search = await rae.searchWord(word);
+        const wordId = search.getRes()[0].getId(); // gets 'hola' word id
+
+        const result = await rae.fetchWord(wordId); // fetches the word as object
+        const definitions = result.getDefinitions(); // gets all 'hola' definitions as Defintion[]
+        const first = definitions[0].getDefinition();
+        Tts.save('./media/temp/dict.mp3', 'Definición de' + word + first, function(){
+            sendPtt('./media/temp/dict.mp3')
+        })
+
+    }
 
 /*----------CHAT BOTS----------*/
     if(!isMe && isTag && !isCmd){
@@ -424,37 +449,16 @@ module.exports = async (msg ,client) => {
     }
 
 /*----------ENVIO DE AUDIOS----------*/
-    if (!isCmd && chats.toLowerCase() === 'yamete'){
-        const yamete = ['./media/yamete/1.mp3','./media/yamete/2.mp3','./media/yamete/3.mp3','./media/yamete/4.mp3']
-        var randomy = yamete[Math.floor(Math.random() * yamete.length)]
-        grabando(from)
-        sendPttReply(randomy)
-    }
-    if (!isCmd && chats.toLowerCase() === 'onichan'){
-        const onichan = ['./media/oniichan/oniichan1.mp3','./media/oniichan/oniichan2.mp3','./media/oniichan/oniichan3.mp3','./media/oniichan/oniichan4.mp3','./media/oniichan/oniichan5.mp3','./media/oniichan/oniichan6.mp3','./media/oniichan/oniichan7.mp3','./media/oniichan/oniichan8.mp3','./media/oniichan/oniichan9.mp3','./media/oniichan/oniichan10.mp3','./media/oniichan/oniichan11.mp3','./media/oniichan/oniichan12.mp3','./media/oniichan/oniichan13.mp3','./media/oniichan/oniichan14.mp3','./media/oniichan/oniichan15.mp3','./media/oniichan/oniichan16.mp3','./media/oniichan/oniichan17.mp3','./media/oniichan/oniichan18.mp3','./media/oniichan/oniichan19.mp3','./media/oniichan/oniichan20.mp3','./media/oniichan/oniichan21.mp3','./media/oniichan/oniichan22.mp3','./media/oniichan/oniichan23.mp3','./media/oniichan/oniichan24.mp3','./media/oniichan/oniichan25.mp3','./media/oniichan/oniichan26.mp3','./media/oniichan/oniichan27.mp3']
-        var randomo = onichan[Math.floor(Math.random() * onichan.length)]
-        grabando(from)
-        sendPttReply(randomo)
-    }
-    if (!isCmd && chats.toLowerCase() === 'baka'){
-        const baka = ['./media/baka/1.mp3','./media/baka/2.mp3','./media/baka/3.mp3','./media/baka/4.mp3','./media/baka/5.mp3','./media/baka/6.mp3','./media/baka/7.mp3']
-        var randomb = baka[Math.floor(Math.random() * baka.length)]
-        grabando(from)
-        sendPttReply(randomb)
-    }
-    if (!isCmd && chats.toLowerCase() === 'ara'){
-        const ara = ['./media/ara/1.mp3', './media/ara/2.mp3', './media/ara/3.mp3', './media/ara/4.mp3', './media/ara/5.mp3', './media/ara/6.mp3', './media/ara/7.mp3', './media/ara/8.mp3', './media/ara/9.mp3', './media/ara/10.mp3', './media/ara/11.mp3', './media/ara/12.mp3', './media/ara/13.mp3', './media/ara/14.mp3', './media/ara/15.mp3', './media/ara/16.mp3', './media/ara/17.mp3', './media/ara/18.mp3', './media/ara/19.mp3', './media/ara/20.mp3', './media/ara/21.mp3']
-        var randoma = ara[Math.floor(Math.random() * ara.length)]
-        grabando(from)
-        sendPttReply(randoma)
-    }
-    if (!isCmd && chats.toLowerCase() === 'nya'){
-        const nya = ['./media/nya/1.mp3', './media/nya/2.mp3', './media/nya/3.mp3', './media/nya/4.mp3', './media/nya/5.mp3', './media/nya/6.mp3', './media/nya/7.mp3', './media/nya/8.mp3', './media/nya/9.mp3', './media/nya/10.mp3', './media/nya/11.mp3', './media/nya/12.mp3', './media/nya/13.mp3', './media/nya/14.mp3', './media/nya/15.mp3', './media/nya/16.mp3', './media/nya/17.mp3', './media/nya/18.mp3', './media/nya/19.mp3', './media/nya/20.mp3', './media/nya/21.mp3', './media/nya/22.mp3', './media/nya/23.mp3', './media/nya/24.mp3', './media/nya/25.mp3', './media/nya/26.mp3', './media/nya/27.mp3', './media/nya/28.mp3']
-        var randomn = nya[Math.floor(Math.random() * nya.length)]
-        grabando(from)
-        sendPttReply(randomn)
-    }
-
+    if (!isCmd && chats.toLowerCase().startsWith('ara')){ var fAra = fs.readdirSync('./media/ara'); let chosenAra = fAra[Math.floor(Math.random() * fAra.length)]; grabando(from); sendPttReply(`./media/ara/${chosenAra}`) }    
+    if (!isCmd && chats.toLowerCase().startsWith('baka')){ var fBaka = fs.readdirSync('./media/baka'); let chosenBaka = fBaka[Math.floor(Math.random() * fBaka.length)]; grabando(from); sendPttReply(`./media/baka/${chosenBaka}`) }
+    if (!isCmd && chats.toLowerCase().startsWith('nya')){ var fNya = fs.readdirSync('./media/nya'); let chosenNya = fNya[Math.floor(Math.random() * fNya.length)]; grabando(from); sendPttReply(`./media/nya/${chosenNya}`) }
+    if (!isCmd && chats.toLowerCase().startsWith('onichan')){ var fOni = fs.readdirSync('./media/oniichan'); let chosenOni = fOni[Math.floor(Math.random() * fOni.length)]; grabando(from); sendPttReply(`./media/oniichan/${chosenOni}`) }
+    if (!isCmd && chats.toLowerCase().startsWith('yamete')){ var fYam = fs.readdirSync('./media/yamete'); let chosenYam = fYam[Math.floor(Math.random() * fYam.length)]; grabando(from); sendPttReply(`./media/yamete/${chosenYam}`) }
+    if (!isCmd && chats.toLowerCase().startsWith('meow')){ var fCat = fs.readdirSync('./media/gatito'); let chosenCat = fCat[Math.floor(Math.random() * fCat.length)]; grabando(from); sendPttReply(`./media/gatito/${chosenCat}`) }
+    
+    if (!isCmd && chats.toLowerCase().startsWith('oki')){sendPttReply('./media/resources/okidoki.mp3')}
+    if (!isCmd && chats.toLowerCase().startsWith('turip')){sendPttReply('./media/resources/turip.mp3')}
+    
 /*-----------STICKER COMMAND */
     const u8 = isSticker ? msg.message.stickerMessage.fileSha256 : ''
     const stickerCommand = Buffer.from(u8).toString('base64')
@@ -503,37 +507,37 @@ module.exports = async (msg ,client) => {
     switch(command){
         /*---------AJUSTES DE GRUPOS----------*/
         case 'abrir': case 'open': case 'desmutear':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (!isAnnounce) return sendReply(toast.notannounce(pushname))
             client.groupSettingUpdate(from, 'not_announcement')
             break
         case 'cerrar': case 'close': case 'mutear':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (isAnnounce) return sendReply(toast.announce(pushname))
             await client.groupSettingUpdate(from, 'announcement')
             break
         case 'bloquear': case 'lock':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (isRestrict) return sendReply(toast.desclock(pushname))
             client.groupSettingUpdate(from, 'locked')
             break
         case 'desbloquear': case 'unlock':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (!isRestrict) return sendReply(toast.descunclock(pushname))
             client.groupSettingUpdate(from, 'unlocked')
             break
         case 'promover': case 'promote':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (isTag){
                 const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
                 if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
@@ -558,9 +562,9 @@ module.exports = async (msg ,client) => {
             inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'promote'); sendReplyWithMentions(text, [`${regExp}@s.whatsapp.net`])}})
             break
         case 'degradar': case 'demote':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (isTag){
                 const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
                 if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
@@ -586,9 +590,9 @@ module.exports = async (msg ,client) => {
             inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'demote'); sendReplyWithMentions(demtext, [`${regExp}@s.whatsapp.net`])}})
             break
         case 'eliminar': case 'remove': case 'kick': case 'ban':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (isTag){
                 const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
                 if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
@@ -613,9 +617,9 @@ module.exports = async (msg ,client) => {
             inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'remove'); sendReplyWithMentions(remtext, [`${regExp}@s.whatsapp.net`])}})
             break
         case 'añadir': case 'add':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (isTag){
                 const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
                 if (groupParticipants.includes(etiqueta)) return sendReply(toast.onGroup(pushname))
@@ -640,49 +644,49 @@ module.exports = async (msg ,client) => {
             inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'add'); sendReplyWithMentions(addtext, [`${regExp}@s.whatsapp.net`])}})
             break
         case 'enlace': case 'link':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             await client.groupInviteCode(from).then((res) => {sendReply(toast.link(res))})
             break
         case 'anular': case 'revoke':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             client.groupRevokeInvite(from).then(()=>{sendReply(toast.revoke())})
             break
         case 'salir': case 'leave':
-            if (!isOwner) return (alertas.owners)
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isOwner) return (toast.owners())
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             client.groupLeave(from).then(() => {client.sendMessage(sender, {text: toast.leave()}, {quoted: msg})})
             break
         case 'entrar': case 'join':
-            if (!isOwner) return sendReply(alertas.owners)
+            if (!isOwner) return sendReply(toast.owners())
             if (args.length == 0) return sendReply(toast.nojoin(informacion))
             if (!isWaLink) return sendReply(toast.nowalink())
             await client.groupAcceptInvite(linkWA).then(() => {sendReply(toast.join())}).catch(() => {sendReply(toast.nowalink())})
             break
         case 'nombre': case 'name':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (args.length == 0) return sendReply(toast.name())
             if (q.length > 35 ) return sendReply(toast.longname())
             client.groupUpdateSubject(from, q).then(()=>{sendReply(toast.namechanged(groupName))})
             break
         case 'descripcion': case 'desc': case 'description':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (args.length == 0) return sendReply(toast.desc())
             if (q.length > 522 ) return sendReply(toast.longdesc())
             client.groupUpdateDescription(from, q).then(() => {sendReply(toast.descchanged(groupDesc))})
             break
         case 'icono': case 'icon':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (isQuotedImage){
                 const profile = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
                 await downloadMediaMessage(profile).then(async res => {await writeFile('./media/profile.jpg', res)})
@@ -693,7 +697,7 @@ module.exports = async (msg ,client) => {
             }; sendReply(toast.noprofileg(informacion))
             break
         case 'creargrupo': case 'groupcreate':
-            if (!isOwner) return sendReply(alertas.owners)
+            if (!isOwner) return sendReply(toast.owners())
             if (args.length == 0) return sendReply(toast.groupcreate(informacion))
             if(q.length > 35 ) return sendReply(toast.longname())
             await client.groupCreate(q, [sender]).then(res => { client.groupInviteCode(res.id).then((link) => {client.sendMessage(res.id, {text: toast.joinmessage()});sendReply(toast.gpcreate(link))})})
@@ -701,9 +705,9 @@ module.exports = async (msg ,client) => {
     
     /*---------ACTIVADORES----------*/
         case 'ceroenlaces': case 'cerolink': case 'cerolinks':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const ceroenlacesCheck = isCeroenlaces ? 'funcion ceroenlaces *ACTIVADA* \n\n!ceroenlaces off para desactivar' : 'funcion ceroenlaces *DESACTIVADA* \n\n!ceroenlaces on para activar'
             if (args.length == 0){ if (isCeroenlaces) return sendReply(ceroenlacesCheck) ; if (!isCeroenlaces) return sendReply(ceroenlacesCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -719,9 +723,9 @@ module.exports = async (msg ,client) => {
             }
         break
         case 'antienlaces': case 'antilink': case 'antilinks':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const antienlacesCheck = isAntienlaces ? 'funcion antienlaces *ACTIVADA* \n\n!antienlaces off para desactivar' : 'funcion antienlaces *DESACTIVADA* \n\n!antienlaces on para activar'
             if (args.length == 0){ if (isAntienlaces) return sendReply(antienlacesCheck) ; if (!isAntienlaces) return sendReply(antienlacesCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -737,9 +741,9 @@ module.exports = async (msg ,client) => {
             }
         break
         case 'simi': 
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const simiCheck = isSimi ? 'funcion simi *ACTIVADA* \n\n!simi off para desactivar' : 'funcion simi *DESACTIVADA* \n\n!simi on para activar'
             if (args.length == 0){ if (isSimi) return sendReply(simiCheck) ; if (!isSimi) return sendReply(simiCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -755,9 +759,9 @@ module.exports = async (msg ,client) => {
             }
         break
         case 'bienvenida': 
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const bienvenidaCheck = isBienvenida ? 'funcion bienvenida *ACTIVADA* \n\n!bienvenida off para desactivar' : 'funcion bienvenida *DESACTIVADA* \n\n!bienvenida on para activar'
             if (args.length == 0){ if (isBienvenida) return sendReply(bienvenidaCheck) ; if (!isBienvenida) return sendReply(bienvenidaCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -773,9 +777,9 @@ module.exports = async (msg ,client) => {
             }
         break
         case 'despedida': 
-        if (!isGroup) return sendReply(alertas.groups)
-        if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-        if (!isBotAdmin) return sendReply(alertas.adminbot)
+        if (!isGroup) return sendReply(toast.groups())
+        if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+        if (!isBotAdmin) return sendReply(toast.adminbot())
         const despedidaCheck = isDespedida ? 'funcion despedida *ACTIVADA* \n\n!despedida off para desactivar' : 'funcion despedida *DESACTIVADA* \n\n!despedida on para activar'
         if (args.length == 0){ if (isDespedida) return sendReply(despedidaCheck) ; if (!isDespedida) return sendReply(despedidaCheck)}
         if (args[0] == 'on' || args[0] == '1') {
@@ -791,9 +795,9 @@ module.exports = async (msg ,client) => {
         }
     break
         case 'cortana': 
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const cortanaCheck = isCortana ? 'funcion cortana *ACTIVADA* \n\n!cortana off para desactivar' : 'funcion cortana *DESACTIVADA* \n\n!cortana on para activar'
             if (args.length == 0){ if (isCortana) return sendReply(cortanaCheck) ; if (!isCortana) return sendReply(cortanaCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -809,9 +813,9 @@ module.exports = async (msg ,client) => {
             }
         break
         case 'nsfw': 
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const nsfwCheck = isNsfw ? 'funcion nsfw *ACTIVADA* \n\n!nsfw off para desactivar' : 'funcion nsfw *DESACTIVADA* \n\n!nsfw on para activar'
             if (args.length == 0){ if (isNsfw) return sendReply(nsfwCheck) ; if (!isNsfw) return sendReply(nsfwCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -827,9 +831,9 @@ module.exports = async (msg ,client) => {
             }
         break
         case 'promovidos': case 'promoted': 
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const promoteCheck = isPromote ? 'funcion promote *ACTIVADA* \n\n!promote off para desactivar' : 'funcion promote *DESACTIVADA* \n\n!promote on para activar'
             if (args.length == 0){ if (isPromote) return sendReply(promoteCheck) ; if (!isPromote) return sendReply(promoteCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -845,9 +849,9 @@ module.exports = async (msg ,client) => {
             }
         break
         case 'degradados': case 'demoted': 
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const demoteCheck = isDemote ? 'funcion demote *ACTIVADA* \n\n!demote off para desactivar' : 'funcion demote *DESACTIVADA* \n\n!demote on para activar'
             if (args.length == 0){ if (isDemote) return sendReply(demoteCheck) ; if (!isDemote) return sendReply(demoteCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -863,9 +867,9 @@ module.exports = async (msg ,client) => {
             }
         break
         case 'antiarabes': 
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const antiarabesCheck = isAntiarabes ? 'funcion antiarabes *ACTIVADA* \n\n!antiarabes off para desactivar' : 'funcion antiarabes *DESACTIVADA* \n\n!antiarabes on para activar'
             if (args.length == 0){ if (isAntiarabes) return sendReply(antiarabesCheck) ; if (!isAntiarabes) return sendReply(antiarabesCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -881,9 +885,9 @@ module.exports = async (msg ,client) => {
             }
         break
         case 'antifakes': 
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const antifakesCheck = isAntifakes ? 'funcion antifakes *ACTIVADA* \n\n!antifakes off para desactivar' : 'funcion antifakes *DESACTIVADA* \n\n!antifakes on para activar'
             if (args.length == 0){ if (isAntifakes) return sendReply(antifakesCheck) ; if (!isAntifakes) return sendReply(antifakesCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -899,8 +903,8 @@ module.exports = async (msg ,client) => {
             }
         break
         case 'autostickers': 
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             const autostickersCheck = isAutostickers ? 'funcion autostickers *ACTIVADA* \n\n!autostickers off para desactivar' : 'funcion autostickers *DESACTIVADA* \n\n!autostickers on para activar'
             if (args.length == 0){ if (isAutostickers) return sendReply(autostickersCheck) ; if (!isAutostickers) return sendReply(autostickersCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -915,10 +919,10 @@ module.exports = async (msg ,client) => {
                 sendReply('[DESACTIVANDO AUTOSTICKERS]')
             }
         break
-        case 'leveling': case 'nivel': case 'level':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+        case 'leveling': case 'niveles': case 'levels':
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const levelingCheck = isLeveling ? 'funcion leveling *ACTIVADA* \n\n!leveling off para desactivar' : 'funcion leveling *DESACTIVADA* \n\n!leveling on para activar'
             if (args.length == 0){ if (isLeveling) return sendReply(levelingCheck) ; if (!isLeveling) return sendReply(levelingCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -934,9 +938,9 @@ module.exports = async (msg ,client) => {
             }
         break
         case 'porno': 
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const pornoCheck = isPorno ? 'funcion porno *ACTIVADA* \n\n!porno off para desactivar' : 'funcion porno *DESACTIVADA* \n\n!porno on para activar'
             if (args.length == 0){ if (isPorno) return sendReply(pornoCheck) ; if (!isPorno) return sendReply(pornoCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -952,9 +956,9 @@ module.exports = async (msg ,client) => {
             }
         break
         case 'antivuv': 
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             const antivuvCheck = isAntivuv ? 'funcion antivuv *ACTIVADA* \n\n!antivuv off para desactivar' : 'funcion antivuv *DESACTIVADA* \n\n!antivuv on para activar'
             if (args.length == 0){ if (isAntivuv) return sendReply(antivuvCheck) ; if (!isAntivuv) return sendReply(antivuvCheck)}
             if (args[0] == 'on' || args[0] == '1') {
@@ -972,7 +976,7 @@ module.exports = async (msg ,client) => {
     
     /*--------COMANDOS TEST-------- */
         case 'sacame':
-            if (!isBotAdmin) return sendReply(alertas.adminbot)
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (args[0] == 'si') { sendReply(toast.sacamesi(pushname, tipoDeUsr));await client.groupParticipantsUpdate(from,[sender], 'remove').then(()=>{sendReply('[Eliminacion Finalizada]')})}
             if (args[0] == 'no') return sendReply(toast.sacameno())
             const texto = toast.sacame(pushname, tipoDeUsr)
@@ -1014,8 +1018,8 @@ module.exports = async (msg ,client) => {
             }
             break
         case 'borrar': //ELIMINAR MENSAJES ENVIADOS POR EL BOT
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
                 if (!isQuoted) return sendReply('_*Borrador de Mensajes*_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!borrar*_')
                 const identificacion = msg.message.extendedTextMessage.contextInfo.participant
                 if (identificacion != numeroBotId) return sendReply('_*Borrador de Mensajes*_\n\n_!Error! lamentablemente en este momento aun no esta disponible la funcion de eliminar mensajes de otras personas_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!eliminar*_')              
@@ -1024,7 +1028,7 @@ module.exports = async (msg ,client) => {
                 client.sendMessage(from, { delete: key }).then(() => {sendReaction('👍', from)})
                 break
         case 'chat':// MUTEAR, DESMUTEAR, ARCHIVAR, DESARCHIVAR, LEER, MARCAR COMO NO LEIDO
-            if(!isOwner) return sendReply(alertas.owners)
+            if(!isOwner) return sendReply(toast.owners())
             if (args.length == 0) return sendReply('funciones disponibles para administracion del chat:\n\n1. !chat mute\n2. !chat unmute \n3. !chat archive\n4. chat unarchive\n5. !chat read\n6.0')
             if (q2 == 'archive') return await client.chatModify({archive: true, lastMessages:[msg]}, from)
             if (q2 == 'unarchive') return await client.chatModify({archive: false, lastMessages:[msg]}, from)
@@ -1040,8 +1044,8 @@ module.exports = async (msg ,client) => {
             sendReply('funciones disponibles para administracion del chat:\n\n1. !chat mute\n2. !chat unmute \n3. !chat archive\n4. chat unarchive\n5. !chat read\n6.0')
             break
         case 'temporales': //MENSAJES TEMPORALES 24 HORAS - 7 DIAS - 90 DIAS
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (args.length == 0) return
             if (q2 == 'on') client.sendMessage(from,{disappearingMessagesInChat:  WA_DEFAULT_EPHEMERAL})
             if (q2 == 'off') client.sendMessage(from,{disappearingMessagesInChat:  null})
@@ -1081,7 +1085,7 @@ module.exports = async (msg ,client) => {
             }})
             break
         case 'change':
-            if(!isOwner) return sendReply(alertas.owners)
+            if(!isOwner) return sendReply(toast.owners())
             if (args.length == 0) return sendReply('Si deseas realizar cambios en mi perfil o estado envia un mensaje con los siguientes comandos.\n\n1. !change profile + imagen (para cambiar mi foto de perfil)\n2. !change status + texto (para cambiar mi informacion de estado)\n3. !change name + nombre (para cambiar mi nombre)')
             if (args[0].startsWith('status')) {
                 if (args.length == 1) return sendReply('mensaje vacio, por favor escribe un estado')
@@ -1120,7 +1124,7 @@ module.exports = async (msg ,client) => {
             client.sendMessage(from, {text: q}, {ephemeralExpiration : WA_DEFAULT_EPHEMERAL})
             break
         case 'block':
-            if(!isOwner) return sendReply(alertas.owners)
+            if(!isOwner) return sendReply(toast.owners())
             if (!isGroup) return client.updateBlockStatus(from, 'block')
             if (isGroup){
                 if (isQuoted) {
@@ -1137,7 +1141,7 @@ module.exports = async (msg ,client) => {
             }
             break
         case 'unblock':
-            if(!isOwner) return sendReply(alertas.owners)
+            if(!isOwner) return sendReply(toast.owners())
             if (!isGroup) return client.updateBlockStatus(from, 'block')
             if (isGroup){
                 if (isQuoted) {
@@ -1158,23 +1162,23 @@ module.exports = async (msg ,client) => {
             groupSettings(msg, client, q, args, command)
             break
         case 'gpperfil':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             groupSettings(msg, client, q, args, command)
             break
-        case 'acceppt':if (!isGroup) return sendReply(alertas.groups)
-            if (!isOwner) return sendReply(alertas.owners)
+        case 'acceppt':if (!isGroup) return sendReply(toast.groups())
+            if (!isOwner) return sendReply(toast.owners())
             const inviteMessage = msg.message.extendedTextMessage.contextInfo.quotedMessage.groupInviteMessage
             await client.groupAcceptInviteV4(from, inviteMessage)        
             break
         case 'admins':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             sendReplyWithMentions(q, groupAdmins)
         break
         case 'todos':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             sendReplyWithMentions(q, groupParticipants)
             break
     
@@ -1457,7 +1461,7 @@ module.exports = async (msg ,client) => {
                 let media = './media/temp/toimg.png'
                 const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
                 await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
-                exec(`ffmpeg -i ${media} ${ran}`, () => {client.sendMessage(from, {image: readFileSync(ran), caption: alertas.processed},{quoted: msg}); unlinkSync(ran); unlinkSync(media)})
+                exec(`ffmpeg -i ${media} ${ran}`, () => {client.sendMessage(from, {image: readFileSync(ran), caption: toast.processed},{quoted: msg}); unlinkSync(ran); unlinkSync(media)})
             }
             break
         case 'tovid': case 'stvid':
@@ -1465,7 +1469,7 @@ module.exports = async (msg ,client) => {
                 let media = './media/temp/tovid.mp4'
                 const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
                 await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
-                sendGifReply(readFileSync(media), alertas.processed)
+                sendGifReply(readFileSync(media), toast.processed)
             }
             break
         case 'tovn':
@@ -1511,14 +1515,14 @@ module.exports = async (msg ,client) => {
             })
             break
         case 'newrule': case 'addrule': case 'nuevaregla':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             addRules(groupId,q)
             sendReply(toast.rulesUpdated(q))
             break
         case 'reglas': case 'rules':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             const isRule = checkRules(groupId)
             if (isRule === false){
                 if (groupDesc === undefined){ var reglas = 'Este grupo aun no tiene reglas definidas.' } else { var reglas = groupDesc }
@@ -1529,8 +1533,8 @@ module.exports = async (msg ,client) => {
             }
             break
         case 'resetrules':
-            if (!isGroup) return sendReply(alertas.groups)
-            if (!isAdmin && !isOwner && !isVip) return sendReply(alertas.admins)
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             try {
                 const isRule = checkRules(groupId)
                 if (isRule == false) return sendReply(toast.notRules())
@@ -1545,13 +1549,13 @@ module.exports = async (msg ,client) => {
                 const encmedia = msg.message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage
                 let media = './media/temp/reveal.png'
                 await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)})
-                sendImageReply(media, alertas.sucess)
+                sendImageReply(media, toast.sucess)
             } else {
                 sendReply('[Error] => Funcion no disponible para mensajes normales')
             }
             break
         case 'afk':
-            if (!isGroup) return await sendReply( alertas.groups)
+            if (!isGroup) return await sendReply( toast.groups())
             const timee = moment.tz('America/Bogota').format('DD/MM/YY HH:mm:ss')
             if (isAfkOn) return await sendReply( `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_⋆⋅⊱∘[✧MODO AFK✧]∘⊰⋅⋆_\n\n_La función AFK ya se ha *ACTIVADO* antes._\n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`)
             const reason = q ? q : 'Ninguna.'
@@ -1559,6 +1563,197 @@ module.exports = async (msg ,client) => {
             await sendReply( `*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*\n_⋆⋅⊱∘[✧MODO AFK✧]∘⊰⋅⋆_\n\n_La función AFK se ha *ACTIVADO* con éxito_\n   \n    ➸ *Usuario*: ${pushname}\n    ➸ *Razón*: ${reason}\n    \n*⋆⋅⋅⋅⊱∘───[✧ᴷᴮ✧]───∘⊰⋅⋅⋅⋆*`)
             break
         
+    //AJUSTES DE PREFIJOS Y PRIVACIDAD
+        case 'private': case '🔒':
+            if (!isOwner) return sendReply( toast.owners())
+            if (banChats === true) return sendReply('·El bot ya esta configurado como privado·')
+            info.banChats = true
+            banChats = true
+            writeFileSync('./JSONS/settings.json', stringify(info))
+            sendReply('Bot configurado como privado')
+            break
+        case 'public': case '🔓':
+            if (!isOwner) return sendReply( toast.owners())
+            if (banChats === false) return sendReply('·El bot ya esta configurado como publico')
+            info.banChats = false
+            banChats = false
+            writeFileSync('./JSONS/settings.json', stringify(info))
+            sendReply('Bot configurado como publico')
+            break
+        case 'onepref':
+            if (!isOwner) return sendReply( toast.owners())
+            if (onepref == true ) return sendReply('·la funcion [UN PREFIX] ya esta activa·')
+            info.onepref = true; onepref = true; info.nopref = false; nopref = false; info.multipref = false; multipref = false; 
+            writeFileSync('./JSONS/settings.json', stringify(info))
+            sendReply(toast.onepref())
+            break
+        case 'nopref':
+            if (!isOwner) return sendReply( toast.owners())
+            if (nopref == true ) return sendReply('·la funcion [SIN PREFIX] ya esta activa·')
+            info.onepref = false; onepref = false; info.nopref = true; nopref = true; info.multipref = false; multipref = false; 
+            writeFileSync('./JSONS/settings.json', stringify(info))
+            sendReply(toast.nopref())
+            break
+        case 'multipref':
+            if (!isOwner) return sendReply( toast.owners())
+            if (multipref == true ) return sendReply('·la funcion [MULTI PREFIX] ya esta activa·')
+            info.onepref = false; onepref = false; info.nopref = false; nopref = false; info.multipref = true; multipref = true; 
+            writeFileSync('./JSONS/settings.json', stringify(info))
+            sendReply(toast.multipref())
+            break
+        case 'prefix':
+            if (!isOwner) return sendReply( toast.owners())
+            const sections = [{ rows: [{ title: `·SIN PREFIJO·`, rowId: `${prefix}nopref` },{ title: `·MULTI PREFIJO·`, rowId: `${prefix}multipref` }, { title: `UN PREFIJO`, rowId: `${prefix}onepref` }]}]
+            sendListText(toast.prefixes(pushname), '· ✍️ Opciones·', sections)
+            break
+        case 'newpref':
+            if (!isOwner) return sendReply( toast.owners());
+            if (args.length === 0) return sendReply(toast.nonewpref());
+            if (q.length > 1) return sendReply(toast.newpreflong()); 
+            info.prefix = q;
+            prefix = q;
+            writeFileSync('./JSONS/settings.json', stringify(info)); sendReply(toast.newpref(q));
+            break
+    
+    //MULTIMEDIA Y DESCARGAS
+        case 'stik': case 'stick':
+            if (args.length == 0) return sendReply(toast.stick())
+            var opts = {searchTerm: q, queryStringAddition: '&hl=es-419&tbm=isch&tbs=ic:trans'}
+            gis(opts, stiks)
+            function stiks (error, result){
+                if(error) return (sendReply(toast.error()))
+                sendStickerFromUrl(client, msg, from, result[Math.floor(Math.random() * result.length)].url)
+            }
+            break
+        case 'imagereverse':
+            if (!isImage && !isQuotedImage) return sendReply(toast.girInf())
+            if (isImage){ let media = './media/temp/gir.png'; 
+                await downloadMediaMessage(msg).then(async res => {await writeFile(media, res)}); 
+                const options = {apiKey: imgbb, imagePath: media, expiration: 3600};
+                const img = await imgbbUp(options);
+                const girRes = img.display_url;
+                await gir(girRes, Gir);
+                function Gir(result){sendReply(toast.gir(result)).catch(() => sendReply(toast.error()))}
+            };
+            if (isQuotedImage ){ let media = './media/temp/gir.png';  
+                const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo; 
+                await downloadMediaMessage(encmedia).then(async res => {await writeFile(media, res)});  
+                const options = {apiKey: imgbb, imagePath: media, expiration: 3600};
+                const img = await imgbbUp(options);
+                const girRes = img.display_url;
+                await gir(girRes, Gir);
+                function Gir(result){sendReply(toast.gir(result)).catch(() => sendReply(toast.error()))}
+            };
+            break
+        case 'imagen': case 'imagenes': case 'image': case 'images':
+            if (args.length == 0) return sendReply(toast.gis())
+            gis(q, results)
+            function results (error, result){
+                if(error) return (sendReply(toast.error()))
+                var random = result[Math.floor(Math.random() * result.length)].url
+                sendImageReply(random, toast.searched())
+            }
+            break
+        case 'ytmp3':
+            if (args.length == 0) return sendReply(toast.ytmp3())
+            if (!isLink && !isYoutube) return sendReply(toast.noytlink())
+            const ytmp3 = await scraper.youtubedl(q).catch(async () => await scraper.youtubedlv2(q))
+            if (ytmp3.thumbnail === 'https://i.ytimg.com/vi/xKKeqlBQass/0.jpg') { sendImageReply('./media/resources/ytunk.png', toast.ytunk())}
+            const dlMp3 = await ytmp3.audio['128kbps'].download()
+            await sendImageReply(ytmp3.thumbnail, toast.ytmres(ytmp3))
+            await sendAudioReply({url: dlMp3})
+            break
+        case 'ytptt':
+            if (args.length == 0) return sendReply(toast.ytptt())
+            if (!isLink && !isYoutube) return sendReply(toast.noytlink())
+            const ytaudio = await scraper.youtubedl(q).catch(async () => await scraper.youtubedlv2(q))
+            if (ytaudio.thumbnail === 'https://i.ytimg.com/vi/xKKeqlBQass/0.jpg') { sendImageReply('./media/resources/ytunk.png', toast.ytunk())}
+            const dlAudio = await ytaudio.audio['128kbps'].download()
+            await sendImageReply(ytaudio.thumbnail, toast.ytmres(ytaudio))
+            await sendPttReply(dlAudio)
+            break
+        case 'ytdoc':
+            if (args.length == 0) return sendReply(toast.ytdoc())
+            if (!isLink && !isYoutube) return sendReply(toast.noytlink())
+            const ytdoc = await scraper.youtubedl(q).catch(async () => await scraper.youtubedlv2(q))
+            if (ytdoc.thumbnail === 'https://i.ytimg.com/vi/xKKeqlBQass/0.jpg') { sendImageReply('./media/resources/ytunk.png', toast.ytunk())}
+            const dlDoc = await ytdoc.audio['128kbps'].download()
+            await sendImageReply(ytdoc.thumbnail, toast.ytmres(ytdoc))
+            await sendAudioDocReply({url: dlDoc}, ytdoc.title)
+            break
+        case 'yts':
+            if(args.length == 0) return sendReply(toast.yts())
+            yts(q).then(async res => {
+                var ytRes = '';
+                ytRes += '[ *RESULTADOS DE BUSQUEDA* ]'
+                ytRes += '\n________________________\n\n'
+                res.videos.map((video) =>{ ytRes += `*📖 Título:* ${video.title} \n`; ytRes += `*🔗 Enlace:* ${video.url} \n`; ytRes += `*⏳ Duración:* ${video.timestamp} \n`; ytRes += `*📢 Publicado:* ${video.ago}\n________________________\n\n` });
+                ytRes += copyright
+                sendImageReply(res.videos[0].image, ytRes)
+            })
+            break
+        case 'musica': case 'musica':
+            if (args.length == 0) return sendReply(toast.ytmusic())
+            yts(q).then(async res => {
+                const {url, title, description, image, timestamp, ago, views, author} = res.videos[0]
+                var visitas = new Intl.NumberFormat().format(views);
+                if (visitas == NaN){var visitas = 'Sin'}
+                const hace = await translate(ago, 'es')
+                const buttons = [
+                    {index: 1, urlButton: {displayText: '·URL·', url: url}},
+                    {index: 2, urlButton: {displayText: '·CANAL·', url: author.url}},
+                    {index: 3, quickReplyButton: {displayText: '·MP3·', id: `${prefix}ytmp3 ${url}`}},
+                    {index: 4, quickReplyButton: {displayText: '·DOCUMENTO·', id: `${prefix}ytdoc ${url}`}},
+                    {index: 5, quickReplyButton: {displayText: '·MAS RESULTADOS·', id: `${prefix}ytmusic ${url}`}}
+                  ]
+                sendTemplateButtonImage(image, toast.musica(author, timestamp, title, visitas, hace, description), buttons)
+            })
+            break
+        case 'video': 
+            if (args.length == 0) return sendReply(toast.ytvid())
+            yts(q).then(async res => {
+                const {url, title, description, image, timestamp, ago, views, author} = res.videos[0]
+                var visitas = new Intl.NumberFormat().format(views);
+                if (visitas == NaN){var visitas = 'Sin'}
+                const hace = await translate(ago, 'es')
+                const buttons = [
+                    {index: 1, urlButton: {displayText: '·URL·', url: url}},
+                    {index: 2, urlButton: {displayText: '·CANAL·', url: author.url}},
+                    {index: 3, quickReplyButton: {displayText: '·MP4·', id: `${prefix}ytmp4 ${url}`}},
+                    {index: 4, quickReplyButton: {displayText: '·DOCUMENTO·', id: `${prefix}ytvdoc ${url}`}},
+                    {index: 5, quickReplyButton: {displayText: '·MAS RESULTADOS·', id: `${prefix}ytvideo ${url}`}}
+                  ]
+                sendTemplateButtonImage(image, toast.video(timestamp, title, visitas, hace, description), buttons)
+            })
+            break
+        case 'ytmusic':
+            if(!isOwner) return sendReply(toast.owners())
+            break
+        case 'ytvideo':
+            if(!isOwner) return sendReply(toast.owners())
+            break
+        case 'ytmp4':
+            if (args.length == 0) return sendReply(toast.ytmp4())
+            if (!isLink && !isYoutube) return sendReply(toast.noytlink())
+            const ytmp4 = await scraper.youtubedl(q).catch(async () => await scraper.youtubedlv2(q))
+            if (ytmp4.thumbnail === 'https://i.ytimg.com/vi/xKKeqlBQass/0.jpg') { sendImageReply('./media/resources/ytunk.png', toast.ytunkv())}
+            const dlMp4 = await ytmp4.video['360p'].download().catch(async () => ytmp4.video['144p'].download())
+            await sendImageReply(ytmp4.thumbnail, toast.ytmresv(ytmp4))
+            await sendVideoReply({url: dlMp4})
+            break
+        case 'ytvdoc':
+            if (args.length == 0) return sendReply(toast.ytvdoc())
+            if (!isLink && !isYoutube) return sendReply(toast.noytlink())
+            const ytvdoc = await scraper.youtubedl(q).catch(async () => await scraper.youtubedlv2(q))
+            if (ytvdoc.thumbnail === 'https://i.ytimg.com/vi/xKKeqlBQass/0.jpg') { sendImageReply('./media/resources/ytunk.png', toast.ytunkv())}
+            const dlvDoc = await ytvdoc.video['360p'].download().catch(async () => ytvdoc.video['144p'].download())
+            await sendImageReply(ytvdoc.thumbnail, toast.ytmresv(ytvdoc))
+            await sendVideoDocReply({url: dlvDoc}, ytvdoc.title)
+            break
+        case 'test':
+            if(!isOwner) return sendReply(toast.owners())
+            break
+
             default:
     }
 
@@ -1605,5 +1800,6 @@ module.exports = async (msg ,client) => {
         break
         default:
     }
+
     //if (isSticker) {log(stickerCommand)}
 }
