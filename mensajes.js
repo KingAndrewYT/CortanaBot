@@ -4,7 +4,10 @@ process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 const {assertMediaContent, downloadMediaMessage, WA_DEFAULT_EPHEMERAL, downloadContentFromMessage, getContentType } = require ('@adiwajshing/baileys')
 const { RAE } = require('rae-api'); const rae = new RAE();
 const acrcloud = require ('acrcloud'); const acr = new acrcloud({ host: "identify-eu-west-1.acrcloud.com", access_key: "e82b8f70d39b088e8166835b1b3f0eb9", access_secret: "6C6g5TccDAE1FeBx6iJph2dwkANZb4cbarwj7jRj"})
+//const bibliaApi = require('@amanda-mitchell/biblia-api'); const biblia = bibliaApi.createBibliaApiClient({apiKey: 'cddf6c0b615e0da8e8f8f5e0073190b8', fetch})
 const gis = require('g-i-s')
+const ttsv1 = require('ibm-watson/text-to-speech/v1')
+const {IamAuthenticator} = require ('ibm-watson/auth')
 const gir = require('another-node-reverse-image-search')
 const google = require ('google-it')
 const imgbbUp = require('imgbb-uploader')
@@ -14,7 +17,7 @@ const { writeFile } =  require ('fs/promises')
 const {exec} = require ('child_process')
 const {generate} = require ('flaming-text-generator')
 const moment = require ('moment-timezone'); moment.tz.setDefault('America/Bogota').locale('es')
-const gtts = require ('node-gtts')
+const gtts = require ('node-gtts'); const tts = gtts('es')
 const ffmpeg = require ('fluent-ffmpeg')
 const axios = require ('axios')
 const fs = require('fs')
@@ -45,6 +48,13 @@ const error = console.error;
 function padTo2Digits (num){ return num.toString().padStart(2, '0') }
 function duracion (milisegundos){const minutos = Math.floor(milisegundos / 60000); const segundos = Math.floor((milisegundos % 60000) / 1000);return segundos === 60 ? `${minutos + 1}:00` : `${minutos}:${padTo2Digits(segundos)}`}
 function getRandom (ext){return Math.floor(Math.random() * 1000)+ext}
+function textToSpeak () {
+    const TextToSpeech = new ttsv1({ authenticator: new IamAuthenticator({ apikey: '6nj8wFv3XXy_QOYmJGjJLsyZ7GsD2LtoJDWbAGlHulGh' }), serviceUrl: 'https://api.au-syd.text-to-speech.watson.cloud.ibm.com/instances/14c63066-b4bd-45e4-b7d0-15b7a7df4c35' })
+    TextToSpeech.listVoices()
+    .then(async voices => {
+        log(stringify(voices, null, 2))
+    }).catch(err => {log('Error:', err)})
+}
 const sleep = async (ms) => {return new Promise(resolve => setTimeout(resolve, ms))}
 const time = moment.tz('America/Bogota').format('H:mm:ss a')
 const date = moment.tz('America/Bogota').format('DD/MM/YY')
@@ -413,9 +423,24 @@ module.exports = async (msg ,client) => {
 
 /*----------RESPUESTAS DE LA BOT----------*/
     if (!isMe && chats.toLowerCase().startsWith('..')){ sendReaction('🫶', from)}
-    if (!isCmd && (chats).toLowerCase().startsWith('di ')){ const tts = gtts('es') ;const text = chats.slice(3) ; tts.save('./media/temp/di.mp3', text, async function(){ grabando(from) ; await sendPttReply('./media/temp/di.mp3').catch(e => {return sendReply('¡ERROR 404! Not Found.')}) })}
+    if (!isCmd && (chats).toLowerCase().startsWith('di ')){ const text = chats.slice(3) ; tts.save('./media/temp/di.mp3', text, async function(){ grabando(from) ; await sendPttReply('./media/temp/di.mp3').catch(e => {return sendReply('¡ERROR 404! Not Found.')}) })}
 
 /*----------COMANDOS SIN PREFIJO----------*/
+    if(!isMe && chats.toLowerCase().startsWith('reproduce')){
+        if (chats.slice(10) == '') return tts.save('./media/temp/reproduce.mp3', 'por favor indica el nombre de la cancion que quieres escuchar', function (){sendPttReply('./media/temp/reproduce.mp3')})
+        tts.save('./media/temp/reproduce.mp3', `Reproduciendo: ${chats.slice(10)}`, function (){sendPttReply('./media/temp/reproduce.mp3')})
+        const ytUrl = await yts(chats.slice(10)).then(async res =>{return res.videos[0].url}).catch(async () => sendReply(toast.error()))
+        const ytRep = await scraper.youtubedl(ytUrl).catch(async () => await scraper.youtubedlv2(ytUrl)).catch(async () => sendReply(toast.error()))
+        const dlRep = await ytRep.audio['128kbps'].download()
+        await sendPttReply(dlRep)
+        }
+    /*if(!isMe && chats.toLowerCase().startsWith('biblia')){ //ESM MODULE
+        const pasaje = chats.slice(7)
+        if(chats.slice(7) == '') return sendReply(toast.biblia())
+        biblia.content({passage: chats.slice(7),format: 'txt', bible : 'leb'}).then(async res => {
+        const bTrans = await translate(res, 'es').then(async () => {return res})}).catch(async () => sendReply(toast.error()))
+        tts.save('./media/temp/biblia.mp3', bTrans, function(){sendPttReply('./media/temp/biblia.mp3')})
+    }*/
     if (!isMe && chats.toLowerCase().startsWith('define')){
         const Tts = gtts('es')
         const word = chats.slice(7)
@@ -1853,13 +1878,15 @@ module.exports = async (msg ,client) => {
                     musics += `Nombre: ${title}\nArtistas: ${artistas.toString()}\nAlbum: ${album.name}\nGeneros: ${generos.toString()}\nDuracion: ${duracion(duration_ms)}\nPuntuacion: ${score}\nFecha de lanzamiento: ${release_date}\n\n`
                 })
                 musics += '·⏬ DESCARGAR CANCION·'
-                yts(titulo).then(async res => {
+                yts(titulo+artistas).then(async res => {
                     const buttons = [{  buttonId:`${prefix}ytdoc ${res.videos[0].url}`, buttonText:{ displayText:'·DESCARGAR·' }, type:1  }]
                     sendButtonImage(res.videos[0].image, musics ,buttons)
                 })
             })
             break
-
+        case 'test':
+            textToSpeak()
+            break
         default:
     }
 
@@ -1910,6 +1937,5 @@ module.exports = async (msg ,client) => {
         
         default:
     }
-
     if (isSticker) {log(stickerCommand)}
 }
