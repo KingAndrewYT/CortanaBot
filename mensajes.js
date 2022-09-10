@@ -6,7 +6,8 @@ const { RAE } = require('rae-api'); const rae = new RAE();
 const acrcloud = require ('acrcloud'); const acr = new acrcloud({ host: "identify-eu-west-1.acrcloud.com", access_key: "e82b8f70d39b088e8166835b1b3f0eb9", access_secret: "6C6g5TccDAE1FeBx6iJph2dwkANZb4cbarwj7jRj"})
 //const bibliaApi = require('@amanda-mitchell/biblia-api'); const biblia = bibliaApi.createBibliaApiClient({apiKey: 'cddf6c0b615e0da8e8f8f5e0073190b8', fetch})
 const gis = require('g-i-s')
-const ttsv1 = require('ibm-watson/text-to-speech/v1'); const {IamAuthenticator} = require ('ibm-watson/auth'); const TextToSpeech = new ttsv1({ authenticator: new IamAuthenticator({ apikey: '6nj8wFv3XXy_QOYmJGjJLsyZ7GsD2LtoJDWbAGlHulGh' }), serviceUrl: 'https://api.au-syd.text-to-speech.watson.cloud.ibm.com/instances/14c63066-b4bd-45e4-b7d0-15b7a7df4c35' })
+const ttsv1 = require('ibm-watson/text-to-speech/v1')
+const {IamAuthenticator} = require ('ibm-watson/auth')
 const gir = require('another-node-reverse-image-search')
 const google = require ('google-it')
 const imgbbUp = require('imgbb-uploader')
@@ -47,7 +48,13 @@ const error = console.error;
 function padTo2Digits (num){ return num.toString().padStart(2, '0') }
 function duracion (milisegundos){const minutos = Math.floor(milisegundos / 60000); const segundos = Math.floor((milisegundos % 60000) / 1000);return segundos === 60 ? `${minutos + 1}:00` : `${minutos}:${padTo2Digits(segundos)}`}
 function getRandom (ext){return Math.floor(Math.random() * 1000)+ext}
-
+function textToSpeak () {
+    const TextToSpeech = new ttsv1({ authenticator: new IamAuthenticator({ apikey: '6nj8wFv3XXy_QOYmJGjJLsyZ7GsD2LtoJDWbAGlHulGh' }), serviceUrl: 'https://api.au-syd.text-to-speech.watson.cloud.ibm.com/instances/14c63066-b4bd-45e4-b7d0-15b7a7df4c35' })
+    TextToSpeech.listVoices()
+    .then(async voices => {
+        log(stringify(voices, null, 2))
+    }).catch(err => {log('Error:', err)})
+}
 const sleep = async (ms) => {return new Promise(resolve => setTimeout(resolve, ms))}
 const time = moment.tz('America/Bogota').format('H:mm:ss a')
 const date = moment.tz('America/Bogota').format('DD/MM/YY')
@@ -94,16 +101,6 @@ let aki = false
 let usuarioJugando = false
 
 module.exports = async (msg ,client) => {
-    function textToSpeak (text) {
-        //const getVoiceParams = { voice : 'es-ES_EnriqueV3Voice' }
-        //TextToSpeech.listVoices().then(async voices => {log(stringify(voices, null, 2))}).catch(err => {log('Error:', err)})
-        //TextToSpeech.getVoice(getVoiceParams).then(async voice =>{ log(stringify(voice, null, 2))})
-        const synthesizeParams = { text: text, accept: 'audio/mp3', voice: 'es-LA_SofiaV3Voice', };
-        TextToSpeech.synthesize(synthesizeParams)
-        .then(response => {return TextToSpeech.repairWavHeaderStream(response.result)})
-        .then(async buffer => {await writeFileSync('./media/temp/loquendo.mp3', buffer); client.sendMessage(from, { audio: readFileSync('./media/temp/loquendo.mp3'), mimetype: 'audio/mp4', ptt: true},{quoted: msg})})
-        .catch(err => {log('Error: ', err)})
-    }
     if (!msg.message) return
     if (msg.key && msg.key.remoteJid === 'status@broadcast') return
     const isMe = msg.key.fromMe
@@ -1888,8 +1885,7 @@ module.exports = async (msg ,client) => {
             })
             break
         case 'test':
-            if(!isOwner) return sendReply(toast.owners())
-            await textToSpeak(q)
+            textToSpeak()
             break
         default:
     }
