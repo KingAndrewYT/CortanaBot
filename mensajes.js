@@ -3,8 +3,10 @@ process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 /*----------MODULOS----------*/
 const {assertMediaContent, downloadMediaMessage, WA_DEFAULT_EPHEMERAL, downloadContentFromMessage, getContentType } = require ('@adiwajshing/baileys')
 const { RAE } = require('rae-api'); const rae = new RAE();
+const acrcloud = require ('acrcloud'); const acr = new acrcloud({ host: "identify-eu-west-1.acrcloud.com", access_key: "e82b8f70d39b088e8166835b1b3f0eb9", access_secret: "6C6g5TccDAE1FeBx6iJph2dwkANZb4cbarwj7jRj"})
 const gis = require('g-i-s')
 const gir = require('another-node-reverse-image-search')
+const google = require ('google-it')
 const imgbbUp = require('imgbb-uploader')
 const scraper = require('@bochilteam/scraper')
 const fetch = require('node-fetch')
@@ -40,6 +42,9 @@ const log = console.log;
 const error = console.error;
 
 /*--------------ESPECIALES--------------*/
+function padTo2Digits (num){ return num.toString().padStart(2, '0') }
+function duracion (milisegundos){const minutos = Math.floor(milisegundos / 60000); const segundos = Math.floor((milisegundos % 60000) / 1000);return segundos === 60 ? `${minutos + 1}:00` : `${minutos}:${padTo2Digits(segundos)}`}
+function getRandom (ext){return Math.floor(Math.random() * 1000)+ext}
 const sleep = async (ms) => {return new Promise(resolve => setTimeout(resolve, ms))}
 const time = moment.tz('America/Bogota').format('H:mm:ss a')
 const date = moment.tz('America/Bogota').format('DD/MM/YY')
@@ -1378,6 +1383,27 @@ module.exports = async (msg ,client) => {
             break
 
     /*---------JUEGOS----------*/
+        case 'top3':
+            if(args.length == 0) return 
+            var t3m = []; 
+            const p31 = randomizer(groupMembers); const p32 = randomizer(groupMembers); const p33 = randomizer(groupMembers);
+            t3m.push(sender, p31.id, p32.id, p33.id)
+            sendReplyWithMentions(toast.top3(sender, q, groupName, p31, p32, p33), t3m)
+            break
+        case 'top5':
+            if(args.length == 0) return 
+            var t5m = []; 
+            const p51 = randomizer(groupMembers); const p52 = randomizer(groupMembers); const p53 = randomizer(groupMembers); const p54 = randomizer(groupMembers); const p55 = randomizer(groupMembers);
+            t5m.push(sender, p51.id, p52.id, p53.id, p54.id, p55.id)
+            sendReplyWithMentions(toast.top5(sender, q, groupName, p51, p52, p53, p54, p55), t5m)
+            break
+        case 'top10':
+            if(args.length == 0) return 
+            var t10m = []; 
+            const p11 =randomizer(groupMembers); const p12 = randomizer(groupMembers); const p13 = randomizer(groupMembers); const p14 = randomizer(groupMembers); const p15 = randomizer(groupMembers); const p16 = randomizer(groupMembers); const p17 = randomizer(groupMembers); const p18 = randomizer(groupMembers); const p19 = randomizer(groupMembers); const p110 = randomizer(groupMembers);
+            t10m.push(sender, p11.id, p12.id, p13.id, p14.id, p15.id, p16.id, p17.id, p18.id, p19.id, p110.id)
+            sendReplyWithMentions(toast.top10(sender, q, groupName, p11, p12, p13, p14, p15, p16, p17, p18, p19, p110), t10m)
+            break
         case 'akinator': case 'aki':
                 if (sender !== usuarioJugando && haIniciado == true && !isOwner) return sendReplyWithMentions(toast.noPlayer(usuarioJugando), [usuarioJugando])
                 if (q.toLowerCase() == 'start'){
@@ -1432,16 +1458,14 @@ module.exports = async (msg ,client) => {
                 sendButtonImage(image, textAki, buttonsAki)  
             break
         case 'casino':
-            try {
-                var casino = ['- 🍒 ', '- 🎃 ', '- 🍐 ', '- 🍋 ', '- 7️⃣ ', '- 🍇 ']
-                var resultado = randomizer(casino) + randomizer(casino) + randomizer(casino) + '-'
-                if (resultado == '- 🍒 - 🍒 - 🍒 -' || resultado == '- 🍐 - 🍐 - 🍐 -' || resultado == '- 🎃 - 🎃 - 🎃 -' || resultado == '- 🍋 - 🍋 - 🍋 -' || resultado == '- 7️⃣ - 7️⃣ - 7️⃣ -' || resultado == '- 🍇 - 🍇 - 🍇 -')  { 
-                    await sendReply(toast.casinoWin(resultado)) 
-                } else { 
-                    await sendReply(toast.casinoLoose(resultado, looser)) 
-                }
-            } catch (e){
-                return error(e)
+            var casino = ['- 🍒 ', '- 🎃 ', '- 🍐 ', '- 🍋 ', '- 7️⃣ ', '- 🍇 ']
+            var resultado = randomizer(casino) + randomizer(casino) + randomizer(casino) + '-'
+            var resultado2 = randomizer(casino) + randomizer(casino) + randomizer(casino) + '-'
+            var resultado3 = randomizer(casino) + randomizer(casino) + randomizer(casino) + '-'
+            if (resultado == '- 🍒 - 🍒 - 🍒 -' || resultado == '- 🍐 - 🍐 - 🍐 -' || resultado == '- 🎃 - 🎃 - 🎃 -' || resultado == '- 🍋 - 🍋 - 🍋 -' || resultado == '- 7️⃣ - 7️⃣ - 7️⃣ -' || resultado == '- 🍇 - 🍇 - 🍇 -')  { 
+                await sendReply(toast.casinoWin(resultado)) 
+            } else { 
+                await sendReply(toast.casinoLoose(resultado, looser)) 
             }
             break
         case 'dado': case 'dados':
@@ -1622,7 +1646,17 @@ module.exports = async (msg ,client) => {
             prefix = q;
             writeFileSync('./JSONS/settings.json', stringify(info)); sendReply(toast.newpref(q));
             break
-    
+    //EFECTOS DE AUDIO
+        case 'ardilla':
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            var ranard = './media/temp/'+getRandom('.mp4');  const ardmed = './media/temp/ardilla.mp4'
+            const ardenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(ardenc).then(async res => {await writeFile(ardmed, res)})
+            exec(`ffmpeg -i ${ardmed} -filter:a "atempo=0.6,asetrate=85000" ${ranard}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(ranard) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        
     //MULTIMEDIA Y DESCARGAS
         case 'stik': case 'stick':
             if (args.length == 0) return sendReply(toast.stick())
@@ -1655,11 +1689,21 @@ module.exports = async (msg ,client) => {
             break
         case 'imagen': case 'imagenes': case 'image': case 'images':
             if (args.length == 0) return sendReply(toast.gis())
+            const messageOptions = {
+                quoted:msg,
+                contextInfo:{ forwardingScore : 580,isForwarded: true},
+                caption: 'hey tu XD',
+                jpegThumbnail: null,
+                fileName: 'ardilla.mp4',
+                ptt: true,
+                ephemeralDuration: WA_DEFAULT_EPHEMERAL
+            }
             gis(q, results)
             function results (error, result){
                 if(error) return (sendReply(toast.error()))
                 var random = result[Math.floor(Math.random() * result.length)].url
-                sendImageReply(random, toast.searched())
+                client.sendMessage(from, {image: {url:random}, caption: toast.searched(), jpegThumbnail: null},messageOptions)
+                //sendImageReply(random, toast.searched())
             }
             break
         case 'ytmp3':
@@ -1762,9 +1806,6 @@ module.exports = async (msg ,client) => {
             await sendImageReply(ytvdoc.thumbnail, toast.ytmresv(ytvdoc))
             await sendVideoDocReply({url: dlvDoc}, ytvdoc.title)
             break
-        case 'test':
-            if(!isOwner) return sendReply(toast.owners())
-            break
         case 'play': case 'reproducir':
             if (args.length == 0) return sendReply(toast.ytplay())
             yts(q).then(async res => {
@@ -1780,43 +1821,46 @@ module.exports = async (msg ,client) => {
                 sendButtonImage(image, toast.musica(timestamp, title, visitas, hace, description), buttons)
             })
             break
-        case 'top3':
-            if(args.length == 0) return 
-            var t3m = []; 
-            const t31 = groupMembers; const p31 = t31[Math.floor(Math.random() * t31.length)]; t3m.push(p31.id); 
-            const t32 = groupMembers; const p32 = t32[Math.floor(Math.random() * t32.length)]; t3m.push(p32.id);
-            const t33 = groupMembers; const p33 = t33[Math.floor(Math.random() * t33.length)]; t3m.push(p33.id);
-            t3m.push(sender)
-            sendReplyWithMentions(toast.top3(sender, q, groupName, p31, p32, p33), t3m)
+        case 'google':
+            if(args.length == 0 ) return 
+            google({ 'query': q }).then(async res => {
+                var gresult = ''
+                gresult += `_Resultados de: *${q}*_\n`
+                gresult += '\n________________________\n\n'
+                res.map(({title, link, snippet}) => {
+                    gresult += `*${title}*\n_${snippet}_\n${link}\n________________________\n\n`
+                })
+                gresult += copyright
+                sendReply(gresult)
+            })
             break
-        case 'top5':
-            if(args.length == 0) return 
-            var t5m = []; 
-            const t51 = groupMembers; const p51 = t51[Math.floor(Math.random() * t51.length)]; t5m.push(p51.id); 
-            const t52 = groupMembers; const p52 = t52[Math.floor(Math.random() * t52.length)]; t5m.push(p52.id);
-            const t53 = groupMembers; const p53 = t53[Math.floor(Math.random() * t53.length)]; t5m.push(p53.id);
-            const t54 = groupMembers; const p54 = t54[Math.floor(Math.random() * t54.length)]; t5m.push(p54.id);
-            const t55 = groupMembers; const p55 = t55[Math.floor(Math.random() * t55.length)]; t5m.push(p55.id);
-            t5m.push(sender)
-            sendReplyWithMentions(toast.top5(sender, q, groupName, p51, p52, p53, p54, p55), t5m)
+        case 'shazam':
+            if (!isOwner) return (toast.owners())
+            if (!isQuotedAudio && !isQuotedVideo) return
+            if (isQuotedAudio) sendReply('[...] Procesando audio por favor espere...'); if (isQuotedVideo) sendReply('[...] Procesando video por favor espere...')
+            const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(encmedia).then(async res => {await writeFile('./media/temp/shazam.mp3', res)})
+            acr.identify(readFileSync('./media/temp/shazam.mp3')).then(async res => {
+                log(res.status.msg)
+                if (res.status.msg != 'Success') return sendReply(toast.error())
+                var musics = []; var artistas = []; var generos = []; var titulo = ''
+                musics += '*⋆⋅⋅⋅⊱∘[✧SHAZAM✧]∘⊰⋅⋅⋅⋆*\n\n_🎧 RESULTADOS DE BUSQUEDA_\n'
+                musics += '________________________\n'
+                res.metadata.music.map(({title, score, duration_ms, release_date, artists, genres, album}) => {
+                    titulo += title
+                    artists.map(({name})=>{ artistas += name })
+                    genres.map(({name})=> {generos += name})
+                    musics += `Nombre: ${title}\nArtistas: ${artistas.toString()}\nAlbum: ${album.name}\nGeneros: ${generos.toString()}\nDuracion: ${duracion(duration_ms)}\nPuntuacion: ${score}\nFecha de lanzamiento: ${release_date}\n\n`
+                })
+                musics += '·⏬ DESCARGAR CANCION·'
+                yts(titulo).then(async res => {
+                    const buttons = [{  buttonId:`${prefix}ytdoc ${res.videos[0].url}`, buttonText:{ displayText:'·DESCARGAR·' }, type:1  }]
+                    sendButtonImage(res.videos[0].image, musics ,buttons)
+                })
+            })
             break
-        case 'top10':
-            if(args.length == 0) return 
-            var t10m = []; 
-            const t11 = groupMembers; const p11 = t11[Math.floor(Math.random() * t11.length)]; t10m.push(p11.id); 
-            const t12 = groupMembers; const p12 = t12[Math.floor(Math.random() * t12.length)]; t10m.push(p12.id);
-            const t13 = groupMembers; const p13 = t13[Math.floor(Math.random() * t13.length)]; t10m.push(p13.id);
-            const t14 = groupMembers; const p14 = t14[Math.floor(Math.random() * t14.length)]; t10m.push(p14.id);
-            const t15 = groupMembers; const p15 = t15[Math.floor(Math.random() * t15.length)]; t10m.push(p15.id);
-            const t16 = groupMembers; const p16 = t16[Math.floor(Math.random() * t16.length)]; t10m.push(p16.id);
-            const t17 = groupMembers; const p17 = t17[Math.floor(Math.random() * t17.length)]; t10m.push(p17.id);
-            const t18 = groupMembers; const p18 = t18[Math.floor(Math.random() * t18.length)]; t10m.push(p18.id);
-            const t19 = groupMembers; const p19 = t19[Math.floor(Math.random() * t19.length)]; t10m.push(p19.id);
-            const t110 = groupMembers; const p110 = t110[Math.floor(Math.random() * t110.length)]; t10m.push(p110.id);
-            t10m.push(sender)
-            sendReplyWithMentions(toast.top10(sender, q, groupName, p11, p12, p13, p14, p15, p16, p17, p18, p19, p110), t10m)
-            break
-            default:
+
+        default:
     }
 
     switch(stickerCommand){
