@@ -3,6 +3,10 @@ const proces = require('process')
 proces.on('uncaughtException', console.error)
 
 const mensajes = require ('./mensajes.js');
+const bienvenida = require('./funciones/welcome.js')
+const despedida = require('./funciones/leave.js')
+//const promote = require('./funciones/promote.js')
+//const demote = require('./funciones/demote.js')
 const { default: makeWASocket, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, jidDecode,  downloadContentFromMessage, Browsers, downloadMediaMessage } = require('@adiwajshing/baileys');
 const { state, saveState } = useSingleFileAuthState('./session_cortana.json');
 const { Boom } = require('@hapi/boom')  
@@ -13,8 +17,6 @@ const pino = require ('pino');
 //const CFonts = require ('cfonts');
 const utilidades = require('./utilidades')
 const {generarQR, color} = utilidades
-//const opciones = require('./config/opciones.js')
-//const {info} = opciones
 const log = console.log;
 const error = console.error;
 
@@ -79,6 +81,13 @@ const client = makeWASocket({ logger: pino({ level: 'silent' }), printQRInTermin
                 const msg = messages[0]
                 if (!msg.message) return    
                 mensajes(msg, client)
+            })
+
+            client.ev.on('group-participants.update', async gpu => {
+                bienvenida(client, gpu)
+                despedida(client, gpu)
+                //promote(client, gpu)
+                //demote(client, gpu)
             })
         } catch (e){
             execSh('npm start')

@@ -6,11 +6,11 @@ const { RAE } = require('rae-api'); const rae = new RAE();
 const acrcloud = require ('acrcloud'); const acr = new acrcloud({ host: "identify-eu-west-1.acrcloud.com", access_key: "e82b8f70d39b088e8166835b1b3f0eb9", access_secret: "6C6g5TccDAE1FeBx6iJph2dwkANZb4cbarwj7jRj"})
 //const bibliaApi = require('@amanda-mitchell/biblia-api'); const biblia = bibliaApi.createBibliaApiClient({apiKey: 'cddf6c0b615e0da8e8f8f5e0073190b8', fetch})
 const gis = require('g-i-s')
-const ttsv1 = require('ibm-watson/text-to-speech/v1'); const {IamAuthenticator} = require ('ibm-watson/auth'); const TextToSpeech = new ttsv1({ authenticator: new IamAuthenticator({ apikey: '6nj8wFv3XXy_QOYmJGjJLsyZ7GsD2LtoJDWbAGlHulGh' }), serviceUrl: 'https://api.au-syd.text-to-speech.watson.cloud.ibm.com/instances/14c63066-b4bd-45e4-b7d0-15b7a7df4c35' })
 const gir = require('another-node-reverse-image-search')
 const google = require ('google-it')
 const imgbbUp = require('imgbb-uploader')
 const scraper = require('@bochilteam/scraper')
+const fakeyou = require('./funciones/fakeyou.js')
 const fetch = require('node-fetch')
 const { writeFile } =  require ('fs/promises')
 const {exec} = require ('child_process')
@@ -21,6 +21,7 @@ const ffmpeg = require ('fluent-ffmpeg')
 const axios = require ('axios')
 const fs = require('fs')
 const translate = require ('./funciones/traductor.js')
+const textToSpeak = require ('./funciones/IBM.js')
 const funciones = require ('./funciones')
 const utilidades = require('./utilidades')
 const { color} = utilidades
@@ -63,14 +64,14 @@ let {numeroCreador, nombreCreador, nombreBot, copyright, igCreador, fbCreador, y
 const banned = parse(readFileSync('./JSONS/banned.json'))
 const bienvenida = parse(readFileSync('./JSONS/bienvenida.json'))
 const despedida = parse(readFileSync('./JSONS/despedida.json'))
-const promote = parse(readFileSync('./JSONS/promote.json'))
-const demote = parse(readFileSync('./JSONS/demote.json'))
+const promovidos = parse(readFileSync('./JSONS/promovidos.json'))
+const degradados = parse(readFileSync('./JSONS/degradados.json'))
 const vip = parse(readFileSync('./JSONS/vip.json'))
 const antienlaces = parse(readFileSync('./JSONS/antienlaces.json'))
 const ceroenlaces = parse(readFileSync('./JSONS/ceroenlaces.json'))
 const premium = parse(readFileSync('./JSONS/premium.json'))
 const _afk = parse(readFileSync('./JSONS/afk.json'))
-const _leveling = parse(readFileSync('./JSONS/leveling.json'))
+const leveling = parse(readFileSync('./JSONS/leveling.json'))
 const _registered = parse(readFileSync('./JSONS/registered.json'))
 const _rules = parse(readFileSync('./JSONS/rules.json'))
 const _level = parse(readFileSync('./datos/level.json'))
@@ -94,16 +95,6 @@ let aki = false
 let usuarioJugando = false
 
 module.exports = async (msg ,client) => {
-    function textToSpeak (text) {
-        //const getVoiceParams = { voice : 'es-ES_EnriqueV3Voice' }
-        //TextToSpeech.listVoices().then(async voices => {log(stringify(voices, null, 2))}).catch(err => {log('Error:', err)})
-        //TextToSpeech.getVoice(getVoiceParams).then(async voice =>{ log(stringify(voice, null, 2))})
-        const synthesizeParams = { text: text, accept: 'audio/mp3', voice: 'es-LA_SofiaV3Voice', };
-        TextToSpeech.synthesize(synthesizeParams)
-        .then(response => {return TextToSpeech.repairWavHeaderStream(response.result)})
-        .then(async buffer => {await writeFileSync('./media/temp/loquendo.mp3', buffer); client.sendMessage(from, { audio: readFileSync('./media/temp/loquendo.mp3'), mimetype: 'audio/mp4', ptt: true},{quoted: msg})})
-        .catch(err => {log('Error: ', err)})
-    }
     if (!msg.message) return
     if (msg.key && msg.key.remoteJid === 'status@broadcast') return
     const isMe = msg.key.fromMe
@@ -117,15 +108,15 @@ module.exports = async (msg ,client) => {
 /*----------ENVIO DE MENSAJES----------*/
     const sendText = async (texto) => {client.sendMessage(from, {text: texto})}
     const sendReply = async (texto) => {client.sendMessage(from, {text: texto}, {quoted: msg})}
-    const sendReplyWithMentions = async (texto, menciones) => {await client.sendMessage(from, {text: texto, mentions: menciones}, {quoted: msg})}
-    const sendTextWithMentions = async (texto, menciones) => {await client.sendMessage(from, {text: texto, mentions: menciones})}
-    const sendLocation = async (latitud, longitud) => {await client.sendMessage(from, {location: {degreesLatitude: latitud, degreesLongitude: longitud}})}
+    const sendReplyWithMentions = async (texto, menciones) => {client.sendMessage(from, {text: texto, mentions: menciones}, {quoted: msg})}
+    const sendTextWithMentions = async (texto, menciones) => {client.sendMessage(from, {text: texto, mentions: menciones})}
+    const sendLocation = async (latitud, longitud) => {client.sendMessage(from, {location: {degreesLatitude: latitud, degreesLongitude: longitud}})}
     const sendVcard = async (texto, vcard) =>{client.sendMessage(from, {contacts:{displayName: texto, contacts: [{vcard}]}})}
     const sendButtonText = async (texto, botones = []) => {client.sendMessage(from, {text: texto, footer: copyright, buttons: botones, headerType: 1})}
-    const sendButtonImage = async (imagen, texto, botones) => { await client.sendMessage(from, {image: {url: imagen}, caption: texto, footer: copyright, buttons: botones, headerType: 4})}
-    const sendTemplateButtonText = async (texto, botones) => { await client.sendMessage(from, { text: texto, footer: copyright, templateButtons: botones}) }
-    const sendTemplateButtonImage = async (imagen, texto, botones) => { client.sendMessage(from, { image: {url: imagen}, caption: texto, footer: copyright, templateButtons: botones })}
-    const sendListText = async (text, btext, sections) => { client.sendMessage(from, {text: text, footer: copyright, title: '', buttonText: btext, sections },{quoted: msg})}
+    const sendButtonImage = async (imagen, texto, botones) => {client.sendMessage(from, {image: {url: imagen}, caption: texto, footer: copyright, buttons: botones, headerType: 4})}
+    const sendTemplateButtonText = async (texto, botones) => {client.sendMessage(from, { text: texto, footer: copyright, templateButtons: botones}) }
+    const sendTemplateButtonImage = async (imagen, texto, botones) => {client.sendMessage(from, { image: {url: imagen}, caption: texto, footer: copyright, templateButtons: botones })}
+    const sendListText = async (text, btext, sections) => {client.sendMessage(from, {text: text, footer: copyright, title: '', buttonText: btext, sections },{quoted: msg})}
     const sendReaction = async (texto, para) => {client.sendMessage(para, { react: { text: texto, key: msg.key } })}
     const sendGif = async (ubicacion, texto) => {client.sendMessage(from, {video: {url: ubicacion}, caption: texto, gifPlayback: true})}
     const sendGifReply = async (ubicacion, texto) => {client.sendMessage(from, {video: ubicacion, caption: texto, gifPlayback: true},{quoted: msg})}
@@ -168,7 +159,7 @@ module.exports = async (msg ,client) => {
     const isInviteLink = messageType === 'groupInviteMessage'
 
  /*----------TIPOS DE MENSAJES RESPONDIDOS----------*/
-    const quoted = isQuoted && msg.message.extendedTextMessage.contextInfo.quotedMessage != null ? msg.message.extendedTextMessage.contextInfo.quotedMessage : false
+    const quoted = messageType == 'extendedTextMessage' && msg.message.extendedTextMessage.contextInfo != null  ? msg.message.extendedTextMessage.contextInfo.quotedMessage || [] : []
     var quotedMessageType = Object.keys(quoted)[0]
     const isQuotedText = quotedMessageType === 'conversation'
     const isQuotedImage = quotedMessageType === 'imageMessage'
@@ -189,7 +180,7 @@ module.exports = async (msg ,client) => {
 
     const isTag = isQuoted && msg.message.extendedTextMessage.contextInfo != null ? msg.message.extendedTextMessage.contextInfo.participant != '' : false
     const isMentionedTag = isQuoted && msg.message.extendedTextMessage.contextInfo.mentionedJid != null ? msg.message.extendedTextMessage.contextInfo.mentionedJid : false
-    const isTagStick = isSticker ? msg.message.stickerMessage.contextInfo.quotedMessage != null : false
+    const isTagStick = isSticker && msg.message.stickerMessage.contextInfo != null ? msg.message.stickerMessage.contextInfo.quotedMessage : false
 
 /*----------VIEW ONCE MESSAGES----------*/
     const typeVO = isViewOnce ? msg.message.viewOnceMessage.message : ''
@@ -245,10 +236,9 @@ module.exports = async (msg ,client) => {
     const groupDesc = isGroup ? groupMetadata.desc : ''
     const groupId = isGroup ? groupMetadata.id : ''
     const groupOwner = isGroup ? groupMetadata.owner : ''
-    const groupMembers = isGroup ? groupMetadata.participants : ''
-    const groupAdmins = isGroup ? getAdmins(groupMembers) : ''
-    const groupParticipants = isGroup ? getAll(groupMembers) : ''
-    const miembros = isGroup ? getParticipants(groupMembers) : ''
+    const groupAdmins = isGroup ? getAdmins(groupMetadata.participants) : ''
+    const groupParticipants = isGroup ? getAll(groupMetadata.participants) : ''
+    const miembros = isGroup ? getParticipants(groupMetadata.participants) : ''
     const isEphemeral = isGroup ? groupMetadata.ephemeralDuration != undefined : ''
     const isRestrict = isGroup ? groupMetadata.restrict : false
     const restrict = isRestrict ? 'administradores' : 'todos'
@@ -267,12 +257,12 @@ module.exports = async (msg ,client) => {
     const isPremium = premium.includes(sender)
     const isBienvenida = isGroup ?  bienvenida.includes(from) : false
     const isDespedida = isGroup ?  despedida.includes(from) : false
-    const isPromote = isGroup ?  promote.includes(from) : false
-    const isDemote = isGroup ?  demote.includes(from) : false
+    const isPromovidos = isGroup ?  promovidos.includes(from) : false
+    const isDegradados = isGroup ?  degradados.includes(from) : false
     const isAfkOn = isGroup ? checkAfkUser(sender) : false
     const isAntienlaces = isGroup ? antienlaces.includes(from) : false
     const isCeroenlaces = isGroup ? ceroenlaces.includes(from) : false
-    const isLeveling = isGroup ? _leveling.includes(from) : false
+    const isLeveling = isGroup ? leveling.includes(from) : false
     const isAntiarabes = isGroup ? antiarabes.includes(from) : false
     const isAntifakes = isGroup ? antifakes.includes(from) : false
     const isPrivate = banChats == true;
@@ -476,7 +466,7 @@ module.exports = async (msg ,client) => {
         const text = chats.slice(5)
         const {data} = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(text)}&lc=es&cf=false`)
         const {success} = data
-        await escribiendo()
+        escribiendo()
         sendReply(success)
     }
     if (!isMe && !isCmd && chats.toLowerCase().startsWith('cortana ')){
@@ -575,7 +565,7 @@ module.exports = async (msg ,client) => {
             if (!isRestrict) return sendReply(toast.descunclock(pushname))
             client.groupSettingUpdate(from, 'unlocked')
             break
-        case 'promover': case 'promote':
+        case 'promover': case 'promote': 
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
@@ -586,49 +576,79 @@ module.exports = async (msg ,client) => {
                 if (groupAdmins.includes(etiqueta)) return sendReply(toast.promadmin(pushname))
                 const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido promovido al rango *Administrador*`
                 return client.groupParticipantsUpdate(from,[etiqueta], 'promote').then(()=>{sendReplyWithMentions(text, [etiqueta])})
-            } 
-            if (isMentionedTag){
+            } if (isMentionedTag){
                 const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
-                if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
-                if (mentionedTag == numeroBotId) return sendReply(toast.prombot(pushname))
-                if (groupAdmins.includes(isMentionedTag)) return sendReply(toast.promadmin(pushname))
-                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido promovido al rango *Administrador*`
-                return client.groupParticipantsUpdate(from,[mentionedTag], 'promote').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
-            }
+                if (mentionedTag.length === 1){
+                    if (!groupParticipants.includes(mentionedTag[0])) return sendReply(toast.outGroup(pushname))
+                    if (mentionedTag[0] == numeroBotId) return sendReply(toast.prombot(pushname))
+                    if (groupAdmins.includes(mentionedTag[0])) return sendReply(toast.promadmin(pushname))
+                    const text = `[Success] => El usuario *@${mentionedTag[0].split("@")[0]}* ha sido promovido al rango *Administrador*`
+                    return client.groupParticipantsUpdate(from,[mentionedTag[0]], 'promote').then(()=>{sendReplyWithMentions(text, [mentionedTag[0]])})    
+                } if (mentionedTag.length > 1){
+                    let texto = '·[...] Participantes a promover:\n'; let omitidos = '*⋆⋅⋅⋅⊱∘[✧PROMOTE LOG✧]∘⊰⋅⋅⋅⋆*\n\n·[...] Participantes omitidos·\n' ; let añadidos = [] ; let omited = [];
+                    mentionedTag.map(i => {
+                        if(añadidos.includes(i)) {omitidos += `➔Repetido: @${i.split('@')[0]}\n` ; return omited.push(i)}
+                        if(i == numeroBotId) {omitidos += `➔Bot: @${i.split('@')[0]}\n` ; return omited.push(i) }
+                        if(groupAdmins.includes(i)) {omitidos += `➔Admin: @${i.split('@')[0]}\n`; return omited.push(i) }
+                        if(!groupParticipants.includes(i)) {omitidos += `No es integrante ➔: @${i.split('@')[0]}\n`; return omited.push(i)}
+                        añadidos.push(i)
+                        texto += `➔ @${i.split('@')[0]}\n`
+                    })
+                    if(añadidos.length == 0) texto += '*No se promovera a ningun participante*'
+                    if(omited.length == 0) omitidos += '*Se promoveran a todos los usuarios etiquetados*\n'
+                    texto += '\n\n' + copyright
+                    return client.groupParticipantsUpdate(from, añadidos, 'promote').then(()=>{sendReplyWithMentions(omitidos + '\n' + texto, mentionedTag)})
+                }}
             if (args.length == 0) return sendReplyWithMentions(toast.noprom(informacion), ['573228125090@s.whatsapp.net'])
             if (!groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
             if (regExp == numeroBot) return sendReply(toast.prombot(pushname))
             if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.promadmin(pushname))
-            const text = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido promovido al rango *Administrador*`
-            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'promote'); sendReplyWithMentions(text, [`${regExp}@s.whatsapp.net`])}})
+            const promotetext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido promovido al rango *Administrador*`
+            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'promote'); sendReplyWithMentions(promotetext, [`${regExp}@s.whatsapp.net`])}})
             break
-        case 'degradar': case 'demote':
+        case 'degradar': case 'demote': 
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
             if (isTag){
                 const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
                 if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
-                if (!groupParticipants.includes(etiqueta)) return sendReply(toast.outGroup(pushname))
                 if (etiqueta == numeroBotId) return sendReply(toast.dembot(pushname))
                 if (!groupAdmins.includes(etiqueta)) return sendReply(toast.demadmin(pushname))
-                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido degradado rango *Administrador*`
+                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido degradado del rango *Administrador*`
                 return client.groupParticipantsUpdate(from,[etiqueta], 'demote').then(()=>{sendReplyWithMentions(text, [etiqueta])})
-            }
+            } 
             if (isMentionedTag){
                 const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
-                if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
-                if (mentionedTag == numeroBotId) return sendReply(toast.dembot(pushname))
-                if (!groupAdmins.includes(isMentionedTag)) return sendReply(toast.demadmin(pushname))
-                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido degradado del rango *Administrador*`
-                return client.groupParticipantsUpdate(from,[mentionedTag], 'demote').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
+                if (mentionedTag.length === 1){
+                    if (!groupParticipants.includes(mentionedTag[0])) return sendReply(toast.outGroup(pushname))
+                    if (mentionedTag[0] == numeroBotId) return sendReply(toast.dembot(pushname))
+                    if (!groupAdmins.includes(mentionedTag[0])) return sendReply(toast.demadmin(pushname))
+                    const text = `[Success] => El usuario *@${mentionedTag[0].split("@")[0]}* ha sido degradado del rango *Administrador*`
+                    return client.groupParticipantsUpdate(from,[mentionedTag[0]], 'demote').then(()=>{sendReplyWithMentions(text, [mentionedTag[0]])})    
+                }
+                if (mentionedTag.length > 1){
+                    let texto = '·[...] Participantes a degradar:\n'; let omitidos = '*⋆⋅⋅⋅⊱∘[✧demote LOG✧]∘⊰⋅⋅⋅⋆*\n\n·[...] Participantes omitidos·\n' ; let añadidos = [] ; let omited = [];
+                    mentionedTag.map(i => {
+                        if(añadidos.includes(i)) {omitidos += `➔Repetido: @${i.split('@')[0]}\n` ; return omited.push(i)}
+                        if(i == ownerNumber) {omitidos += `➔Creador: @${i.split("@")[0]}\n` ; return omited.push(i)}
+                        if(i == numeroBotId) {omitidos += `➔Bot: @${i.split('@')[0]}\n` ; return omited.push(i) }
+                        if(!groupParticipants.includes(i)) {omitidos += `No es integrante ➔: @${i.split('@')[0]}\n`; return omited.push(i)}
+                        añadidos.push(i)
+                        texto += `➔ @${i.split('@')[0]}\n`
+                    })
+                    if(añadidos.length == 0) texto += '*No se degradara a ningun participante*'
+                    if(omited.length == 0) omitidos += '*Se degradaran a todos los usuarios etiquetados*\n'
+                    texto += '\n\n' + copyright
+                    return client.groupParticipantsUpdate(from, añadidos, 'demote').then(()=>{sendReplyWithMentions(omitidos + '\n' + texto, mentionedTag)})
+                }
             }
-            if (args.length == 0) return sendReplyWithMentions(toast.nodem(informacion), ['573228125090@s.whatsapp.net'])
+            if (args.length == 0) return sendReplyWithMentions(toast.noprom(informacion), ['573228125090@s.whatsapp.net'])
             if (!groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
             if (regExp == numeroBot) return sendReply(toast.dembot(pushname))
-            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.demadmin(pushname))
-            const demtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido degradado del rango *Administrador*`
-            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'demote'); sendReplyWithMentions(demtext, [`${regExp}@s.whatsapp.net`])}})
+            if (!groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.demadmin(pushname))
+            const demotetext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido eliminado del grupo`
+            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'demote'); sendReplyWithMentions(demotetext, [`${regExp}@s.whatsapp.net`])}})
             break
         case 'eliminar': case 'remove': case 'kick': case 'ban':
             if (!isGroup) return sendReply(toast.groups())
@@ -644,11 +664,29 @@ module.exports = async (msg ,client) => {
             } 
             if (isMentionedTag){
                 const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
-                if (!groupParticipants.includes(mentionedTag)) return sendReply(toast.outGroup(pushname))
-                if (mentionedTag == numeroBotId) return sendReply(toast.rembot(pushname))
-                if (groupAdmins.includes(isMentionedTag)) return sendReply(toast.remadmin(pushname))
-                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido eliminado del grupo`
-                return client.groupParticipantsUpdate(from,[mentionedTag], 'remove').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
+                if (mentionedTag.length === 1){
+                    if (!groupParticipants.includes(mentionedTag[0])) return sendReply(toast.outGroup(pushname))
+                    if (mentionedTag[0] == numeroBotId) return sendReply(toast.rembot(pushname))
+                    if (groupAdmins.includes(mentionedTag[0])) return sendReply(toast.remadmin(pushname))
+                    const text = `[Success] => El usuario *@${mentionedTag[0].split("@")[0]}* ha sido eliminado del grupo`
+                    return client.groupParticipantsUpdate(from,[mentionedTag[0]], 'remove').then(()=>{sendReplyWithMentions(text, [mentionedTag[0]])})    
+                }
+                if (mentionedTag.length > 1){
+                    let texto = '·[...] Participantes a eliminar:\n'; let omitidos = '*⋆⋅⋅⋅⊱∘[✧BAN LOG✧]∘⊰⋅⋅⋅⋆*\n\n·[...] Participantes omitidos·\n' ; let eliminados = [] ; let omited = [];
+                    mentionedTag.map(i => {
+                        if(eliminados.includes(i)) {omitidos += `➔Repetido: @${i.split('@')[0]}\n` ; return omited.push(i)}
+                        if(i == ownerNumber) {omitidos += `➔Creador: @${i.split("@")[0]}\n` ; return omited.push(i)}
+                        if(i == numeroBotId) {omitidos += `➔Bot: @${i.split('@')[0]}\n` ; return omited.push(i) }
+                        if(groupAdmins.includes(i)) {omitidos += `➔Admin: @${i.split('@')[0]}\n`; return omited.push(i) }
+                        if(!groupParticipants.includes(i)) {omitidos += `No Pertenece ➔: @${i.split('@')[0]}\n`; return omited.push(i)}
+                        eliminados.push(i)
+                        texto += `➔ @${i.split('@')[0]}\n`
+                    })
+                    if(eliminados.length == 0) texto += '*No se realizara ninguna eliminacion*'
+                    if(omited.length == 0) omitidos += '*No se omitira ningun participante*\n'
+                    texto += '\n\n' + copyright
+                    return client.groupParticipantsUpdate(from, eliminados, 'remove').then(()=>{sendReplyWithMentions(omitidos + '\n' + texto, mentionedTag)})
+                }
             }
             if (args.length == 0) return sendReplyWithMentions(toast.norem(informacion), ['573228125090@s.whatsapp.net'])
             if (!groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
@@ -657,33 +695,51 @@ module.exports = async (msg ,client) => {
             const remtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido eliminado del grupo`
             inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'remove'); sendReplyWithMentions(remtext, [`${regExp}@s.whatsapp.net`])}})
             break
-        case 'añadir': case 'add':
-            if (!isGroup) return sendReply(toast.groups())
-            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
-            if (!isBotAdmin) return sendReply(toast.adminbot())
-            if (isTag){
-                const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
-                if (groupParticipants.includes(etiqueta)) return sendReply(toast.onGroup(pushname))
-                if (etiqueta == numeroBotId) return sendReply(toast.addbot(pushname))
-                if (groupAdmins.includes(etiqueta)) return sendReply(toast.addadmin(pushname))
-                const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido añadido al grupo`
-                return client.groupParticipantsUpdate(from,[etiqueta], 'add').then(()=>{sendReplyWithMentions(text, [etiqueta])})
-            } 
-            if (isMentionedTag){
-                const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
-                if (groupParticipants.includes(mentionedTag)) return sendReply(toast.onGroup(pushname))
-                if (mentionedTag == numeroBotId) return sendReply(toast.addbot(pushname))
-                if (groupAdmins.includes(isMentionedTag)) return sendReply(toast.addadmin(pushname))
-                const text = `[Success] => El usuario *@${mentionedTag.split("@")[0]}* ha sido añadido al grupo`
-                return client.groupParticipantsUpdate(from,[mentionedTag], 'add').then(()=>{sendReplyWithMentions(text, [mentionedTag])})
-            }
-            if (args.length == 0) return sendReplyWithMentions(toast.noadd(informacion), ['573228125090@s.whatsapp.net'])
-            if (groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.outGroup(pushname))
-            if (regExp == numeroBot) return sendReply(toast.addbot(pushname))
-            if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.addadmin(pushname))
-            const addtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido añadido al grupo`
-            inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'add'); sendReplyWithMentions(addtext, [`${regExp}@s.whatsapp.net`])}})
-            break
+        case 'añadir': case 'add': case 'unkick': case 'unban':
+                if (!isGroup) return sendReply(toast.groups())
+                if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+                if (!isBotAdmin) return sendReply(toast.adminbot())
+                if (isTag){
+                    const etiqueta = msg.message.extendedTextMessage.contextInfo.participant
+                    if (groupParticipants.includes(etiqueta)) return sendReply(toast.onGroup(pushname))
+                    if (etiqueta == numeroBotId) return sendReply(toast.addbot(pushname))
+                    if (groupAdmins.includes(etiqueta)) return sendReply(toast.addadmin(pushname))
+                    const text = `[Success] => El usuario *@${etiqueta.split("@")[0]}* ha sido añadido al grupo`
+                    return client.groupParticipantsUpdate(from,[etiqueta], 'add').then(()=>{sendReplyWithMentions(text, [etiqueta])})
+                } 
+                if (isMentionedTag){
+                    const mentionedTag = msg.message.extendedTextMessage.contextInfo.mentionedJid
+                    if (mentionedTag.length === 1){
+                        if (groupParticipants.includes(mentionedTag[0])) return sendReply(toast.onGroup(pushname))
+                        if (mentionedTag[0] == numeroBotId) return sendReply(toast.addbot(pushname))
+                        if (groupAdmins.includes(mentionedTag[0])) return sendReply(toast.addadmin(pushname))
+                        const text = `[Success] => El usuario *@${mentionedTag[0].split("@")[0]}* ha sido eliminado del grupo`
+                        return client.groupParticipantsUpdate(from,[mentionedTag[0]], 'add').then(()=>{sendReplyWithMentions(text, [mentionedTag[0]])})    
+                    }
+                    if (mentionedTag.length > 1){
+                        let texto = '·[...] Participantes a añadir:\n'; let omitidos = '*⋆⋅⋅⋅⊱∘[✧ADD LOG✧]∘⊰⋅⋅⋅⋆*\n\n·[...] Participantes omitidos·\n' ; let añadidos = [] ; let omited = [];
+                        mentionedTag.map(i => {
+                            log(i)
+                            if(añadidos.includes(i)) {omitidos += `➔Repetido: @${i.split('@')[0]}\n` ; return omited.push(i)}
+                            if(i == numeroBotId) {omitidos += `➔Bot: @${i.split('@')[0]}\n` ; return omited.push(i) }
+                            if(groupParticipants.includes(i)) {omitidos += `Ya Pertenece ➔: @${i.split('@')[0]}\n`; return omited.push(i)}
+                            añadidos.push(i)
+                            texto += `➔ @${i.split('@')[0]}\n`
+                        })
+                        if(añadidos.length == 0) texto += '*No se realizara ninguna adicion al grupo*'
+                        if(omited.length == 0) omitidos += '*No se omitira ningun participante*\n'
+                        texto += '\n\n' + copyright
+                        if(añadidos.length == 0 ) return sendReplyWithMentions(omitidos + '\n' + texto, mentionedTag)
+                        return client.groupParticipantsUpdate(from, añadidos, 'add').then(()=>{sendReplyWithMentions(omitidos + '\n' + texto, mentionedTag)})
+                    }
+                }
+                if (args.length == 0) return sendReplyWithMentions(toast.noadd(informacion), ['573228125090@s.whatsapp.net'])
+                if (groupParticipants.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.onGroup(pushname))
+                if (regExp == numeroBot) return sendReply(toast.addbot(pushname))
+                if (groupAdmins.includes(`${regExp}@s.whatsapp.net`)) return sendReply(toast.addadmin(pushname))
+                const addtext = `[Success] => El usuario *@${regExp.split("@")[0]}* ha sido eliminado del grupo`
+                inWA(msg,client,regExp).then(async (res) => { if (res == true){ await client.groupParticipantsUpdate(from,[`${regExp}@s.whatsapp.net`], 'add'); sendReplyWithMentions(addtext, [`${regExp}@s.whatsapp.net`])}})
+                break
         case 'enlace': case 'link':
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
@@ -749,272 +805,419 @@ module.exports = async (msg ,client) => {
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
-            const ceroenlacesCheck = isCeroenlaces ? 'funcion ceroenlaces *ACTIVADA* \n\n!ceroenlaces off para desactivar' : 'funcion ceroenlaces *DESACTIVADA* \n\n!ceroenlaces on para activar'
-            if (args.length == 0){ if (isCeroenlaces) return sendReply(ceroenlacesCheck) ; if (!isCeroenlaces) return sendReply(ceroenlacesCheck)}
+            const ceroenlacesCheck = isCeroenlaces ? toast.ceroenlaceson(pushname, saludo) : toast.ceroenlacesoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isCeroenlaces){
+                    const buttons = [{  buttonId:`${prefix}ceroenlaces off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(ceroenlacesCheck, buttons)}
+                if(!isCeroenlaces){
+                    const buttons = [{  buttonId:`${prefix}ceroenlaces on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(ceroenlacesCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
+                const buttons = [{  buttonId:`${prefix}ceroenlaces off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isCeroenlaces) return sendButtonText(ceroenlacesCheck, buttons)
                 ceroenlaces.push(from)
                 writeFileSync('./JSONS/ceroenlaces.json', stringify(ceroenlaces))
-                sendReply('[ACTIVANDO CEROENLACES]')
-            }
+                sendReply(toast.ceroenlaces1())}
             if (args[0] == 'off' || args[0] == '0') {
+                const buttons = [{  buttonId:`${prefix}ceroenlaces on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isCeroenlaces) return sendButtonText(ceroenlacesCheck, buttons)
                 let del = ceroenlaces.indexOf(from)
                 ceroenlaces.splice(del, 1)
                 writeFileSync('./JSONS/ceroenlaces.json', stringify(ceroenlaces))
-                sendReply('[DESACTIVANDO CEROENLACES]')
-            }
+                sendReply(toast.ceroenlaces0())}
         break
         case 'antienlaces': case 'antilink': case 'antilinks':
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
-            const antienlacesCheck = isAntienlaces ? 'funcion antienlaces *ACTIVADA* \n\n!antienlaces off para desactivar' : 'funcion antienlaces *DESACTIVADA* \n\n!antienlaces on para activar'
-            if (args.length == 0){ if (isAntienlaces) return sendReply(antienlacesCheck) ; if (!isAntienlaces) return sendReply(antienlacesCheck)}
+            const antienlacesCheck = isAntienlaces ? toast.antienlaceson(pushname, saludo) : toast.antienlacesoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isAntienlaces){
+                    const buttons = [{  buttonId:`${prefix}antienlaces off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(antienlacesCheck, buttons)}
+                if(!isAntienlaces){
+                    const buttons = [{  buttonId:`${prefix}antienlaces on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(antienlacesCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
+                const buttons = [{  buttonId:`${prefix}antienlaces off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isAntienlaces) return sendButtonText(antienlacesCheck, buttons)
                 antienlaces.push(from)
                 writeFileSync('./JSONS/antienlaces.json', stringify(antienlaces))
-                sendReply('[ACTIVANDO ANTIENLACES]')
-            }
+                sendReply(toast.antienlaces1())}
             if (args[0] == 'off' || args[0] == '0') {
+                const buttons = [{  buttonId:`${prefix}antienlaces on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isAntienlaces) return sendButtonText(antienlacesCheck, buttons)
                 let del = antienlaces.indexOf(from)
                 antienlaces.splice(del, 1)
                 writeFileSync('./JSONS/antienlaces.json', stringify(antienlaces))
-                sendReply('[DESACTIVANDO ANTIENLACES]')
-            }
+                sendReply(toast.antienlaces0())}
         break
-        case 'simi': 
+        case 'simi': case 'simsimi': case 'simisimi':
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
-            if (!isBotAdmin) return sendReply(toast.adminbot())
-            const simiCheck = isSimi ? 'funcion simi *ACTIVADA* \n\n!simi off para desactivar' : 'funcion simi *DESACTIVADA* \n\n!simi on para activar'
-            if (args.length == 0){ if (isSimi) return sendReply(simiCheck) ; if (!isSimi) return sendReply(simiCheck)}
+            const simiCheck = isSimi ? toast.simion(pushname, saludo) : toast.simioff(pushname, saludo)
+            if (args.length == 0) {
+                if(isSimi){
+                    const buttons = [{  buttonId:`${prefix}simi off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(simiCheck, buttons)}
+                if(!isSimi){
+                    const buttons = [{  buttonId:`${prefix}simi on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(simiCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
+                const buttons = [{  buttonId:`${prefix}simi off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isSimi) return sendButtonText(simiCheck, buttons)
                 simi.push(from)
                 writeFileSync('./JSONS/simi.json', stringify(simi))
-                sendReply('[ACTIVANDO SIMI]')
-            }
+                sendReply(toast.simi1())}
             if (args[0] == 'off' || args[0] == '0') {
+                const buttons = [{  buttonId:`${prefix}simi on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isSimi) return sendButtonText(simiCheck, buttons)
                 let del = simi.indexOf(from)
                 simi.splice(del, 1)
                 writeFileSync('./JSONS/simi.json', stringify(simi))
-                sendReply('[DESACTIVANDO SIMI]')
-            }
-        break
-        case 'bienvenida': 
+                sendReply(toast.simi0())}
+            break
+        case 'bienvenida': case 'welcome': 
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
-            if (!isBotAdmin) return sendReply(toast.adminbot())
-            const bienvenidaCheck = isBienvenida ? 'funcion bienvenida *ACTIVADA* \n\n!bienvenida off para desactivar' : 'funcion bienvenida *DESACTIVADA* \n\n!bienvenida on para activar'
-            if (args.length == 0){ if (isBienvenida) return sendReply(bienvenidaCheck) ; if (!isBienvenida) return sendReply(bienvenidaCheck)}
+            const bienvenidaCheck = isBienvenida ? toast.bienvenidaon(pushname, saludo) : toast.bienvenidaoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isBienvenida){
+                    const buttons = [{  buttonId:`${prefix}bienvenida off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(bienvenidaCheck, buttons)}
+                if(!isBienvenida){
+                    const buttons = [{  buttonId:`${prefix}bienvenida on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(bienvenidaCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
+                const buttons = [{  buttonId:`${prefix}bienvenida off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isBienvenida) return sendButtonText(bienvenidaCheck, buttons)
                 bienvenida.push(from)
                 writeFileSync('./JSONS/bienvenida.json', stringify(bienvenida))
-                sendReply('[ACTIVANDO BIENVENIDA]')
-            }
+                sendReply(toast.bienvenida1())}
             if (args[0] == 'off' || args[0] == '0') {
+                const buttons = [{  buttonId:`${prefix}bienvenida on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isBienvenida) return sendButtonText(bienvenidaCheck, buttons)
                 let del = bienvenida.indexOf(from)
                 bienvenida.splice(del, 1)
                 writeFileSync('./JSONS/bienvenida.json', stringify(bienvenida))
-                sendReply('[DESACTIVANDO BIENVENIDA]')
-            }
+                sendReply(toast.bienvenida0())}
         break
-        case 'despedida': 
-        if (!isGroup) return sendReply(toast.groups())
-        if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
-        if (!isBotAdmin) return sendReply(toast.adminbot())
-        const despedidaCheck = isDespedida ? 'funcion despedida *ACTIVADA* \n\n!despedida off para desactivar' : 'funcion despedida *DESACTIVADA* \n\n!despedida on para activar'
-        if (args.length == 0){ if (isDespedida) return sendReply(despedidaCheck) ; if (!isDespedida) return sendReply(despedidaCheck)}
-        if (args[0] == 'on' || args[0] == '1') {
-            despedida.push(from)
-            writeFileSync('./JSONS/despedida.json', stringify(despedida))
-            sendReply('[ACTIVANDO DESPEDIDA]')
-        }
-        if (args[0] == 'off' || args[0] == '0') {
-            let del = despedida.indexOf(from)
-            despedida.splice(del, 1)
-            writeFileSync('./JSONS/despedida.json', stringify(despedida))
-            sendReply('[DESACTIVANDO DESPEDIDA]')
-        }
-    break
+        case 'despedida': case 'leave': 
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            const despedidaCheck = isDespedida ? toast.despedidaon(pushname, saludo) : toast.despedidaoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isDespedida){
+                    const buttons = [{  buttonId:`${prefix}despedida off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(despedidaCheck, buttons)}
+                if(!isDespedida){
+                    const buttons = [{  buttonId:`${prefix}despe on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(despedidaCheck, buttons)}}
+            if (args[0] == 'on' || args[0] == '1') {
+                const buttons = [{  buttonId:`${prefix}despedida off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isDespedida) return sendButtonText(despedidaCheck, buttons)
+                despedida.push(from)
+                writeFileSync('./JSONS/despedida.json', stringify(despedida))
+                sendReply(toast.despedida1())}
+            if (args[0] == 'off' || args[0] == '0') {
+                const buttons = [{  buttonId:`${prefix}despedida on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isDespedida) return sendButtonText(despedidaCheck, buttons)
+                let del = despedida.indexOf(from)
+                despedida.splice(del, 1)
+                writeFileSync('./JSONS/despedida.json', stringify(despedida))
+                sendReply(toast.despedida0())}
+        break
         case 'cortana': 
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
-            const cortanaCheck = isCortana ? 'funcion cortana *ACTIVADA* \n\n!cortana off para desactivar' : 'funcion cortana *DESACTIVADA* \n\n!cortana on para activar'
-            if (args.length == 0){ if (isCortana) return sendReply(cortanaCheck) ; if (!isCortana) return sendReply(cortanaCheck)}
+            const cortanaCheck = isCortana ? toast.cortanaon(pushname, saludo) : toast.cortanaoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isCortana){
+                    const buttons = [{  buttonId:`${prefix}cortana off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(cortanaCheck, buttons)}
+                if(!isCortana){
+                    const buttons = [{  buttonId:`${prefix}despe on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(cortanaCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
+                const buttons = [{  buttonId:`${prefix}cortana off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isCortana) return sendButtonText(cortanaCheck, buttons)
                 cortana.push(from)
                 writeFileSync('./JSONS/cortana.json', stringify(cortana))
-                sendReply('[ACTIVANDO CORTANA]')
-            }
+                sendReply(toast.cortana1())}
             if (args[0] == 'off' || args[0] == '0') {
+                const buttons = [{  buttonId:`${prefix}cortana on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isCortana) return sendButtonText(cortanaCheck, buttons)
                 let del = cortana.indexOf(from)
                 cortana.splice(del, 1)
                 writeFileSync('./JSONS/cortana.json', stringify(cortana))
-                sendReply('[DESACTIVANDO CORTANA]')
-            }
+                sendReply(toast.cortana0())}
         break
         case 'nsfw': 
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
-            const nsfwCheck = isNsfw ? 'funcion nsfw *ACTIVADA* \n\n!nsfw off para desactivar' : 'funcion nsfw *DESACTIVADA* \n\n!nsfw on para activar'
-            if (args.length == 0){ if (isNsfw) return sendReply(nsfwCheck) ; if (!isNsfw) return sendReply(nsfwCheck)}
+            const nsfwCheck = isNsfw ? toast.nsfwon(pushname, saludo) : toast.nsfwoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isNsfw){
+                    const buttons = [{  buttonId:`${prefix}nsfw off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(nsfwCheck, buttons)}
+                if(!isNsfw){
+                    const buttons = [{  buttonId:`${prefix}despe on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(nsfwCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
+                const buttons = [{  buttonId:`${prefix}nsfw off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isNsfw) return sendButtonText(nsfwCheck, buttons)
                 nsfw.push(from)
                 writeFileSync('./JSONS/nsfw.json', stringify(nsfw))
-                sendReply('[ACTIVANDO NSFW]')
-            }
+                sendReply(toast.nsfw1())}
             if (args[0] == 'off' || args[0] == '0') {
+                const buttons = [{  buttonId:`${prefix}nsfw on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isNsfw) return sendButtonText(nsfwCheck, buttons)
                 let del = nsfw.indexOf(from)
                 nsfw.splice(del, 1)
                 writeFileSync('./JSONS/nsfw.json', stringify(nsfw))
-                sendReply('[DESACTIVANDO NSFW]')
-            }
+                sendReply(toast.nsfw0())}
         break
-        case 'promovidos': case 'promoted': 
+        case 'promovidos': case 'promoted':
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
-            const promoteCheck = isPromote ? 'funcion promote *ACTIVADA* \n\n!promote off para desactivar' : 'funcion promote *DESACTIVADA* \n\n!promote on para activar'
-            if (args.length == 0){ if (isPromote) return sendReply(promoteCheck) ; if (!isPromote) return sendReply(promoteCheck)}
+            const promovidosCheck = isPromovidos ? toast.promovidoson(pushname, saludo) : toast.promovidosoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isPromovidos){
+                    const buttons = [{  buttonId:`${prefix}promovidos off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(promovidosCheck, buttons)}
+                if(!isPromovidos){
+                    const buttons = [{  buttonId:`${prefix}despe on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(promovidosCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
-                promote.push(from)
-                writeFileSync('./JSONS/promote.json', stringify(promote))
-                sendReply('[ACTIVANDO PROMOTE]')
-            }
+                const buttons = [{  buttonId:`${prefix}promovidos off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isPromovidos) return sendButtonText(promovidosCheck, buttons)
+                promovidos.push(from)
+                writeFileSync('./JSONS/promovidos.json', stringify(promovidos))
+                sendReply(toast.promovidos1())}
             if (args[0] == 'off' || args[0] == '0') {
-                let del = promote.indexOf(from)
-                promote.splice(del, 1)
-                writeFileSync('./JSONS/promote.json', stringify(promote))
-                sendReply('[DESACTIVANDO PROMOTE]')
-            }
+                const buttons = [{  buttonId:`${prefix}promovidos on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isPromovidos) return sendButtonText(promovidosCheck, buttons)
+                let del = promovidos.indexOf(from)
+                promovidos.splice(del, 1)
+                writeFileSync('./JSONS/promovidos.json', stringify(promovidos))
+                sendReply(toast.promovidos0())}
         break
         case 'degradados': case 'demoted': 
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
-            const demoteCheck = isDemote ? 'funcion demote *ACTIVADA* \n\n!demote off para desactivar' : 'funcion demote *DESACTIVADA* \n\n!demote on para activar'
-            if (args.length == 0){ if (isDemote) return sendReply(demoteCheck) ; if (!isDemote) return sendReply(demoteCheck)}
+            const degradadosCheck = isDegradados ? toast.degradadoson(pushname, saludo) : toast.degradadosoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isDegradados){
+                    const buttons = [{  buttonId:`${prefix}degradados off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(degradadosCheck, buttons)}
+                if(!isDegradados){
+                    const buttons = [{  buttonId:`${prefix}despe on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(degradadosCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
-                demote.push(from)
-                writeFileSync('./JSONS/demote.json', stringify(demote))
-                sendReply('[ACTIVANDO DEMOTE]')
-            }
+                const buttons = [{  buttonId:`${prefix}degradados off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isDegradados) return sendButtonText(degradadosCheck, buttons)
+                degradados.push(from)
+                writeFileSync('./JSONS/degradados.json', stringify(degradados))
+                sendReply(toast.degradados1())}
             if (args[0] == 'off' || args[0] == '0') {
-                let del = demote.indexOf(from)
-                demote.splice(del, 1)
-                writeFileSync('./JSONS/demote.json', stringify(demote))
-                sendReply('[DESACTIVANDO DEMOTE]')
-            }
+                const buttons = [{  buttonId:`${prefix}degradados on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isDegradados) return sendButtonText(degradadosCheck, buttons)
+                let del = degradados.indexOf(from)
+                degradados.splice(del, 1)
+                writeFileSync('./JSONS/degradados.json', stringify(degradados))
+                sendReply(toast.degradados0())}
         break
-        case 'antiarabes': 
+        case 'antiarabes':
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
-            const antiarabesCheck = isAntiarabes ? 'funcion antiarabes *ACTIVADA* \n\n!antiarabes off para desactivar' : 'funcion antiarabes *DESACTIVADA* \n\n!antiarabes on para activar'
-            if (args.length == 0){ if (isAntiarabes) return sendReply(antiarabesCheck) ; if (!isAntiarabes) return sendReply(antiarabesCheck)}
+            const antiarabesCheck = isAntiarabes ? toast.antiarabeson(pushname, saludo) : toast.antiarabesoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isAntiarabes){
+                    const buttons = [{  buttonId:`${prefix}antiarabes off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(antiarabesCheck, buttons)}
+                if(!isAntiarabes){
+                    const buttons = [{  buttonId:`${prefix}despe on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(antiarabesCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
+                const buttons = [{  buttonId:`${prefix}antiarabes off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isAntiarabes) return sendButtonText(antiarabesCheck, buttons)
                 antiarabes.push(from)
                 writeFileSync('./JSONS/antiarabes.json', stringify(antiarabes))
-                sendReply('[ACTIVANDO ANTIARABES]')
-            }
+                sendReply(toast.antiarabes1())}
             if (args[0] == 'off' || args[0] == '0') {
+                const buttons = [{  buttonId:`${prefix}antiarabes on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isAntiarabes) return sendButtonText(antiarabesCheck, buttons)
                 let del = antiarabes.indexOf(from)
                 antiarabes.splice(del, 1)
                 writeFileSync('./JSONS/antiarabes.json', stringify(antiarabes))
-                sendReply('[DESACTIVANDO ANTIARABES]')
-            }
+                sendReply(toast.antiarabes0())}
         break
-        case 'antifakes': 
+        case 'antifakes':
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
-            const antifakesCheck = isAntifakes ? 'funcion antifakes *ACTIVADA* \n\n!antifakes off para desactivar' : 'funcion antifakes *DESACTIVADA* \n\n!antifakes on para activar'
-            if (args.length == 0){ if (isAntifakes) return sendReply(antifakesCheck) ; if (!isAntifakes) return sendReply(antifakesCheck)}
+            const antifakesCheck = isAntifakes ? toast.antifakeson(pushname, saludo) : toast.antifakesoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isAntifakes){
+                    const buttons = [{  buttonId:`${prefix}antifakes off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(antifakesCheck, buttons)}
+                if(!isAntifakes){
+                    const buttons = [{  buttonId:`${prefix}despe on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(antifakesCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
+                const buttons = [{  buttonId:`${prefix}antifakes off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isAntifakes) return sendButtonText(antifakesCheck, buttons)
                 antifakes.push(from)
                 writeFileSync('./JSONS/antifakes.json', stringify(antifakes))
-                sendReply('[ACTIVANDO ANTIFAKES]')
-            }
+                sendReply(toast.antifakes1())}
             if (args[0] == 'off' || args[0] == '0') {
+                const buttons = [{  buttonId:`${prefix}antifakes on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isAntifakes) return sendButtonText(antifakesCheck, buttons)
                 let del = antifakes.indexOf(from)
                 antifakes.splice(del, 1)
                 writeFileSync('./JSONS/antifakes.json', stringify(antifakes))
-                sendReply('[DESACTIVANDO ANTIFAKES]')
-            }
+                sendReply(toast.antifakes0())}
         break
-        case 'autostickers': 
+        case 'autostickers': case 'autostikers': case 'autosticker': case 'autostiker': 
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
-            const autostickersCheck = isAutostickers ? 'funcion autostickers *ACTIVADA* \n\n!autostickers off para desactivar' : 'funcion autostickers *DESACTIVADA* \n\n!autostickers on para activar'
-            if (args.length == 0){ if (isAutostickers) return sendReply(autostickersCheck) ; if (!isAutostickers) return sendReply(autostickersCheck)}
+            if (!isBotAdmin) return sendReply(toast.adminbot())
+            const autostickersCheck = isAutostickers ? toast.autostickerson(pushname, saludo) : toast.autostickersoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isAutostickers){
+                    const buttons = [{  buttonId:`${prefix}autostickers off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(autostickersCheck, buttons)}
+                if(!isAutostickers){
+                    const buttons = [{  buttonId:`${prefix}despe on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(autostickersCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
+                const buttons = [{  buttonId:`${prefix}autostickers off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isAutostickers) return sendButtonText(autostickersCheck, buttons)
                 autostickers.push(from)
                 writeFileSync('./JSONS/autostickers.json', stringify(autostickers))
-                sendReply('[ACTIVANDO AUTOSTICKERS]')
-            }
+                sendReply(toast.autostickers1())}
             if (args[0] == 'off' || args[0] == '0') {
+                const buttons = [{  buttonId:`${prefix}autostickers on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isAutostickers) return sendButtonText(autostickersCheck, buttons)
                 let del = autostickers.indexOf(from)
                 autostickers.splice(del, 1)
                 writeFileSync('./JSONS/autostickers.json', stringify(autostickers))
-                sendReply('[DESACTIVANDO AUTOSTICKERS]')
-            }
+                sendReply(toast.autostickers0())}
         break
-        case 'leveling': case 'niveles': case 'levels':
+        case 'leveling': case 'niveles': 
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
-            const levelingCheck = isLeveling ? 'funcion leveling *ACTIVADA* \n\n!leveling off para desactivar' : 'funcion leveling *DESACTIVADA* \n\n!leveling on para activar'
-            if (args.length == 0){ if (isLeveling) return sendReply(levelingCheck) ; if (!isLeveling) return sendReply(levelingCheck)}
+            const levelingCheck = isLeveling ? toast.levelingon(pushname, saludo) : toast.levelingoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isLeveling){
+                    const buttons = [{  buttonId:`${prefix}leveling off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(levelingCheck, buttons)}
+                if(!isLeveling){
+                    const buttons = [{  buttonId:`${prefix}despe on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(levelingCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
-                _leveling.push(from)
-                writeFileSync('./JSONS/leveling.json', stringify(_leveling))
-                sendReply('[ACTIVANDO LEVELING]')
-            }
+                const buttons = [{  buttonId:`${prefix}leveling off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isLeveling) return sendButtonText(levelingCheck, buttons)
+                leveling.push(from)
+                writeFileSync('./JSONS/leveling.json', stringify(leveling))
+                sendReply(toast.leveling1())}
             if (args[0] == 'off' || args[0] == '0') {
-                let del = _leveling.indexOf(from)
-                _leveling.splice(del, 1)
-                writeFileSync('./JSONS/leveling.json', stringify(_leveling))
-                sendReply('[DESACTIVANDO LEVELING]')
-            }
+                const buttons = [{  buttonId:`${prefix}leveling on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isLeveling) return sendButtonText(levelingCheck, buttons)
+                let del = leveling.indexOf(from)
+                leveling.splice(del, 1)
+                writeFileSync('./JSONS/leveling.json', stringify(leveling))
+                sendReply(toast.leveling0())}
         break
-        case 'porno': 
+        case 'porno': case 'xxx': 
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
-            const pornoCheck = isPorno ? 'funcion porno *ACTIVADA* \n\n!porno off para desactivar' : 'funcion porno *DESACTIVADA* \n\n!porno on para activar'
-            if (args.length == 0){ if (isPorno) return sendReply(pornoCheck) ; if (!isPorno) return sendReply(pornoCheck)}
+            const pornoCheck = isPorno ? toast.pornoon(pushname, saludo) : toast.pornooff(pushname, saludo)
+            if (args.length == 0) {
+                if(isPorno){
+                    const buttons = [{  buttonId:`${prefix}porno off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(pornoCheck, buttons)}
+                if(!isPorno){
+                    const buttons = [{  buttonId:`${prefix}despe on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(pornoCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
+                const buttons = [{  buttonId:`${prefix}porno off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isPorno) return sendButtonText(pornoCheck, buttons)
                 porno.push(from)
                 writeFileSync('./JSONS/porno.json', stringify(porno))
-                sendReply('[ACTIVANDO PORNO]')
-            }
+                sendReply(toast.porno1())}
             if (args[0] == 'off' || args[0] == '0') {
+                const buttons = [{  buttonId:`${prefix}porno on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isPorno) return sendButtonText(pornoCheck, buttons)
                 let del = porno.indexOf(from)
                 porno.splice(del, 1)
                 writeFileSync('./JSONS/porno.json', stringify(porno))
-                sendReply('[DESACTIVANDO PORNO]')
-            }
+                sendReply(toast.porno0())}
         break
-        case 'antivuv': 
+        case 'antivuv': case 'antivo':
             if (!isGroup) return sendReply(toast.groups())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
             if (!isBotAdmin) return sendReply(toast.adminbot())
-            const antivuvCheck = isAntivuv ? 'funcion antivuv *ACTIVADA* \n\n!antivuv off para desactivar' : 'funcion antivuv *DESACTIVADA* \n\n!antivuv on para activar'
-            if (args.length == 0){ if (isAntivuv) return sendReply(antivuvCheck) ; if (!isAntivuv) return sendReply(antivuvCheck)}
+            const antivuvCheck = isAntivuv ? toast.antivuvon(pushname, saludo) : toast.antivuvoff(pushname, saludo)
+            if (args.length == 0) {
+                if(isAntivuv){
+                    const buttons = [{  buttonId:`${prefix}antivuv off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                    sendButtonText(antivuvCheck, buttons)}
+                if(!isAntivuv){
+                    const buttons = [{  buttonId:`${prefix}despe on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                    sendButtonText(antivuvCheck, buttons)}}
             if (args[0] == 'on' || args[0] == '1') {
+                const buttons = [{  buttonId:`${prefix}antivuv off`, buttonText:{ displayText:'·❌ DESACTIVAR·' }, type:1  }]
+                if(isAntivuv) return sendButtonText(antivuvCheck, buttons)
                 antivuv.push(from)
                 writeFileSync('./JSONS/antivuv.json', stringify(antivuv))
-                sendReply('[ACTIVANDO ANTIVUV]')
-            }
+                sendReply(toast.antivuv1())}
             if (args[0] == 'off' || args[0] == '0') {
+                const buttons = [{  buttonId:`${prefix}antivuv on`, buttonText:{ displayText:'·✅ ACTIVAR·' }, type:1  }]
+                if(!isAntivuv) return sendButtonText(antivuvCheck, buttons)
                 let del = antivuv.indexOf(from)
                 antivuv.splice(del, 1)
                 writeFileSync('./JSONS/antivuv.json', stringify(antivuv))
-                sendReply('[DESACTIVANDO ANTIVUV]')
-            }
+                sendReply(toast.antivuv0())}
         break
-    
+        case 'ajustes':
+            if (!isGroup) return sendReply(toast.groups())
+            if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
+            const gData = await client.groupMetadata(from)
+            const admins = getAdmins(gData.participants)
+            const creacion = moment(gData.creation * 1000).tz('America/Bogota').format('dddd, DD MMM YYYY')
+            const horaCreacion = moment(gData.creation * 1000).tz('America/Bogota').format('h:mm:ss a') 
+            const botadmin = isBotAdmin ? '·Si·' : '·No·'
+            const Antifakes = isAntifakes ? '·Si·' : '·No·'
+            const Antiarabes = isAntiarabes ? '·Si·' : '·No·'
+            const Antivuv = isAntivuv ? '·Si·' : '·No·'
+            const Nsfw = isNsfw ? '·Si·' : '·No·'
+            const Porno = isPorno ? '·Si·' : '·No·'
+            const Simi = isSimi ? '·Si·' : '·No·'
+            const Cortana = isCortana ? '·Si·' : '·No·'
+            const Autostickers = isAutostickers ? '·Si·' : '·No·'
+            const Leveling = isLeveling ? '·Si·' : '·No·'
+            const Bienvenida = isBienvenida ? '·Si·' : '·No·'
+            const Despedida = isDespedida ? '·Si·' : '·No·'
+            const Promovidos = isPromovidos ? '·Si·' : '·No·'
+            const Degradados = isDegradados ? '·Si·' : '·No·'
+            const Antienlaces = isAntienlaces ? '·Si·' : '·No·'
+            const Ceroenlaces = isCeroenlaces ? '·Si·' : '·No·'
+            const Onlyowners = isOnlyowner ? '·Si·' : '·No·'
+            const Onlypremium = isOnlypremium ? '·Si·' : '·No·'
+            const Onlyadmins = isOnlyadmins ? '·Si·' : '·No·'
+            const Onlyvip = isOnlyvip ? '·Si·' : '·No·'
+            const datas = {admins, gData, creacion, horaCreacion, botadmin, Antifakes, Antiarabes, Antivuv, Nsfw, Porno, Simi, Cortana, Autostickers, Leveling, Bienvenida, Despedida, Promovidos, Degradados, Antienlaces, Ceroenlaces,  Onlyowners, Onlypremium, Onlyadmins, Onlyvip}
+            sendReplyWithMentions(toast.ajustes(datas), [gData.owner])
+            break
     /*--------COMANDOS TEST-------- */
         case 'sacame':
             if (!isBotAdmin) return sendReply(toast.adminbot())
@@ -1198,7 +1401,7 @@ module.exports = async (msg ,client) => {
                 }
             }
             break
-        case'infolink':case'infogrupo':
+        case 'infolink':case'infogrupo':
             //if (!isGroup) return sendReply('esta opcion solo esta disponible dentro de grupos')
             groupSettings(msg, client, q, args, command)
             break
@@ -1414,21 +1617,21 @@ module.exports = async (msg ,client) => {
         case 'top3':
             if(args.length == 0) return 
             var t3m = []; 
-            const p31 = randomizer(groupMembers); const p32 = randomizer(groupMembers); const p33 = randomizer(groupMembers);
+            const p31 = randomizer(groupMetadata.participants); const p32 = randomizer(groupMetadata.participants); const p33 = randomizer(groupMetadata.participants);
             t3m.push(sender, p31.id, p32.id, p33.id)
             sendReplyWithMentions(toast.top3(sender, q, groupName, p31, p32, p33), t3m)
             break
         case 'top5':
             if(args.length == 0) return 
             var t5m = []; 
-            const p51 = randomizer(groupMembers); const p52 = randomizer(groupMembers); const p53 = randomizer(groupMembers); const p54 = randomizer(groupMembers); const p55 = randomizer(groupMembers);
+            const p51 = randomizer(groupMetadata.participants); const p52 = randomizer(groupMetadata.participants); const p53 = randomizer(groupMetadata.participants); const p54 = randomizer(groupMetadata.participants); const p55 = randomizer(groupMetadata.participants);
             t5m.push(sender, p51.id, p52.id, p53.id, p54.id, p55.id)
             sendReplyWithMentions(toast.top5(sender, q, groupName, p51, p52, p53, p54, p55), t5m)
             break
         case 'top10':
             if(args.length == 0) return 
             var t10m = []; 
-            const p11 =randomizer(groupMembers); const p12 = randomizer(groupMembers); const p13 = randomizer(groupMembers); const p14 = randomizer(groupMembers); const p15 = randomizer(groupMembers); const p16 = randomizer(groupMembers); const p17 = randomizer(groupMembers); const p18 = randomizer(groupMembers); const p19 = randomizer(groupMembers); const p110 = randomizer(groupMembers);
+            const p11 =randomizer(groupMetadata.participants); const p12 = randomizer(groupMetadata.participants); const p13 = randomizer(groupMetadata.participants); const p14 = randomizer(groupMetadata.participants); const p15 = randomizer(groupMetadata.participants); const p16 = randomizer(groupMetadata.participants); const p17 = randomizer(groupMetadata.participants); const p18 = randomizer(groupMetadata.participants); const p19 = randomizer(groupMetadata.participants); const p110 = randomizer(groupMetadata.participants);
             t10m.push(sender, p11.id, p12.id, p13.id, p14.id, p15.id, p16.id, p17.id, p18.id, p19.id, p110.id)
             sendReplyWithMentions(toast.top10(sender, q, groupName, p11, p12, p13, p14, p15, p16, p17, p18, p19, p110), t10m)
             break
@@ -1674,14 +1877,156 @@ module.exports = async (msg ,client) => {
             prefix = q;
             writeFileSync('./JSONS/settings.json', stringify(info)); sendReply(toast.newpref(q));
             break
+    
     //EFECTOS DE AUDIO
         case 'ardilla':
             if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
             var ranard = './media/temp/'+getRandom('.mp4');  const ardmed = './media/temp/ardilla.mp4'
             const ardenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
             await downloadMediaMessage(ardenc).then(async res => {await writeFile(ardmed, res)})
             exec(`ffmpeg -i ${ardmed} -filter:a "atempo=0.6,asetrate=85000" ${ranard}`, async () => { 
                 await client.sendMessage(from, { audio: readFileSync(ranard) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'bajos':
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var bassrand = './media/temp/'+getRandom('.mp4');  const bassmedia = './media/temp/bajos.mp4'
+            const bassenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(bassenc).then(async res => {await writeFile(bassmedia, res)})
+            exec(`ffmpeg -i ${bassmedia} -af equalizer=f=94:width_type=o:width=2:g=30 ${bassrand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(bassrand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'ruido': case 'trigger':
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var trigerrand = './media/temp/'+getRandom('.mp4');  const trigermedia = './media/temp/ruido.mp4'
+            const trigerenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(trigerenc).then(async res => {await writeFile(trigermedia, res)})
+            exec(`ffmpeg -i ${trigermedia} -af acrusher=.1:1:64:0:log:1 ${trigerrand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(trigerrand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'profundo': case 'deep':
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var deeprand = './media/temp/'+getRandom('.mp4');  const deepmedia = './media/temp/profundo.mp4'
+            const deepenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(deepenc).then(async res => {await writeFile(deepmedia, res)})
+            exec(`ffmpeg -i ${deepmedia} -af atempo=4/4,asetrate=44500*2/3 ${deeprand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(deeprand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'volumen': case 'earrape':
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var earraperand = './media/temp/'+getRandom('.mp4');  const earrapemedia = './media/temp/volumen.mp4'
+            const earrapeenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(earrapeenc).then(async res => {await writeFile(earrapemedia, res)})
+            exec(`ffmpeg -i ${earrapemedia} -af volume=12 ${earraperand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(earraperand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'rapido': case 'fast':
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var fastrand = './media/temp/'+getRandom('.mp4');  const fastmedia = './media/temp/rapido.mp4'
+            const fastenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(fastenc).then(async res => {await writeFile(fastmedia, res)})
+            exec(`ffmpeg -i ${fastmedia} -filter:a "atempo=1.63,asetrate=44100" ${fastrand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(fastrand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'gordo': case 'fat':
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var fatrand = './media/temp/'+getRandom('.mp4');  const fatmedia = './media/temp/gordo.mp4'
+            const fatenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(fatenc).then(async res => {await writeFile(fatmedia, res)})
+            exec(`ffmpeg -i ${fatmedia} -filter:a "atempo=1.6,asetrate=22100" ${fatrand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(fatrand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'hombre': case 'man': //error
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var manrand = './media/temp/'+getRandom('.mp4');  const manmedia = './media/temp/hombre.mp4'
+            const manenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(manenc).then(async res => {await writeFile(manmedia, res)})
+            exec(`ffmpeg -i ${manmedia} atempo=4/3,asetrate=44500*3/4 ${manrand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(manrand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'niño': case 'boy': //error
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var boyrand = './media/temp/'+getRandom('.mp4');  const boymedia = './media/temp/niño.mp4'
+            const boyenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(boyenc).then(async res => {await writeFile(boymedia, res)})
+            exec(`ffmpeg -i ${boymedia} atempo=3/4,asetrate=44500*4/3 ${boyrand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(boyrand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'fantasma': case 'ghost': //error
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var ghostrand = './media/temp/'+getRandom('.mp4');  const ghostmedia = './media/temp/fantasma.mp4'
+            const ghostenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(ghostenc).then(async res => {await writeFile(ghostmedia, res)})
+            exec(`ffmpeg -i ${ghostmedia} atempo=1.0,asetrate=3486 ${ghostrand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(ghostrand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'noche': case 'nightcore':
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var nightcorerand = './media/temp/'+getRandom('.mp4');  const nightcoremedia = './media/temp/noche.mp4'
+            const nightcoreenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(nightcoreenc).then(async res => {await writeFile(nightcoremedia, res)})
+            exec(`ffmpeg -i ${nightcoremedia} -filter:a atempo=1.06,asetrate=44100*1.25 ${nightcorerand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(nightcorerand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'reversa': case 'reverse':
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var reverserand = './media/temp/'+getRandom('.mp4');  const reversemedia = './media/temp/reversa.mp4'
+            const reverseenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(reverseenc).then(async res => {await writeFile(reversemedia, res)})
+            exec(`ffmpeg -i ${reversemedia} -filter_complex "areverse" ${reverserand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(reverserand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'robot': case 'robot':
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var robotrand = './media/temp/'+getRandom('.mp4');  const robotmedia = './media/temp/robot.mp4'
+            const robotenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(robotenc).then(async res => {await writeFile(robotmedia, res)})
+            exec(`ffmpeg -i ${robotmedia} -filter_complex "afftfilt=real=\'hypot(re,im)*sin(0)\':imag=\'hypot(re,im)*cos(0)\':win_size=512:overlap=0.75" ${robotrand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(robotrand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'lento': case 'slow':
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var slowrand = './media/temp/'+getRandom('.mp4');  const slowmedia = './media/temp/lento.mp4'
+            const slowenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(slowenc).then(async res => {await writeFile(slowmedia, res)})
+            exec(`ffmpeg -i ${slowmedia} -filter:a "atempo=0.7,asetrate=44100" ${slowrand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(slowrand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
+            })
+            break
+        case 'suave': case 'smooth':
+            if (!isQuotedAudio) return sendReply(`[ERROR] => por favor etiqueta una cancion`)
+            sendReply(toast.audioproc())
+            var smoothrand = './media/temp/'+getRandom('.mp4');  const smoothmedia = './media/temp/suave.mp4'
+            const smoothenc = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
+            await downloadMediaMessage(smoothenc).then(async res => {await writeFile(smoothmedia, res)})
+            exec(`ffmpeg -i ${smoothmedia} -filter:v "minterpolate=\'mi_mode=mci:mc_mode=aobmc:vsbmc=1:fps=120\'" ${smoothrand}`, async () => { 
+                await client.sendMessage(from, { audio: readFileSync(smoothrand) , mimetype: 'audio/mp4', ptt: true},{quoted:msg}); 
             })
             break
         
@@ -1865,7 +2210,7 @@ module.exports = async (msg ,client) => {
         case 'shazam':
             if (!isOwner) return (toast.owners())
             if (!isQuotedAudio && !isQuotedVideo) return
-            if (isQuotedAudio) sendReply('[...] Procesando audio por favor espere...'); if (isQuotedVideo) sendReply('[...] Procesando video por favor espere...')
+            if (isQuotedAudio) sendReply(toast.audioproc()); if (isQuotedVideo) sendReply(toast.videoproc())
             const encmedia = parse(stringify(msg).replace('quotedM','m')).message.extendedTextMessage.contextInfo
             await downloadMediaMessage(encmedia).then(async res => {await writeFile('./media/temp/shazam.mp3', res)})
             acr.identify(readFileSync('./media/temp/shazam.mp3')).then(async res => {
@@ -1887,13 +2232,35 @@ module.exports = async (msg ,client) => {
                 })
             })
             break
-        case 'test':
-            if(!isOwner) return sendReply(toast.owners())
-            await textToSpeak(q)
+        case 'voz':
+            //if(!isOwner) return sendReply(toast.owners())
+            if (args[0] == 1){textToSpeak(q.slice(2), 'es-ES_EnriqueV3Voice', sendPttReply)}
+            if (args[0] == 2){textToSpeak(q.slice(2), 'es-ES_LauraV3Voice', sendPttReply)}
+            if (args[0] == 3){textToSpeak(q.slice(2), 'es-LA_SofiaV3Voice', sendPttReply)}
+            if (args[0] == 4){textToSpeak(q.slice(2), 'es-US_SofiaV3Voice', sendPttReply)}
+            if (args[0] == 5){ const trans = await translate(q.slice(2), 'ar'); textToSpeak(trans, 'ar-MS_OmarVoice', sendPttReply)}
+            if (args[0] == 6){ const trans = await translate(q.slice(2), 'en'); textToSpeak(trans, 'en-AU_CraigVoice', sendPttReply)}
+            if (args[0] == 7){ const trans = await translate(q.slice(2), 'cs'); textToSpeak(trans, 'cs-CZ_AlenaVoice', sendPttReply)}
             break
-        default:
+        case 'voz2':
+            if (args.length == 0) return sendButtonText(toast.voz2(), [{  buttonId:`${prefix}listavoz2`, buttonText:{ displayText:'·Lista Idiomas·' }, type:1  }])
+            const dataText = q.slice(3)
+            const voz2trans = await translate(dataText, args[0])
+            const ttsGB = gtts(args[0])
+            if (dataText == '') return sendReply(toast.ttsError()) 
+            ttsGB.save('./media/temp/tts.mp3', voz2trans, async function(){ grabando(from); await sendPttReply('./media/temp/tts.mp3').catch(() => {sendReply(toast.error())})})
+            break
+        case 'listavoz2':
+            sendReply(menu.voz2List(informacion))
+            break
+        /*case 'fakeyou':
+            fakeyou('mario', q)
+            break*/
+        case 'test':
+            const path = './media/'
+            break
+            default:
     }
-
     switch(stickerCommand){
         case 'G9tTADIZWkqyKB46Hhxlg5qex17XLQ9e/H6psMqX/aY=': //degradar
             if (!isGroup) return 
@@ -1941,5 +2308,5 @@ module.exports = async (msg ,client) => {
         
         default:
     }
-    if (isSticker) {log(stickerCommand)}
+    //if (isSticker) {log(stickerCommand)}
 }
