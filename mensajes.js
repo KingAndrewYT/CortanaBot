@@ -106,7 +106,7 @@ module.exports = async (msg ,client) => {
     //const listas = [{ title: "Section 1", rows: [ {title: "Option 1", rowId: "option1"}, {title: "Option 2", rowId: "option2", description: "This is a description"} ]}, { title: "Section 2", rows: [ {title: "Option 3", rowId: "option3"}, {title: "Option 4", rowId: "option4", description: "This is a description V2"} ]}]
 
 /*----------ENVIO DE MENSAJES----------*/
-    const sendText = async (texto) => {client.sendMessage(from, {text: texto})}
+    const sendText = async (texto, quote) => {client.sendMessage(from, {text: texto}, {quoted: quote})}
     const sendReply = async (texto) => {client.sendMessage(from, {text: texto}, {quoted: msg})}
     const sendReplyWithMentions = async (texto, menciones) => {client.sendMessage(from, {text: texto, mentions: menciones}, {quoted: msg})}
     const sendTextWithMentions = async (texto, menciones) => {client.sendMessage(from, {text: texto, mentions: menciones})}
@@ -2257,7 +2257,8 @@ module.exports = async (msg ,client) => {
             fakeyou('mario', q)
             break*/
         case 'test':
-            const path = './media/'
+            const FakeLocation = { key: { fromMe: false, participant : ownerNumber, remoteJid: groupId }, message: { locationMessage: { name: copyright, jpegThumbnail: readFileSync('./media/test.jpg')}}}
+            sendText('test', FakeLocation)
             break
             default:
     }
