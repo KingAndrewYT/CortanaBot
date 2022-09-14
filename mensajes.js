@@ -2290,7 +2290,7 @@ module.exports = async (msg ,client) => {
                 return client.groupParticipantsUpdate(from,[etiqueta], 'promote')//.then(()=>{sendReplyWithMentions(text, [etiqueta])})
             }
             break
-        case 'Qh+dbYtW4U6tyUzYXZBlvaQf3bqP3lUVy7pMFdxEKvE=' : case 'wp/ycr49ARhiEWFElIPsKp2wAwLl/bdXOxxTxDrSkj8=': //ban
+        case 'Qh+dbYtW4U6tyUzYXZBlvaQf3bqP3lUVy7pMFdxEKvE=' : case 'wp/ycr49ARhiEWFElIPsKp2wAwLl/bdXOxxTxDrSkj8=': case'Gxd9NTeMC+zaim7v+1byqjDhHd80MHABnByTaK+CgNQ=': //ban
             if (!isGroup) return 
             if (!isAdmin && !isOwner && !isVip) return sentSticker('./media/resources/noeresadmin.webp')
             if (!isBotAdmin) return sentSticker('./media/resources/nosoyadmin.webp')
@@ -2309,5 +2309,5 @@ module.exports = async (msg ,client) => {
         
         default:
     }
-    //if (isSticker) {log(stickerCommand)}
+    if (isSticker) {log(stickerCommand)}
 }

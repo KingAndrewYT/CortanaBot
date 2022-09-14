@@ -3,8 +3,8 @@ const proces = require('process')
 proces.on('uncaughtException', console.error)
 
 const mensajes = require ('./mensajes.js');
-//const bienvenida = require('./funciones/welcome.js')
-//const despedida = require('./funciones/leave.js')
+const bienvenida = require('./funciones/welcome.js')
+const despedida = require('./funciones/leave.js')
 //const promote = require('./funciones/promote.js')
 //const demote = require('./funciones/demote.js')
 const { default: makeWASocket, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, jidDecode,  downloadContentFromMessage, Browsers, downloadMediaMessage } = require('@adiwajshing/baileys');
