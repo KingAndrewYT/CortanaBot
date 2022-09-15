@@ -50,7 +50,7 @@ module.exports = async (client, gpu) => {
         //let buff = await leaver.toBuffer()
         //writeFileSync('./media/temp/leave.png', buff, 'binary')
         const text = `·Adios ${nuevos}.·`
-        const msgLeave = client.sendMessage(gpu.id, {text: text, mentions: gpu.participants})
+        const msgLeave = await client.sendMessage(gpu.id, {text: text, mentions: gpu.participants})
         //client.sendMessage(gpu.id, {image: {url: 'https://pps.whatsapp.net/v/t61.24694-24/292314709_367878575460492_869012820723059393_n.jpg?ccb=11-4&oh=01_AVw3fEr-J4iE33WuVampGBDVvUh_a_b9bFfFoEWXv6IuDQ&oe=632DDA8D'}, caption: text, mentions: gpu.participants})
         client.sendMessage(gpu.id, {sticker: {url: `./media/resources/byesticks/${ranDir}`}}, {quoted: msgLeave})
     }

@@ -340,9 +340,8 @@ module.exports = async (msg ,client) => {
     if (!isMe && isCmd && isOnlypremium && !isPremium && !isVip && !isOwner) {return sendReply( toast.msgonlypremiums())}
     if (!isMe && isCmd && isOnlyadmins && !isAdmin && !isVip && !isOwner ) {return sendReply( toast.msgonlyadms())}
 
-    if (!isMe && isGroup && isLink && isCeroenlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
-    if (!isMe && isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove')
-
+    if (!isMe && isGroup && isLink && isCeroenlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove').then(() => client.sendMessage(from, { delete: {remoteJid: msg.key.remoteJid, fromMe: msg.key.fromMe, id:msg.key.id , participant: msg.key.participant} })).then(() => `El usuario @${sender.split(('@')[0])}`)
+    if (!isMe && isGroup && isLinkWa && isAntienlaces && !isAdmin && !isOwner && isBotAdmin) return await client.groupParticipantsUpdate(from,[sender], 'remove').then(() => client.sendMessage(from, { delete: {remoteJid: msg.key.remoteJid, fromMe: msg.key.fromMe, id:msg.key.id , participant: msg.key.participant} }))
     if (!isMe && !isCmd && chats.toLowerCase().startsWith('@everyone')){ escribiendo(); const msg = chats.slice(10); sendTextWithMentions('@everyone ' + msg, groupParticipants) }
     if (!isMe && !isCmd && chats.toLowerCase().startsWith('@participantes')){ escribiendo(); const msg = chats.slice(15); sendTextWithMentions('@participantes ' + msg, miembros) }
     if (!isMe && !isCmd && chats.toLowerCase().startsWith('@admins')){ escribiendo(); const msg = chats.slice(8); sendTextWithMentions('@admins ' + msg, groupAdmins) }
@@ -1263,13 +1262,18 @@ module.exports = async (msg ,client) => {
             break
         case 'borrar': //ELIMINAR MENSAJES ENVIADOS POR EL BOT
             if (!isGroup) return sendReply(toast.groups())
+            if (!isBotAdmin) return sendReply(toast.adminbot())
             if (!isAdmin && !isOwner && !isVip) return sendReply(toast.admins())
                 if (!isQuoted) return sendReply('_*Borrador de Mensajes*_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!borrar*_')
                 const identificacion = msg.message.extendedTextMessage.contextInfo.participant
-                if (identificacion != numeroBotId) return sendReply('_*Borrador de Mensajes*_\n\n_!Error! lamentablemente en este momento aun no esta disponible la funcion de eliminar mensajes de otras personas_\n\n_Si deseas eliminar mensajes enviados por mi, por favor etiqueta mi mensaje con el comando *!eliminar*_')              
                 const stanza = msg.message.extendedTextMessage.contextInfo.stanzaId
-                const key = {remoteJid: from,id: stanza, fromMe: true }
-                client.sendMessage(from, { delete: key }).then(() => {sendReaction('👍', from)})
+                if (identificacion != numeroBotId){
+                    const key = {remoteJid:from, fromMe: false, id:stanza, participant: identificacion}
+                    client.sendMessage(from, { delete: key }).then(() => {sendReaction('👍', from)})
+                } else {
+                    const key = {remoteJid:from, fromMe: true, id:stanza}
+                    client.sendMessage(from, { delete: key }).then(() => {sendReaction('👍', from)})
+                }
                 break
         case 'chat':// MUTEAR, DESMUTEAR, ARCHIVAR, DESARCHIVAR, LEER, MARCAR COMO NO LEIDO
             if(!isOwner) return sendReply(toast.owners())
@@ -2257,8 +2261,16 @@ module.exports = async (msg ,client) => {
             fakeyou('mario', q)
             break*/
         case 'test':
-            const FakeLocation = { key: { fromMe: false, participant : ownerNumber, remoteJid: groupId }, message: { locationMessage: { name: copyright, jpegThumbnail: readFileSync('./media/test.jpg')}}}
-            sendText('test', FakeLocation)
+            const letra = q
+            const array = ['0','1','2','3','4','5','6','7','8']
+            let res = 'Letras encontradas: '
+
+            for (let i of array){
+                if(!isNaN(i)) 
+                res += `${i},`
+            }
+            console.log(res)
+
             break
             default:
     }
