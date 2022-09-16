@@ -81,6 +81,8 @@ const client = makeWASocket({ logger: pino({ level: 'silent' }), printQRInTermin
                 const msg = messages[0]
                 if (!msg.message) return    
                 mensajes(msg, client)
+                client.sendMessage(from, {text
+                    :{}})
             })
 
             client.ev.on('group-participants.update', async gpu => {
